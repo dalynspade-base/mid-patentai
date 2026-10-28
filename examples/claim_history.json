@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "provenance": "synthetic_example_not_real_patent",
+  "selected_version": "amended",
+  "sources": [{"id": "filed-description", "version_id": "filed", "location": "原始说明书教学段落", "text": "控制器可以通过无线通信模块发送经加密的温度数据。"}],
+  "versions": [
+    {
+      "id": "filed", "date": "2024-01-01", "stage": "申请文本",
+      "claims": [
+        {"id": "1", "kind": "independent", "text": "一种温控装置，包括温度传感器和控制器，控制器在温度超过设定界限时启动冷却泵。", "depends_on": [], "limitations": ["包括温度传感器和控制器", "控制器在温度超过设定界限时启动冷却泵"]},
+        {"id": "2", "kind": "dependent", "text": "根据权利要求1所述的装置，其中控制器通过无线通信模块发送温度数据。", "depends_on": ["1"], "limitations": ["控制器通过无线通信模块发送温度数据"]},
+        {"id": "3", "kind": "dependent", "text": "根据权利要求1或2所述的装置，其中冷却泵为离心泵。", "depends_on": ["1", "2"], "dependency_mode": "any", "limitations": ["冷却泵为离心泵"]}
+      ],
+      "amendment_basis": []
+    },
+    {
+      "id": "amended", "date": "2024-03-01", "stage": "答复时修改文本",
+      "claims": [
+        {"id": "1", "kind": "independent", "text": "一种温控装置，包括温度传感器和控制器，控制器在温度超过设定界限时启动冷却泵。", "depends_on": [], "limitations": ["包括温度传感器和控制器", "控制器在温度超过设定界限时启动冷却泵"]},
+        {"id": "2", "kind": "dependent", "text": "根据权利要求1所述的装置，其中控制器通过无线通信模块发送经加密的温度数据。", "depends_on": ["1"], "limitations": ["控制器通过无线通信模块发送经加密的温度数据"]},
+        {"id": "3", "kind": "dependent", "text": "根据权利要求1或2所述的装置，其中冷却泵为离心泵。", "depends_on": ["1", "2"], "dependency_mode": "any", "limitations": ["冷却泵为离心泵"]}
+      ],
+      "amendment_basis": [{"claim_id": "2", "source_id": "filed-description", "quote": "控制器可以通过无线通信模块发送经加密的温度数据。", "explanation": "新增加密限定的原始记载；是否支持该组合及是否超范围仍需专业核验。"}]
+    }
+  ]
+}

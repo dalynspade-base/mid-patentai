@@ -150,10 +150,11 @@ class DocumentReview:
     context_complete: bool = False
     completeness_basis: str = ""
     reviewed_section_ids: tuple[str, ...] = ()
+    review_context_hash: str = ""
 
     def __post_init__(self) -> None:
         for key in ("reviewer", "reviewed_at", "input_hash", "same_scheme_basis", "relevance", "relevance_basis",
-                    "review_method", "review_model", "review_endpoint", "review_prompt_version", "completeness_basis"):
+                    "review_method", "review_model", "review_endpoint", "review_prompt_version", "completeness_basis", "review_context_hash"):
             value = getattr(self, key)
             if value is None:
                 object.__setattr__(self, key, "")
@@ -183,6 +184,8 @@ def review_input_hash(features: list[Feature], document: PatentDocument, cutoff:
                       review: DocumentReview) -> str:
     data = asdict(review)
     data.pop("input_hash")
+    if not review.review_context_hash:
+        data.pop("review_context_hash")  # Preserve the exact hash of historical records.
     # 旧人工记录沿用原哈希；新的模型字段全部绑定，修改模型或上下文判定会失效。
     defaults = {"review_method": "human", "review_model": "", "review_endpoint": "",
                 "review_prompt_version": "", "context_complete": False,
@@ -197,12 +200,16 @@ def review_input_hash(features: list[Feature], document: PatentDocument, cutoff:
 
 
 def stamp_review(review: DocumentReview, features: list[Feature],
-                 document: PatentDocument, cutoff: str) -> DocumentReview:
+                 document: PatentDocument, cutoff: str, *, patent_context=None) -> DocumentReview:
     """绑定已完成的复核；模型建议不得调用，模型终审须显式标记 review_method=model。"""
     if not review.reviewed:
         return replace(review, reviewed_at="", input_hash="")
     if review.review_method == "candidate":
         raise ValueError("候选建议不能直接提交为已完成复核。")
+    if patent_context is not None:
+        from modules.patent_context import context_for
+        from modules.skill_contracts import digest
+        review=replace(review,review_context_hash=digest(context_for(features,cutoff,patent_context)))
     stamped = replace(review, reviewer=review.reviewer.strip(),
                       reviewed_at=datetime.now(timezone.utc).isoformat(), input_hash="")
     return replace(stamped, input_hash=review_input_hash(features, document, cutoff, stamped))

@@ -27,6 +27,10 @@ from modules.candidate_relevance import valid_body_review, model_endpoint
 from skills.precheck_skill import NoveltyHarness
 from modules.semantic_eval_ui import render_semantic_evaluation
 from skills.evidence_alignment_skill import review as run_evidence_review
+from modules.claim_ui import render_claim_input
+from modules.patent_context import context_for
+from modules.novelty_models import parse_features
+from modules.application_baselines import TOPICS
 
 
 def fingerprint(*items: str) -> str:
@@ -72,14 +76,35 @@ def main() -> None:
             return
     render_material_intake()
     invention = st.text_area("发明描述", key="invention_input", placeholder="描述完整技术方案；保留结构、连接关系、步骤、条件和数值。", height=110)
+    claim_selection=render_claim_input()
+    if claim_selection and not claim_selection["ready"]:
+        return
     feature_text = st.text_area("确认待判断的技术要素（每行一个）", height=130,
                                 key="feature_text_input",
                                 placeholder="压力传感器\n压力传感器连接控制器\n控制器通过无线通信模块发送数据")
-    expansion = render_synonym_expansion(feature_text, lexicon, api_key, base_url, model)
+    if claim_selection:
+        feature_text="\n".join(f.text for f in claim_selection["features"])
+        st.caption("本轮采用上方选定权利要求的继承限定；普通要素编辑框不改变此目标。")
     cutoff = st.date_input("判断基准日", value=datetime.now(ZoneInfo("Asia/Shanghai")).date()).isoformat()
+    with st.expander("方案语境与申请底线"):
+        technical_field=st.text_input("具体技术领域（可选）")
+        baseline_topics=st.multiselect("相关技术类型",list(TOPICS),default=["general"],format_func=lambda k:TOPICS[k])
+        functional=st.checkbox("方案包含功能、作用机制或效果限定")
+    try:
+        ui_features=claim_selection["features"] if claim_selection else (parse_features(feature_text) if feature_text.strip() else [])
+        context_seed={"technical_field":technical_field or "未指定","baseline_topics":baseline_topics,
+                      "semantic_focus":["functions_effects"] if functional else []}
+        if claim_selection:
+            context_seed["target"]=claim_selection["target"]
+        patent_context=context_for(ui_features,cutoff,context_seed,invention=invention)
+    except ValueError as exc:
+        st.error(str(exc))
+        return
+    expansion = render_synonym_expansion(feature_text, lexicon, api_key, base_url, model,
+        features_override=ui_features,patent_context=patent_context)
     query = st.text_input("Google Patents 检索词（可选）")
     st.caption("留空时原要素优先，再发送审核通过的扩展；理论类最多8条、工程类最多16条，每条400字，不截断。自定义词保持指定范围。")
-    st.caption("先按整套要素评估，不区分独立/从属权利要求。基准日及优先权适用性由你确认。")
+    st.caption("普通输入按整套确认要素预筛；权利要求模式按选定版本和引用路径分别比对。基准日及优先权适用性需核验。")
     st.info("检索词发送到 Google Patents。分别确认并点击生成术语或模型复核后，对应的要素/术语表或原文/候选才发送到模型。")
     prepared = st.session_state.get("prepared_material_features")
     material_context = {"material_unknowns": list(prepared.get("unknowns", [])) if prepared else [],
@@ -89,12 +114,15 @@ def main() -> None:
     material_identity = {"case": st.session_state.get("active_material_case"),
                          "preparation": prepared.get("preparation_ref") if prepared else None,
                          **material_context}
-    material_skill_context={"material_original":invention}
-    if prepared and prepared["feature_text"]==feature_text and prepared.get("skill_record"):
+    material_skill_context={"material_original":invention,"patent_context":patent_context}
+    if claim_selection:
+        material_skill_context.update(claim_history=claim_selection["history"],claim_target=claim_selection["target"]["id"])
+    if not claim_selection and prepared and prepared["feature_text"]==feature_text and prepared.get("skill_record"):
         material_skill_context["material_skill_record"]=prepared["skill_record"]
     signature = fingerprint(invention, feature_text, cutoff, query, str(max_documents),
                             json.dumps(lexicon.groups, ensure_ascii=False),
                             json.dumps(expansion, ensure_ascii=False, sort_keys=True),
+                            json.dumps(patent_context, ensure_ascii=False, sort_keys=True),
                             json.dumps(material_identity, ensure_ascii=False, sort_keys=True))
     harness = NoveltyHarness(lexicon=lexicon, max_documents=max_documents)
     state = st.session_state.get("novelty_state") if st.session_state.get("novelty_signature") == signature else None
@@ -178,7 +206,8 @@ def main() -> None:
     options = {doc.id: doc for doc in state["documents"]}
     selected = st.multiselect("待逐项复核的文献", list(options), default=list(options))
     candidates_by_id = {review.document_id: review for review in state["suggestions"]}
-    payloads = [model_review_payload(state["features"], options[key], cutoff, candidates_by_id.get(key), state.get("hits", []))
+    payloads = [model_review_payload(state["features"], options[key], cutoff, candidates_by_id.get(key), state.get("hits", []),
+                                   patent_context=state.get("patent_context"))
                 for key in selected]
     consent_payload = json.dumps(payloads, ensure_ascii=False, sort_keys=True)
     review_signature = fingerprint(consent_payload, base_url.strip(), model.strip())
@@ -198,7 +227,7 @@ def main() -> None:
 
     by_doc = {doc.id: doc for doc in state["documents"]}
     invalid = {r.document_id for r in state.get("reviews", []) if
-        not valid_body_review(r, state["features"], by_doc.get(r.document_id), cutoff) or
+        not valid_body_review(r, state["features"], by_doc.get(r.document_id), cutoff,patent_context=state.get("patent_context")) or
         (r.review_method == "model" and (r.review_model != model.strip() or r.review_endpoint != model_endpoint(base_url.strip())
                                        or r.review_prompt_version != MODEL_REVIEW_PROMPT_VERSION))}
     if invalid:
@@ -213,7 +242,8 @@ def main() -> None:
             candidates = state["suggestions"]
             with st.spinner("逐篇调用模型复核并校验引文、要素和段落覆盖…"):
                 reviews, _ = run_evidence_review(state["features"], [options[key] for key in selected], cutoff,
-                    LLMClient(api_key, base_url, model), consent, candidates, evidence_hits=state.get("hits", []))
+                    LLMClient(api_key, base_url, model), consent, candidates, evidence_hits=state.get("hits", []),
+                    context=state.get("patent_context"),upstream=state.get("skill_records", []))
                 updated = harness.run(features=state["features"], cutoff=cutoff,
                     documents=state["documents"], reviews=list({r.document_id: r for r in list(state.get("reviews", [])) + reviews}.values()), errors=state.get("errors", []),
                     search_audit=state["search_audit"], **material_context, **material_skill_context)

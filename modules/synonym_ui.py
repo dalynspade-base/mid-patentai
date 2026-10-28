@@ -16,7 +16,7 @@ def build_expansion_plan(*args,**kwargs):
     return run_synonym_skill(*args,**kwargs)[0]
 
 
-def render_synonym_expansion(feature_text, lexicon, api_key, base_url, model):
+def render_synonym_expansion(feature_text, lexicon, api_key, base_url, model,*,features_override=None,patent_context=None):
     with st.expander("同义词四层扩展与检索评测", expanded=False):
         profile = st.selectbox("专利检索类型", list(PROFILES), index=1,
                                format_func=lambda key: PROFILES[key]["label"])
@@ -28,12 +28,12 @@ def render_synonym_expansion(feature_text, lexicon, api_key, base_url, model):
         st.caption("第一层使用预定义词典；第二层可选LLM生成中英文和缩写；第三层拦截语义漂移及限定变化。"
                    "词典外的新词需明确审核才进入查询，未审核项不自动当同义词。")
         try:
-            features = parse_features(feature_text) if feature_text.strip() else []
+            features = features_override if features_override is not None else (parse_features(feature_text) if feature_text.strip() else [])
         except ValueError as exc:
             st.warning(str(exc))
             return None
         payload = {"features": [asdict(f) for f in features], "profile": profile,
-                   "protected_terms": protected, "dictionary_groups": lexicon.groups}
+                   "protected_terms": protected, "dictionary_groups": lexicon.groups,"patent_context":patent_context}
         signature = hashlib.sha256(json.dumps([payload, base_url.strip(), model.strip()],
                                    ensure_ascii=False, sort_keys=True).encode()).hexdigest()[:20]
         consent = st.checkbox("我确认将技术要素、保护术语和词典发送到模型生成扩展候选",
@@ -45,7 +45,7 @@ def render_synonym_expansion(feature_text, lexicon, api_key, base_url, model):
             try:
                 with st.spinner("生成候选并检查术语与限定…"):
                     st.session_state[cache_key] = generate_llm_candidates(features, lexicon, profile, protected,
-                        LLMClient(api_key, base_url, model), consent)
+                        LLMClient(api_key, base_url, model), consent,patent_context=patent_context)
             except (ValueError, RuntimeError, PermissionError) as exc:
                 st.error(str(exc))
         generated = st.session_state.get(cache_key)
@@ -68,6 +68,9 @@ def render_synonym_expansion(feature_text, lexicon, api_key, base_url, model):
         if plan and approved and confirmation:
             plan = build_expansion_plan(features, lexicon, profile, protected, generated, approved)
         if plan:
+            if patent_context:
+                from modules.skill_contracts import digest
+                plan["context_binding"]=digest({k:patent_context[k] for k in ("features_hash","cutoff","scope","target")})
             st.dataframe(plan["candidates"], hide_index=True, width="stretch")
             st.caption(f"本轮有{len(plan['variants'])}个候选查询变体；按原要素优先、类型预算发送，多余或超长查询另行记录。")
             st.download_button("下载同义词扩展与审核记录", json.dumps(plan, ensure_ascii=False, indent=2),

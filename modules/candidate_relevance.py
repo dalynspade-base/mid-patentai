@@ -35,8 +35,17 @@ def model_endpoint(base_url):
         return ""
 
 
-def valid_body_review(review, features, document, cutoff):
+def valid_body_review(review, features, document, cutoff, *, patent_context=None):
     try:
+        if patent_context is not None:
+            from modules.patent_context import context_for
+            from modules.skill_contracts import digest
+            ctx=context_for(features,cutoff,patent_context)
+            expected=digest(ctx)
+            if review.review_context_hash and review.review_context_hash != expected:
+                return False
+            if not review.review_context_hash and (review.review_method=="model" or ctx.get("definitions") or ctx["target"].get("claim_id")):
+                return False
         return bool(document and review.reviewed and review.review_method in {"human", "model"}
             and review.reviewer.strip() and datetime.fromisoformat(review.reviewed_at).utcoffset() is not None
             and review.input_hash == review_input_hash(features, document, cutoff, review)

@@ -55,7 +55,7 @@ class ModelReviewUITests(unittest.TestCase):
             app = self.ready()
             state = app.session_state["novelty_state"]
             preview = model_review_payload(state["features"], state["documents"][0], "2024-01-01",
-                                           state["suggestions"][0], state["hits"])
+                                           state["suggestions"][0], state["hits"],patent_context=state["patent_context"])
             self.submit(app)
             self.assertEqual(json.loads(model.call_args.args[1]), json.loads(json.dumps(preview)))
             self.assertEqual(preview["evidence_alignment"]["primary"], "model_semantics")

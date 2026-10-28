@@ -207,7 +207,7 @@ class ModelReviewTests(unittest.TestCase):
         features, document, review = EvidenceReviewTests().valid_inputs()
         data = asdict(review)
         for key in ("input_hash", "review_method", "review_model", "review_endpoint", "review_prompt_version",
-                    "context_complete", "completeness_basis", "reviewed_section_ids"):
+                    "context_complete", "completeness_basis", "reviewed_section_ids", "review_context_hash"):
             data.pop(key)
         raw = json.dumps({"features": [asdict(f) for f in features], "cutoff": "2024-01-01",
             "snapshot_hash": document.snapshot_hash, "review": data}, ensure_ascii=False, sort_keys=True)

@@ -8,10 +8,17 @@ from urllib.parse import quote as url_quote
 
 
 def build_payload(state: dict, invention: str, cutoff: str, lexicon_groups: list) -> dict:
+    from modules.patent_context import context_for
+    from modules.application_baselines import select_baselines
+    ctx=context_for(state["features"],cutoff,state.get("patent_context"),invention=invention)
+    target=ctx["target"]
+    scope=(f"Google Patents；版本{target['version_id']}；权利要求{target['claim_id']}；引用路径{' → '.join(target['path'])}"
+           if target.get("claim_id") else "Google Patents；整套用户确认要素")
     payload = {
         "report_schema_version": 3,
         "created_at": datetime.now(timezone.utc).isoformat(), "task": "CN_novelty_precheck",
-        "scope": "Google Patents；整套用户确认要素；不展开独立/从属权利要求",
+        "scope": scope, "patent_context":ctx,
+        "application_baselines":select_baselines(ctx["baseline_topics"]),
         "cutoff": cutoff, "invention": invention,
         "features": [asdict(f) for f in state["features"]],
         "documents": [doc.to_dict() | {"snapshot_hash": doc.snapshot_hash} for doc in state["documents"]],
@@ -30,6 +37,8 @@ def build_payload(state: dict, invention: str, cutoff: str, lexicon_groups: list
                    "Google Patents 不包含全部非专利现有技术；日期、抵触申请、充分公开等仍可能需要专业核验。",
                    "模型逐项复核不等于人工确认，不能作为真实专业准确率的金标准。"],
     }
+    if state.get("claim_history"):
+        payload["claim_history"]=state["claim_history"]
     return payload
 
 
@@ -40,6 +49,20 @@ def to_markdown(payload: dict, *, include_skill_audit=True) -> str:
              f"判断基准日：{payload['cutoff']}", f"范围：{payload['scope']}",
              "", "## 发明描述", payload["invention"], "", "## 已确认技术要素"]
     lines += [f"- {f['id']}：{f['text']}" for f in payload["features"]]
+    target=payload.get("patent_context",{}).get("target",{})
+    if target.get("claim_id"):
+        lines += ["", "## 权利要求及修改范围", target["boundary"]]
+        lines += [f"- 权利要求{c['id']}（{c['kind']}）：{c['text']}" for c in target["claims"]]
+        for change in target["amendments"]:
+            before=(change["before"] or {}).get("text","本版本未记载")
+            after=(change["after"] or {}).get("text","本版本已删除")
+            lines += [f"- {change['version_id']} / {change['claim_id']}：{before} → {after}",
+                      "  修改依据：" + ("；".join(b["explanation"] for b in change["basis"]) or "未提供，不能确认修改支持或合法性。")]
+    if payload.get("application_baselines"):
+        lines += ["", "## 同类技术争议与申请底线", "以下为有出处的核查依据；须与本案具体限定及证据比对，不据此自动认定不过审。"]
+        for pattern in payload["application_baselines"]["patterns"]:
+            lines += [f"- **{pattern['problem']}**（{'、'.join(pattern['grounds'])}）：{pattern['baseline']}",
+                      f"  适用边界：{pattern['limit']} [来源]({pattern['source']['url']})"]
     if payload.get("evidence_alignment"):
         lines += ["", "证据对照以模型对技术含义及全部限定的理解为主；LlamaIndex提供本地阅读线索。"
                   "模型须检查全部输入原文，可以采用未命中段落，逐项说明支持关系、矛盾或不确定性。"]

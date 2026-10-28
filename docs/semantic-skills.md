@@ -28,7 +28,7 @@ LangGraph底层位于modules/precheck_graph.py，LlamaIndex阅读线索位于mod
 
 这些是任务检查维度，不声称语言学文献规定六层理论。六维无权重、不累加；必需维度由各技能职责指定，其他维度不适用也须说明。
 
-独立裁判输出 findings（dimension/status/basis/citations/counterexample/next_action）、verdict、summary。
+独立裁判输出 findings（dimension/status/basis/citations/counterexample/next_action）、activated_dimensions、verdict、summary。上下文记录须返回动态必查维度，不能跳过已触发项。
 status为satisfied/violated/undetermined/not_applicable；有违反则needs_revision，无违反但存在未定则pending_adjudication，其余acceptable。
 每个确定判断同时引用skill_output和原始依据；引文逐字回查。裁判对语义的解释仍是模型意见，程序校验不能证明其正确。
 
@@ -44,3 +44,7 @@ status为satisfied/violated/undetermined/not_applicable；有违反则needs_revi
 
 engineering/legacy/basic_contracts.py与旧指标函数只用于历史工程；tools/check_semantic_contract.py为独立离线契约入口。报告统一由skills/report_delivery_skill.py组装，modules/novelty_report.py只生成基础载荷和正文。历史报告不重写。
 新测试验证执行绑定、裁判正负对照、六维完整性、引文和失败处理，模拟响应不证明实际模型专业准确率。
+
+## 上下文与跨步骤验收
+
+六个专用合同及权利要求版本协议集中在[skill-contexts.md](skill-contexts.md)；案例共性问题见[application-baselines.md](application-baselines.md)。全部步骤完成后增加一次独立的跨skill语义核验，其输入同样预览，结果进入整体裁决。绑定冲突不能由模型接受覆盖。旧记录缺少上下文时只按其实际内容评步骤，不补造跨步骤验收。

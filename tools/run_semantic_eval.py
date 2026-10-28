@@ -11,6 +11,7 @@ from modules.skill_contracts import SKILLS,serialized,validate_record
 from modules.semantic_eval import evaluation_packet,evaluation_markdown
 from modules.semantic_eval_examples import teaching_records
 from skills.semantic_eval_skill import run
+from modules.semantic_handoff import handoff_packet
 
 
 def main(default_skill=None):
@@ -47,6 +48,7 @@ def main(default_skill=None):
         print(json.dumps({"execution":report["execution"],"verdict":report["verdict"],"output":str(args.output_dir)},ensure_ascii=False))
         return 0 if report["execution"]=="completed" else 2
     plan={"execution":"not_executed","verdict":None,"evaluation_inputs":[evaluation_packet(r,(refs or {}).get(r["skill_id"])) for r in records],
+          "handoff_input":handoff_packet(records) if not args.skill else None,
           "note":"仅生成外发预览；没有调用语义裁判，没有验收结论。"}
     (args.output_dir/"semantic_eval_plan.json").write_text(json.dumps(plan,ensure_ascii=False,indent=2),encoding="utf-8")
     print(json.dumps({"execution":"not_executed","output":str(args.output_dir)},ensure_ascii=False))

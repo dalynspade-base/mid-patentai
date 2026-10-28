@@ -1,6 +1,7 @@
 """CNIPA 新颖性预筛规则。结论受限于已检索、已复核的 Google Patents 快照。
 
-禁止跨文献/互斥实施例拼接。当前不处理创造性、FTO、从属引用展开或宽限期。
+禁止跨文献/互斥实施例拼接。权利要求引用在入口按明确分支展开；此处逐个完整目标判断。
+当前不处理创造性、FTO或宽限期。
 同义词和检索分数不进入法律判断；模型复核须通过出处、覆盖和输入绑定校验。
 """
 
@@ -20,7 +21,7 @@ def assess_novelty(features: list[Feature], documents: list[PatentDocument],
                    errors: list[str] | None = None, allow_synthetic: bool = False,
                    material_unknowns: list[str] | None = None,
                    material_warnings: list[str] | None = None,
-                   search_audit: dict | None = None) -> NoveltyDecision:
+                   search_audit: dict | None = None, patent_context=None) -> NoveltyDecision:
     if task != "novelty":
         return NoveltyDecision("out_of_scope", ["仅支持新颖性预筛，不输出侵权、FTO 或可授权性判断。"])
     baseline = check_cutoff(cutoff)
@@ -83,6 +84,11 @@ def assess_novelty(features: list[Feature], documents: list[PatentDocument],
         if not review or not review.reviewed or review.review_method == "candidate":
             warnings.append(f"{doc.id}：对照尚未完成逐项复核。")
             continue
+        if patent_context is not None:
+            from modules.candidate_relevance import valid_body_review
+            if not valid_body_review(review,features,doc,cutoff,patent_context=patent_context):
+                warnings.append(f"{doc.id}：复核与当前语境未绑定或已失效，需要重新复核。")
+                continue
         try:
             reviewed_at = datetime.fromisoformat(review.reviewed_at)
             time_valid = reviewed_at.utcoffset() is not None

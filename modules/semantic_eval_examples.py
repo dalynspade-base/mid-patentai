@@ -28,7 +28,8 @@ def judgment_example(record,*,violation=False):
                          {"source_id":"skill_input","quote":serialized(record["inputs"])}],
             "counterexample":"教学反例：把仅在条件下启动改为无条件启动。" if bad else "",
             "next_action":"恢复触发条件。" if bad else ""})
-    return {"findings":findings,"verdict":"needs_revision" if violation else "acceptable","summary":"仅用于裁判契约自测。"}
+    return {"findings":findings,"activated_dimensions":list(DIMENSIONS),
+            "verdict":"needs_revision" if violation else "acceptable","summary":"仅用于裁判契约自测。"}
 
 
 def contract_demo():

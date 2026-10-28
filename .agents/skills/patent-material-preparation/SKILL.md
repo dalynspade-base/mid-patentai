@@ -9,6 +9,8 @@ description: 将已读取的发明材料整理为带原文出处的技术要素�
 
 使用 `skills.material_preparation_skill.prepare_with_model(sources, client, confirmed)` 可整理已提取的文本；`run` 仅规范化用户确认要素，不声称已经理解附件。模型外发沿用用户已批准范围。
 
+上下文须包含实际原文/确认要素、读取范围与未知；本轮基准日、范围及目标由 `patent_context` 交接。权利要求模式保留原文、版本、引用路径与新增限定出处，核验父项继承完整，不把实施例细节擅自导入保护范围。修改依据能回查不等于修改合法，详见[上下文与版本协议](../../../docs/skill-contexts.md)。
+
 案件保存沿用 `modules.material_cases.save_prepared_features`，不修改原件及旧整理版本，不设置虚假的人工复核。仅有材料中一句话的引文，不等于该句支持全部技术限定。
 
 交付连续编号的 features、evidence、unknowns，以及该技能的绑定执行记录；再交术语扩展技能。
