@@ -6,7 +6,8 @@ from urllib.parse import urlsplit, urlunsplit
 from modules.json_output import parse_object
 from modules.skill_contracts import DIMENSIONS, SKILLS, digest, plain, serialized, validate_record
 
-RUBRIC_VERSION = "multidimensional-semantic-v1"
+RUBRIC_VERSION = "multidimensional-semantic-v1.0.1"
+MAX_EVAL_CHARACTERS = 50000
 VERDICTS = {"acceptable": "可接受", "needs_revision": "需修订", "pending_adjudication": "待裁决"}
 EXECUTION_LABELS={"completed":"已完成","partial":"部分完成","not_executed":"未执行","failed":"执行失败","incomplete":"执行不完整"}
 FINDING_LABELS={"satisfied":"满足","violated":"违反","undetermined":"未确定","not_applicable":"不适用"}
@@ -25,6 +26,10 @@ violated须给出具体counterexample和next_action。undetermined须说明缺�
 只输出JSON：findings数组（dimension,status,basis,citations,counterexample,next_action）、verdict、summary。
 verdict仅acceptable/needs_revision/pending_adjudication；有violated必须needs_revision，无错误但有undetermined
 必须pending_adjudication，其余acceptable。禁止分数、概率、权重、通过率、高中低评级及数值质量指标。
+sources通过record_path定位record中的内容，路径数组依次指定对象字段或数组下标。
+format=text表示该位置的逐字文本；format=canonical_json表示该对象的JSON序列化文本。
+skill_input和skill_output分别指向record.inputs和record.output，引用其中实际字段的文字即可，不必重复整个对象。
+所有引用内容均已在record内提供，路径不是要求访问外部材料。不得把路径或哈希当作原文证据。
 参考允许多种有效解释；参考来源不充分不作为权威。裁判意见属于模型辅助复核，不冒称人工或专业认证。"""
 
 
@@ -45,14 +50,34 @@ def evaluation_packet(record, reference=None):
                 or reference.get("provenance") not in {"independent_human_reference", "teaching_reference"}
                 or any(not isinstance(reference.get(k), str) or not reference[k].strip() for k in ("author", "basis"))):
             raise ValueError("参考须有独立来源说明、作者、依据和匹配的输出绑定。")
-    sources = record["sources"] + [
-        {"id": "skill_input", "text": serialized(record["inputs"]), "location": "冻结的技能输入"},
-        {"id": "skill_output", "text": serialized(record["output"]), "location": "冻结的实际输出"}]
+    # Keep the original hashed record intact. Source aliases point into that record,
+    # instead of serializing the entire inputs/output and original sources twice.
+    sources = [
+        {"id": source["id"], "record_path": ["sources", index, "text"],
+         "format": "text", "location": source["location"]}
+        for index, source in enumerate(record["sources"])
+    ] + [
+        {"id": "skill_input", "record_path": ["inputs"], "format": "canonical_json", "location": "冻结的技能输入"},
+        {"id": "skill_output", "record_path": ["output"], "format": "canonical_json", "location": "冻结的实际输出"}]
     spec = SKILLS[record["skill_id"]]
     return {"rubric_version": RUBRIC_VERSION, "record": record, "dimensions": DIMENSIONS,
         "required_dimensions": list(spec["required"]), "obligations": spec["obligations"],
         "sources": sources, "reference": reference,
         "reference_status": "none" if reference is None else reference["provenance"]}
+
+
+def source_texts(packet):
+    """Resolve local aliases for quote validation; also accept archived v1 packets."""
+    result = {}
+    for source in packet["sources"]:
+        if "text" in source:
+            result[source["id"]] = source["text"]
+            continue
+        value = packet["record"]
+        for key in source["record_path"]:
+            value = value[key]
+        result[source["id"]] = serialized(value) if source["format"] == "canonical_json" else value
+    return result
 
 
 def _derive(findings):
@@ -70,7 +95,7 @@ def validate_judgment(data, packet):
     findings = data.get("findings")
     if not isinstance(findings, list):
         raise ValueError("语义裁判缺少维度核验。")
-    sources = {s["id"]: s["text"] for s in packet["sources"]}
+    sources = source_texts(packet)
     seen = set()
     for finding in findings:
         if not isinstance(finding, dict) or set(finding) != {"dimension", "status", "basis", "citations", "counterexample", "next_action"}:
@@ -135,7 +160,7 @@ def evaluate_skill(record, client, confirmed=False, reference=None):
         return result
     identity = _identity(client)
     payload = serialized(packet)
-    if len(payload) > 50000:
+    if len(payload) > MAX_EVAL_CHARACTERS:
         raise ValueError("单个技能评估输入超过上限，未调用裁判且未截断。")
     judgment = validate_judgment(parse_object(client.complete(JUDGE_SYSTEM, payload, max_tokens=10000)), packet)
     result.update(judgment, execution="completed", judge=identity,
@@ -160,7 +185,7 @@ def evaluate_records(records, client, confirmed=False, references=None, *, requi
     # Validate every packet and size before the first request; never send a partial preflight batch.
     for record in records:
         packet = evaluation_packet(record, refs.get(record["skill_id"]))
-        if record["execution"] == "completed" and len(serialized(packet)) > 50000:
+        if record["execution"] == "completed" and len(serialized(packet)) > MAX_EVAL_CHARACTERS:
             raise ValueError("单个技能评估输入超过上限，整批未发送。")
     by_id = {r["skill_id"]: r for r in records}
     results = []

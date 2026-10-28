@@ -124,6 +124,7 @@ def main() -> None:
                                                   manual_filing, manual_priority, manual_complete)
                 documents = [doc for doc in (state or {}).get("documents", []) if doc.id != document.id] + [document]
                 state = harness.run(feature_text=feature_text, query=query, cutoff=cutoff, documents=documents,
+                                    expansion=expansion,
                                     reviews=[r for r in (state or {}).get("reviews", []) if r.document_id != document.id],
                                     errors=(state or {}).get("errors", []),
                                     **({"search_audit": state["search_audit"]} if state and "search_audit" in state else {}),
@@ -191,8 +192,7 @@ def main() -> None:
     def clear_review_result(selected_ids=None):
         # 只撤销本轮重试的文献；其他输入有效的正文复核继续保留。
         retained = [] if selected_ids is None else [r for r in state.get("reviews", []) if r.document_id not in selected_ids]
-        refreshed=harness.run(features=state["features"],cutoff=cutoff,documents=state["documents"],reviews=retained,
-            errors=state.get("errors",[]),search_audit=state["search_audit"],**material_context,**material_skill_context)
+        refreshed=harness.refresh(state,reviews=retained)
         state.update(refreshed)
         st.session_state.pop("model_review_signature", None)
 
@@ -214,9 +214,8 @@ def main() -> None:
             with st.spinner("逐篇调用模型复核并校验引文、要素和段落覆盖…"):
                 reviews, _ = run_evidence_review(state["features"], [options[key] for key in selected], cutoff,
                     LLMClient(api_key, base_url, model), consent, candidates, evidence_hits=state.get("hits", []))
-                updated = harness.run(features=state["features"], cutoff=cutoff,
-                    documents=state["documents"], reviews=list({r.document_id: r for r in list(state.get("reviews", [])) + reviews}.values()), errors=state.get("errors", []),
-                    search_audit=state["search_audit"], **material_context, **material_skill_context)
+                updated = harness.refresh(state,
+                    reviews=list({r.document_id: r for r in list(state.get("reviews", [])) + reviews}.values()))
             updated["suggestions"] = candidates
             state = updated
             st.session_state["novelty_state"] = state

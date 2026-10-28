@@ -2,8 +2,8 @@
 import json
 import streamlit as st
 from modules.llm_client import LLMClient
-from modules.skill_contracts import DIMENSIONS,SKILLS,digest
-from modules.semantic_eval import RUBRIC_VERSION,VERDICTS,EXECUTION_LABELS,FINDING_LABELS,evaluation_packet,evaluation_markdown
+from modules.skill_contracts import DIMENSIONS,SKILLS,digest,serialized
+from modules.semantic_eval import RUBRIC_VERSION,VERDICTS,EXECUTION_LABELS,FINDING_LABELS,evaluation_packet,evaluation_markdown,MAX_EVAL_CHARACTERS
 from skills.semantic_eval_skill import run
 
 
@@ -15,8 +15,12 @@ def render_semantic_evaluation(records,api_key,base_url,model):
         st.caption("裁判是与业务生成分开的调用；沿用当前模型配置，明确标记模型来源，不冒称独立专家或另一模型。")
         packets=[evaluation_packet(r) for r in records]
         st.json({"evaluation_inputs":packets},expanded=False)
+        oversized=[p["record"]["skill_name"] for p in packets
+                   if p["record"]["execution"]=="completed" and len(serialized(p))>MAX_EVAL_CHARACTERS]
+        if oversized:
+            st.warning("以下技能的完整评估输入仍超过5万字符："+"、".join(oversized)+"。本轮不会发送或截断，请缩小完整比对范围后重新执行业务。")
         consent=st.checkbox("我确认将上述技能输入、输出和原文发送给独立语义裁判",key="semantic-consent-"+signature)
-        if st.button("逐技能运行语义 eval",disabled=not(consent and api_key.strip() and records)):
+        if st.button("逐技能运行语义 eval",disabled=bool(oversized) or not(consent and api_key.strip() and records)):
             st.session_state.pop(key,None)
             try:
                 with st.spinner("独立核验业务输出与原文…"):

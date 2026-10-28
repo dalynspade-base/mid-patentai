@@ -55,4 +55,21 @@ class SemanticEvalUITests(unittest.TestCase):
             self.assertTrue(all(not r["findings"] for r in result["results"]))
 
 
+    def test_oversized_request_is_visible_and_disabled_before_model_call(self):
+        from streamlit.testing.v1 import AppTest
+        source = """
+from modules.skill_contracts import make_record
+from modules.semantic_eval_ui import render_semantic_evaluation
+record=make_record("patent-material-preparation",{"text":"字"*50001},{})
+render_semantic_evaluation([record],"test-key","https://example.test","test-model")
+"""
+        with patch("modules.llm_client.LLMClient.complete") as model:
+            app=AppTest.from_string(source).run(timeout=60)
+            self.assertEqual(len(app.exception),0)
+            self.assertTrue(any("超过5万字符" in item.value for item in app.warning))
+            helpers.labeled(app.checkbox,"我确认将上述技能输入、输出和原文发送给独立语义裁判").set_value(True).run(timeout=60)
+            self.assertTrue(helpers.labeled(app.button,"逐技能运行语义 eval").disabled)
+            model.assert_not_called()
+
+
 if __name__=="__main__":unittest.main()

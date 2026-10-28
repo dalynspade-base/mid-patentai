@@ -1,6 +1,8 @@
 # Google Patents 专利新颖性预筛
 
-**版本：1.0.0** · [详细版本对比与迁移说明](docs/releases/v1.0.0.md) · [变更记录](CHANGELOG.md)
+**版本：1.0.1** · [本次修复说明](docs/releases/v1.0.1.md) · [1.0.0 版本对比与迁移说明](docs/releases/v1.0.0.md) · [变更记录](CHANGELOG.md)
+
+1.0.1 修复语义评估包重复膨胀、重排/补正文/模型复核后技能记录失真、检索失败仍显示已完成，以及 Streamlit 依赖下限与页面接口不匹配的问题。保留旧案件、业务技能记录及哈希的读取能力；新的裁判提示版本使旧语义评估缓存失效。
 
 本项目把用户想法或已保存材料整理为技术要素，检索或接收 Google Patents 原文快照，逐篇对照技术关系与全部限定，再给出有证据范围的新颖性预筛报告。1.0.0 将流程组织为“一个主 skill、六个业务子 skill、一个独立语义评估 skill”。
 
@@ -26,7 +28,7 @@
 
 ## 安装依赖
 
-已验证环境为 Windows、Python **3.12.14**。建议使用 Python 3.12；其他 Python 版本未在本次发布中验证。
+1.0.0 已验证环境为 Windows、Python **3.12.14**；1.0.1 在 Windows 11、Python **3.14.2**、Streamlit **1.66.0** 上验证。可继续使用已有的 Python 3.12 环境；本次没有重新验证 3.12。页面要求 Streamlit 至少 1.66，升级时应更新依赖。
 
 在项目根目录的 PowerShell 中执行：
 
@@ -42,7 +44,7 @@ py -3.12 -m venv .venv-novelty
 .\.venv-novelty\Scripts\python.exe -X utf8 -m streamlit run app.py --server.address 127.0.0.1
 ```
 
-已有可用环境只需更新依赖，不必删除环境。`requirements-novelty.txt` 是 `requirements.txt` 的兼容安装别名。需要完整历史 DeepEval 回归时，另行安装：
+已有可用环境只需更新依赖，不必删除环境。`requirements-novelty.txt` 是 `requirements.txt` 的兼容安装别名。`requirements-windows-verified.txt` 固定本次 Windows/Python 3.14.2 验证的直接依赖版本，可用 `python -m pip install -r requirements-windows-verified.txt` 安装；它不是所有传递依赖的完整锁文件。需要完整历史 DeepEval 回归时，另行安装：
 
 ```powershell
 .\.venv-novelty\Scripts\python.exe -m pip install -r requirements-engineering.txt
@@ -169,7 +171,7 @@ reports/             既有历史报告与索引
 
 ## 本次验证与能力边界
 
-目标目录验证已通过 **189 项当前工程/语义契约、28 项历史工程测试**，八份技能定义校验通过。测试使用构造材料和模拟模型响应；这些次数是工程检查记录，不是语义质量分数或独立专利样本数。
+1.0.1 在本机通过 **200 项当前工程/语义契约、28 项历史工程测试**，含11项新增长正文、多文献、记录保留、失败状态和网页交互回归。离线裁判契约与CLI预览通过；八份技能定义沿用1.0.0。测试使用构造材料和模拟模型响应；这些次数是工程检查记录，不是语义质量分数或独立专利样本数。
 
 本次未证明真实模型专业语义准确率，也未证明 Google Patents 全库召回改善。真实能力仍需独立参考、隔离案例和有出处的语义复核。未发现完整披露不等于不存在相关现有技术；日期链、抵触申请及充分公开等特殊情况仍可能需要专业核验。
 

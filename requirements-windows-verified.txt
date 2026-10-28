@@ -1,0 +1,12 @@
+# Direct dependency versions verified on Windows 11 / CPython 3.14.2 for 1.0.1.
+# This is not a complete lock of transitive dependencies.
+-r requirements.txt
+streamlit==1.66.0
+requests==2.34.2
+python-dotenv==1.2.4
+numpy==2.5.4
+scikit-learn==1.9.1
+beautifulsoup4==4.15.0
+langgraph==1.2.16
+llama-index-core==0.14.25
+PyYAML==6.0.3

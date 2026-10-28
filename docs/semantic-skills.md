@@ -39,6 +39,12 @@ status为satisfied/violated/undetermined/not_applicable；有违反则needs_revi
 
 网页报告下方展开独立语义评估，预览完整外发内容并确认后执行；每个已完成技能单独请求。沿用模型设置但独立调用，不自动发送附件或读取其他案件。裁判缓存绑定实际输入、输出及模型设置。
 
+1.0.1 的评估包保留完整、原哈希绑定的 `record`，`sources` 通过 `record_path` 数组指向该记录内的字段或数组元素，不再重复序列化整套输入、输出和来源。路径解析只在当前记录内部进行，不读取外部文件。`format=text` 表示逐字文本，`format=canonical_json` 表示该对象按原规则序列化后的文本；`skill_input`、`skill_output` 引文规则不变。验证器仍可检查旧版内嵌 `text` 的评估包。
+
+新裁判提示版本为 `multidimensional-semantic-v1.0.1`；旧业务记录和哈希不重写，旧裁判缓存不会作为新版本结果沿用。完整实际请求仍限制在5万字符；不静默截断，网页会在超限时提示并禁用发送，CLI保留整批调用前检查。
+
+候选检索执行状态描述取证是否完成：全部查询失败为 `failed`，查询部分失败、正文未读/失败或预算未覆盖为 `partial`；成功的空响应与网络失败分开，业务仍保留“证据不足”。仅对空快照集合且没有检索行为时记 `not_executed`。失败或部分完成的技能不会交给裁判生成验收结论。
+
 `python tools/run_semantic_eval.py --records 已导出的证据JSON --output-dir 新目录` 默认仅生成评估计划，不调用模型。
 显式添加 `--run-model --confirm-external` 才调用配置的LLM_API_KEY/LLM_BASE_URL/LLM_MODEL；可用 `--references` 读取独立参考，先保存待评输入再读取参考。
 

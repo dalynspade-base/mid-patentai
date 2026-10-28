@@ -30,8 +30,9 @@ class CandidateUITests(unittest.TestCase):
             item.start()
             self.addCleanup(item.stop)
 
-    def searched(self):
+    def searched(self, protected=""):
         app = self.app()
+        helpers.labeled(app.text_area, "保护术语（每行一个，不做替换）").set_value(protected)
         helpers.labeled(app.text_area, "确认待判断的技术要素（每行一个）").set_value("压力传感器")
         helpers.labeled(app.sidebar.slider, "最多获取文献数").set_value(1)
         helpers.labeled(app.sidebar.text_input, "模型 API Key").set_value("test-key")
@@ -107,6 +108,24 @@ class CandidateUITests(unittest.TestCase):
             self.assertEqual(state["search_audit"]["ranking"]["status"], "error")
             self.assertEqual([d.id for d in state["documents"]], ["US123"])
             self.assertTrue(any("候选模型判断失败" in value for value in state["decision"].warnings))
+
+
+    def test_rerank_supplement_and_body_review_keep_actual_expansion_record(self):
+        with patch("modules.llm_client.LLMClient.complete", return_value=json.dumps(review_response())):
+            app = self.searched(protected="控制器")
+            before = {r["skill_id"]: r for r in app.session_state["novelty_state"]["skill_records"]}
+            search_count = self.search.call_count
+            helpers.labeled(app.button, "按当前规则重新排序").click().run(timeout=60)
+            self.supplement(app)
+            self.body_review(app, "US123")
+            self.assertEqual(len(app.exception), 0)
+            after = {r["skill_id"]: r for r in app.session_state["novelty_state"]["skill_records"]}
+            for key in ("patent-material-preparation", "patent-synonym-expansion"):
+                self.assertEqual(after[key], before[key])
+            self.assertEqual(after["patent-synonym-expansion"]["output"]["profile"], "engineering")
+            self.assertEqual(after["patent-synonym-expansion"]["output"]["protected_terms"], ["控制器"])
+            self.assertEqual(after["patent-candidate-search"]["inputs"]["mode"], "online")
+            self.assertEqual(self.search.call_count, search_count)
 
 
 if __name__ == "__main__":

@@ -140,13 +140,14 @@ class PrecheckGraph:
         return {"task": task, "features": features, "trace": ["prepare"], "skill_records":[record]}
 
     def _expand(self,state):
-        if state.get("expansion") is not None:
-            plan=state["expansion"]
+        plan=state.get("expansion")
+        if plan is None:
+            plan=state.get("search_audit",{}).get("expansion")
+        if plan is not None:
             record=synonym_expansion_skill.record_plan(state["features"],self.lexicon,plan)
         else:
             # Keep the existing conservative search budget when no policy was selected.
             plan,record=synonym_expansion_skill.run(state["features"],self.lexicon,"theoretical")
-            return {"skill_records":upsert_record(state.get("skill_records",[]),record)}
         return {"expansion":plan,"skill_records":upsert_record(state.get("skill_records",[]),record)}
 
     def _retrieve(self, state: NoveltyState) -> dict:
@@ -189,3 +190,19 @@ class PrecheckGraph:
 
     def run(self, **state) -> NoveltyState:
         return self.graph.invoke(state, config={"recursion_limit": 12})
+
+    def refresh(self, state: NoveltyState, *, documents=None, reviews=None, search_audit=None) -> NoveltyState:
+        """Recompute evidence/decision without replacing the frozen upstream inputs."""
+        current = dict(state)
+        if documents is not None:
+            current["documents"] = documents
+        if reviews is not None:
+            current["reviews"] = reviews
+        if search_audit is not None:
+            current["search_audit"] = search_audit
+        if not current.get("material_skill_record"):
+            current["material_skill_record"] = next(
+                (r for r in state.get("skill_records", [])
+                 if r["skill_id"] == "patent-material-preparation"), None,
+            )
+        return self.run(**current)
