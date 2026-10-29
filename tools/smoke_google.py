@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import argparse
 import json
 import sys
 from datetime import datetime, timezone
@@ -14,6 +15,14 @@ from modules.patent_search import search_patents
 
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--output-dir", type=Path, help="新运行目录；默认保存于.local/verification")
+    args = parser.parse_args()
+    output = args.output_dir or Path(__file__).resolve().parents[1] / ".local/verification" / (
+        "google-smoke-" + datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S-%f")
+    )
+    # Reserve a new destination before any network call.
+    output.mkdir(parents=True, exist_ok=False)
     report = {"checked_at": datetime.now(timezone.utc).isoformat(), "query": '"pressure sensor"',
               "search_ok": False, "document_ok": False, "paid_model_called": False}
     try:
@@ -27,9 +36,9 @@ def main():
                            "complete": document.complete})
     except (RuntimeError, ValueError) as exc:
         report["error"] = str(exc)
-    path = Path("reports/live_google_smoke.json")
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+    path = output / "live_google_smoke.json"
+    with path.open("x", encoding="utf-8") as stream:
+        json.dump(report, stream, ensure_ascii=False, indent=2)
     print(json.dumps(report, ensure_ascii=False, indent=2))
 
 

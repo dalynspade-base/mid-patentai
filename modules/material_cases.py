@@ -148,9 +148,15 @@ def _validate_prepared_features(root: Path, case_id: str, data: dict) -> dict:
     if not isinstance(unknowns, list) or any(not isinstance(x, str) for x in unknowns):
         raise ValueError("未知项须为文字列表。")
     unknowns = list(dict.fromkeys(x.strip() for x in unknowns if x.strip()))
-    return {"feature_text": text, "features": rows, "unknowns": unknowns,
+    prepared = {"feature_text": text, "features": rows, "unknowns": unknowns,
             "warnings": list(dict.fromkeys(warnings)),
             "review_status": "agent_proposal_not_human_review"}
+    from modules.skill_contracts import make_record
+    prepared["skill_record"]=make_record("patent-material-preparation",{"sources":source_texts,"case":current},
+        dict(prepared),sources=[{"id":key,"text":value} for key,value in source_texts.items() if value.strip()],
+        execution="partial" if warnings else "completed",producer="agent_material_proposal_not_human",
+        note="无法提供附件实际文本时保留partial；引文存在不证明语义支持。")
+    return prepared
 
 
 def _append_event(root: Path, event: dict) -> None:

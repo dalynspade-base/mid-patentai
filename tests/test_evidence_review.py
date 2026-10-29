@@ -4,11 +4,12 @@ import unittest
 from dataclasses import asdict, replace
 from pathlib import Path
 
-from evals.fixtures import case_inputs, dataset
+from evals.legacy.fixtures import case_inputs, dataset
 from modules.google_patent_documents import manual_google_document, parse_google_page
 from modules.novelty_models import (DocumentReview, EvidenceRow, Feature, PatentDocument,
                                     review_input_hash, stamp_review)
-from modules.novelty_report import report_payload, to_markdown
+from modules.novelty_report import to_markdown
+from skills.report_delivery_skill import build_report as report_payload
 from modules.novelty_review import adopt_candidate_quotes, edited_review_rows, empty_review_rows
 from modules.novelty_rules import assess_novelty
 

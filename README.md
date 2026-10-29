@@ -1,342 +1,184 @@
-# Google Patents 新颖性预筛 Harness
+# Google Patents 专利新颖性预筛
 
-> **材料接手与案件留存**：在现有主流程中接入材料上传、原件哈希、AI 对话整理要素与案件结果保存。使用与限制见 [材料接手说明](docs/local-integration.md)。保存材料不调用模型；新颖性规则保持有效；0.3.0 将网页人工逐项复核替换为大模型逐项复核。
+**版本：1.1.0** · [本次功能与兼容说明](docs/releases/v1.1.0.md) · [1.0.0架构迁移](docs/releases/v1.0.0.md) · [变更记录](CHANGELOG.md)
 
-当前本地版本：**0.6.0**（模型为主的统一证据对照，开发中，见 [VERSION](VERSION)）。[版本记录](CHANGELOG.md) · [版本与提交约定](CONTRIBUTING.md)。
+本项目把用户想法或已保存材料整理为技术要素，检索或接收 Google Patents 原文快照，逐篇对照技术关系与全部限定，再给出有证据范围的新颖性预筛报告。1.0.0 将流程组织为“一个主 skill、六个业务子 skill、一个独立语义评估 skill”。
 
-0.6.0 将 LlamaIndex 定位与模型辅助对照接成[统一证据对照流程](docs/model-evidence-alignment.md)：本地检索逐篇提供阅读线索，模型检查全部快照，主要依靠对技术含义及完整限定的理解建立“技术要素—原文证据”对应关系。未命中或低分段落仍可作为证据，每项保留逐字引文、位置和支持/矛盾/未知的说明。主界面每篇一次模型请求；兼容的旧建议入口共用语义指令和引文校验，仍只产生候选。
+当前适用于 CN 新颖性预筛，支持整套确认要素，或按明确版本和引用路径展开独立、从属权利要求，分别对照。报告用于定位风险和补充取证，不等于可授权性、创造性、侵权或 FTO 结论。
 
-保存新材料保留当前工作内容；显式切换前另存草稿。AI 整理结果按轮留存，文字附件引文可机械回查；材料未知项和未校验出处进入判断限制。新快照记录原文编号和锚点，候选与最终复核分开；模型复核记录服务、模型名、提示词版本、时间和输入绑定；历史人工记录单独保留。见[证据定位与复核说明](docs/evidence-review.md)。第三阶段增加[逐要素检索记录与相关性关卡](docs/search-evidence.md)，保留实际查询和失败，超长查询明确拒绝。
+## 1.1.0：上下文、权利要求与衔接
 
-把一个发明想法整理成技术要素，从 **Google Patents** 获取文献，逐篇生成可回查原文的要素对照，再依据 **CNIPA 新颖性规则**给出有范围限制的预筛结果。
+六个业务skill共用基准日、CN/Google Patents范围、当前限定及目标版本，按各自职责取得必要原文；独立eval按含义激活功能、关系和表达等必查维度。全部步骤完成后另核验跨skill的限定、未知和结论传递，不新增业务skill。
 
-三个 skill 分别负责 **LangGraph 流程编排、LlamaIndex 证据检索、DeepEval 基础评测**，均有独立 Python 实现、中文注释、技能说明和基础 eval。
+界面可勾选“按独立／从属权利要求及修改版本比对”，导入[教学记录示例](examples/claim_history.json)，选择版本和引用路径。父项限定继承，多项引用分支分别比对；修改前后、来源及依据进入报告，改版后旧复核失效。批量接口为 `NoveltyHarness.run_claims`，详细输入见[上下文与版本协议](docs/skill-contexts.md)。普通要素输入继续可用。
 
-| 项目范围 | 当前实现 |
-|---|---|
-| 判断目标 | 中国发明/实用新型场景的新颖性预筛 |
-| 资料来源 | 本次从 Google Patents 取得或人工录入的原文段落快照 |
-| 比对单位 | 用户确认的整套技术要素；暂不区分独立/从属权利要求，不展开从属引用 |
-| 大模型逐项复核 | 逐篇核查相关性、同义词与完整限定、引文、上下文、同一方案及充分公开；来源明确记为模型 |
-| 交付 | 新颖性 Markdown 报告、证据与判断 JSON、独立的基础 eval 记录 |
+同类案例整理为[申请争议底线](docs/application-baselines.md)，按具体争议原因区分新颖性、创造性、公开充分性、支持和程序，不建专门争议案件库，也不把未授权状态当作新颖性否定。
 
-0.4.0 增加[同义词四层扩展](docs/synonym-expansion.md)：预定义词典 → LLM中英/缩写候选 → 规则及新增词审核 → 扩展前后Recall@K、Precision@K与成本Eval。理论类保留专名、小范围替换；工程类增加部件/结构表达及双术语组合。新增词只服务查询，不写入法律等同或证据嵌入词典。
+## 1.0.0 相对上一版本改变了什么
 
-0.5.0 增加[候选排序与相关文献判断](docs/candidate-ranking.md)：先按部件、关系及提及语境排序，再按需调用模型核查标题/摘要；追加正文后逐篇复核。分别统计扩展独有候选、元数据相关和正文相关，不能用候选数代替召回质量。
+对比基准是已合并的中期提交 `1d1bc25`：其提交标题为“v0.3.0中期汇报”，但当时 `VERSION` 的实际值为 **0.6.0**。本次是从该代码版本升级到 1.0.0，改变了技能发现名称、部分 Python 导入路径及评估接口。
 
-## 完整工作技术流程图
+| 项目 | 上一版本 0.6.0 | 1.0.0 |
+|---|---|---|
+| 技能组织 | LangGraph、LlamaIndex、DeepEval 等框架名称 | 主入口、六个业务子技能、独立语义评估，共八个入口 |
+| 评估对象 | 合成规则、固定候选池与数值工程指标 | 各业务技能实际冻结的输入、输出与原始依据 |
+| 质量结论 | 数值指标与工程断言分别解释 | 六维文字裁决、逐字引文、反例及修订动作 |
+| 状态区分 | 旧评测报告及执行记录 | 业务结论、执行状态、语义验收结论分别记录 |
+| 报告生成 | 网页、报告模块和工作流共同补记录 | 报告交付技能统一组装并绑定最终正文 |
+| 底层实现 | 框架实现位于 `skills/` | LangGraph/LlamaIndex 移入 `modules/`，仍用于编排和阅读线索 |
+| 历史工程代码 | 与当前模块、测试和夹具混放 | 迁至各自的 `legacy/` 区域，数值结果不参与当前语义验收 |
+| 依赖 | 包含 Plotly 和必装 DeepEval | 移除旧景观图依赖，DeepEval 改为可选历史工程依赖 |
+| 业务范围 | 仍留存旧相似度、改进建议及申请初稿代码 | 移除已脱离主流程的旧业务链，聚焦新颖性预筛 |
 
-下图对应当前代码实现。**实线表示业务处理，虚线表示配置输入、重新处理或离线评测关系。** 自动候选经大模型逐篇逐项复核和程序校验后进入判断；模型复核不等于人工确认，离线 eval 不为实际报告背书。
+沿用的能力包括材料留存、术语扩展、候选相关性、逐篇模型复核以及来源、日期、同一方案和充分公开等预筛约束。这些已有能力不作为本次新引入功能重复计算。
 
-```mermaid
-flowchart TD
-    subgraph INPUT["一、输入与任务准备 · Streamlit"]
-        U["发明描述、逐行技术要素、判断基准日<br/>可选检索词、领域同义词"]
-        P["准备状态 prepare<br/>校验日期和要素，保留关系、否定、顺序与数值"]
-        SCOPE{"任务是否为新颖性？"}
-        OUT["out_of_scope<br/>FTO、侵权等请求不进入检索"]
-        U --> P --> SCOPE
-        SCOPE -->|否| OUT
-    end
+## 安装依赖
 
-    subgraph EXPANSION["查询前的同义词四层扩展 · synonym_expansion.py"]
-        TYPE["选择理论/工程策略，设置保护专名"]
-        LEX["第一层：预定义领域词典，按完整术语定位"]
-        GEN["第二层（可选）：确认外发后LLM生成中英术语/缩写"]
-        FILTER["第三层：检查来源、语义关系、保护词、数值/否定/连接限定"]
-        TERM_REVIEW["未收录的新词待审核，显式选择并确认技术含义"]
-        EXP_QUERY["审核通过的替换；工程类再作双术语有界组合<br/>不修改原始要素或嵌入词典"]
-        TERM_REJECT["拒绝语义漂移、完整关系改写及限定变化"]
-        PAIRED["第四层：固定池成对Eval<br/>原词/词典/原始LLM/过滤后扩展<br/>按类型比较Recall@K、Precision@K、逐题退化与成本"]
-        U --> TYPE --> LEX --> FILTER
-        LEX --> GEN --> FILTER
-        FILTER -->|词典通过| EXP_QUERY
-        FILTER -->|新词待审核| TERM_REVIEW
-        TERM_REVIEW -->|明确选择并确认| EXP_QUERY
-        FILTER -->|不通过| TERM_REJECT
-        EXP_QUERY -.-> PLAN
-        EXP_QUERY -.-> PAIRED
-    end
+已验证环境为 Windows、Python **3.12.14**。建议使用 Python 3.12；其他 Python 版本未在本次发布中验证。
 
-    subgraph SOURCE["二、文献获取 · LangGraph retrieve"]
-        PLAN["原要素优先，再发送审核通过的词典/LLM变体<br/>理论类8条、工程类16条；每条最多400字，超限明确记录"]
-        GP["Google Patents 公开检索<br/>保留各查询最多5条返回；按公开号去重，保留每条查询的标题与摘要"]
-        RANK["规则排序：部件覆盖、关系与限定线索、提及语境<br/>保留旧词汇分数与所有候选，按正文预算选择"]
-        META["按需确认外发：模型判断选定标题/摘要相关性<br/>逐要素说明与逐字引文；未知保留，失败回退规则排序"]
-        MORE["显式选择补充正文：每批最多5篇，总计20篇<br/>追加快照，保留此前有效的正文复核"]
-        FETCH["获取单篇页面<br/>提取日期、摘要、平铺权利要求和说明书段落"]
-        GAP["保留空结果、获取失败或正文缺失记录<br/>不能解释为没有现有技术"]
-        MANUAL["人工录入同一 Google Patents 页面的原文<br/>保留链接、日期、段落和人工来源标记"]
-        SNAP["PatentDocument 原文段落快照<br/>文献编号、位置、日期、URL、完整性标记、哈希"]
-        SCOPE -->|是：在线检索| PLAN --> GP --> RANK --> FETCH
-        RANK -->|按需核查候选| META --> MORE --> FETCH
-        FETCH -->|取得正文| SNAP
-        GP -->|失败或空结果| GAP
-        FETCH -->|失败或未取得正文| GAP
-        SCOPE -->|是：直接录入快照| MANUAL
-        GAP -->|可补充原文| MANUAL
-        GAP -->|无可用快照且尚未补充| UNKNOWN
-        MANUAL --> SNAP
-    end
-
-    subgraph RETRIEVAL["三、统一证据对照的本地阅读线索 · LlamaIndex"]
-        EMB["同义词规范化与本地 TF-IDF 嵌入<br/>原文保持不变，长段落按窗口检索"]
-        INDEX["VectorStoreIndex 召回与排序<br/>命中后返回完整父段及出处"]
-        CAND["逐篇逐要素生成阅读线索，传入同一次模型请求<br/>状态 unknown；不预设同一方案；完整原文全部保留"]
-        SNAP --> EMB --> INDEX --> CAND
-    end
-
-    subgraph REVIEW["四、统一证据对照的主要步骤 · 模型理解全部原文并逐项复核"]
-        CONSENT["选择文献、模型并确认外发内容<br/>要素、基准日、完整原文、元数据与候选"]
-        LLM["LLMClient 每篇独立调用一次<br/>整批预检单篇 5 万字符上限，不截断"]
-        SEMANTIC["模型主要依靠理解原文建立要素—证据对应<br/>解释全部限定的支持、矛盾或未知；可采用未命中段落<br/>核查相关性、否定、数值、关系、同一方案与充分公开"]
-        CHECK{"类型、编号、全部要素/段落覆盖及逐字引文校验通过？"}
-        REJECT["拒绝本批模型复核，显示错误<br/>清除本次选定文献旧复核，保留其他有效记录与候选"]
-        STAMP["按 model 来源记录模型、服务、提示词版本、时间及输入哈希<br/>候选与最终模型复核分开；unknown 不转为未找到"]
-        CAND --> CONSENT --> LLM --> SEMANTIC --> CHECK
-        CHECK -->|否或调用失败| REJECT --> UNKNOWN
-        CHECK -->|是| STAMP
-    end
-
-    subgraph DECISION["五、新颖性预筛 · LangGraph decide / novelty_rules.py"]
-        RERUN["提交标记为模型来源的复核结果，使用已有快照重跑状态图<br/>不重新联网检索"]
-        RULE["逐篇检查来源、日期、相关性、完整性和要素覆盖<br/>保留检索缺口；引文须回查，不跨文献或互斥方案拼接"]
-        RESULT{"逐篇评估结果"}
-        RISK["potential_novelty_risk<br/>至少一篇基准日前文献，经复核在同一方案中完整披露"]
-        NOTFOUND["no_complete_disclosure_found<br/>本次全部文献已完整复核且无缺口<br/>未发现单篇完整披露"]
-        UNKNOWN["insufficient_evidence<br/>资料、日期、引文、要素或复核仍有缺口"]
-        STAMP --> RERUN --> RULE --> RESULT
-        GAP -.->|保留检索缺口| RULE
-        RESULT -->|存在符合条件的单篇文献| RISK
-        RESULT -->|无完整披露且全部已核验| NOTFOUND
-        RESULT -->|其他情况| UNKNOWN
-    end
-
-    subgraph DELIVERY["六、结果交付与状态更新"]
-        REPORT["导出 Markdown 报告与证据 JSON<br/>实际查询、排序依据、失败、快照哈希、术语表、复核记录<br/>扩展新增候选、元数据相关与正文相关分别统计"]
-        RISK --> REPORT
-        NOTFOUND --> REPORT
-        UNKNOWN --> REPORT
-        REPORT -.->|输入、日期、检索设置或原文改变：重新建立对照| U
-        REPORT -.->|要素、日期、对应原文或模型设置改变：相应复核失效| CONSENT
-    end
-
-    subgraph EVAL["七、独立离线开发回归 · DeepEval"]
-        DATA["作者编写的教学案例与参考标签<br/>新颖性边界、同义词及裁判正负对照"]
-        RUN["分别运行三个 skill 的基础 eval<br/>不调用付费模型，不把合成来源用于真实预筛"]
-        METRIC["DeepEval BaseMetric / LLMTestCase<br/>确定性检查标签、引用要求和结果契约"]
-        RECORD["逐条结果、各 skill 统计、数据与依赖版本<br/>.local/evaluations/ 或指定的新文件"]
-        PASS{"全部基础 eval 通过？"}
-        FIX["保留失败案例<br/>修正术语表、规则、提示词或流程"]
-        DONE["本轮合成回归通过<br/>不代表实际专利专业准确率"]
-        DATA --> RUN --> METRIC --> RECORD --> PASS
-        PASS -->|否| FIX --> RUN
-        PASS -->|是| DONE
-        PLAN -.->|查询或术语表改动后回归| RUN
-        INDEX -.->|检索实现改动后回归| RUN
-        RULE -.->|规则或流程改动后回归| RUN
-    end
-```
-
-**执行细节：**状态图节点为 `prepare → retrieve → locate_evidence → decide`。第一次获取候选时尚未逐项复核，因此通常返回“证据不足”；点击第 3 步后，界面通过 `model_review_documents` 每篇调用一次模型，严格校验后用同组快照重跑判断。模型调用在用户确认外发内容后执行，未配置密钥时仍可检索及查看候选。快照先保存在当前会话中，导出 JSON 时才保存为可下载记录。
-
-## 快速启动
-
-在项目根目录运行：
+在项目根目录的 PowerShell 中执行：
 
 ```powershell
+py -3.12 -m venv .venv-novelty
+.\.venv-novelty\Scripts\python.exe -m pip install -r requirements.txt
 .\start_novelty.ps1
 ```
 
-如果 PowerShell 限制脚本执行，可直接启动：
+若终端限制执行 PowerShell 脚本，可直接启动：
 
 ```powershell
-.\.venv-novelty\Scripts\python.exe -X utf8 -m streamlit run app.py
+.\.venv-novelty\Scripts\python.exe -X utf8 -m streamlit run app.py --server.address 127.0.0.1
 ```
 
-首次从源码安装需要可用的 Python 3.10+：
+已有可用环境只需更新依赖，不必删除环境。`requirements-novelty.txt` 是 `requirements.txt` 的兼容安装别名。需要完整历史 DeepEval 回归时，另行安装：
 
 ```powershell
-py -m venv .venv-novelty
-.\.venv-novelty\Scripts\python.exe -m pip install -r requirements.txt
-.\.venv-novelty\Scripts\python.exe -X utf8 -m streamlit run app.py
+.\.venv-novelty\Scripts\python.exe -m pip install -r requirements-engineering.txt
 ```
 
-使用专用的 `.venv-novelty` 环境。三个框架的已验证版本固定在 [requirements.txt](requirements.txt)；LlamaIndex 只安装 core，默认使用本地嵌入。模型辅助可在侧栏设置，也可复制 [.env.example](.env.example) 为 `.env` 后填写；默认服务为 DeepSeek。
+## 模型配置与材料使用
 
-## 实际操作
+网页可直接输入模型配置，也会读取项目根目录的 `.env`。首次使用可复制模板：
 
-1. **确认判断对象。**填写发明描述、基准日与技术要素，每行一个，保留连接关系、步骤、否定和数值。涉及优先权时，先人工确定适用基准日。
-2. **选择扩展策略并取得文献。**在“同义词四层扩展与检索评测”选择理论或工程类，可设置保护术语；按需生成中英候选，词典外新词须选中并确认技术含义后才查询。点击第 1 步检索 Google Patents，或直接粘贴同一来源的原文。人工录入需填写链接、日期，并保留相关权利要求和说明书上下文。
-3. **改善候选排序并补取文献。**查看实际查询、未查询要素、排序线索和正文状态。展开“改善候选排序与补充相关文献”，可确认外发后让模型判断所选标题/摘要并重排，再选择尚未取得正文的候选追加读取。标题/摘要相关判断不替代正文逐项复核，未知候选仍可选择。
-4. **模型建立要素—原文证据对照并复核。**配置模型，选择文献，展开查看要素、完整原文、本地候选及定位线索，确认后点击“调用大模型逐项复核并预筛”。每篇一次请求，模型以技术含义和全部限定为主要依据，独立解释证据支持关系，可纠正候选并引用未命中段落；无法确定时保留 `unknown`。
-5. **查看结果。**程序校验全部要素、全部段落覆盖声明、JSON 类型及逐字引文。模型判定上下文足够且快照有权利要求/说明书结构提示或原始完整标记，才满足自动预筛的完整性门槛；原始快照不被改成“人工确认”。未选文献、获取/校验失败和未知项保留为缺口。
-6. **导出记录。**下载 Markdown 与 JSON。更改要素、日期、对应原文或模型设置会使相应复核失效；选择文献只决定下次调用范围，其他有效记录保留。重试失败清除本次所选文献的旧复核。模型记录可追溯，但不是专业准确率认证。
+```powershell
+if (-not (Test-Path -LiteralPath .env)) { Copy-Item .env.example .env }
+```
 
-### 要素对照状态
+仅在 `.env` 尚不存在时复制；已有配置直接编辑。配置项如下：
 
-| 状态 | 表达的事实 | 复核要求 |
-|---|---|---|
-| `disclosed` | 该文献原文披露了这个技术要素 | 提供逐字引文、段落位置和方案编号；核对同义表述及全部限定 |
-| `not_found` | 本次检查该文献时未找到这个要素 | 不能扩展为其他文献不存在，也不能当作产品缺少该要素 |
-| `unknown` | 资料或技术含义不足以判断 | 保留不确定性，补充资料或人工核验 |
-
-### 三类新颖性结果
-
-| 结果 | 何时出现 | 应如何理解 |
-|---|---|---|
-| 发现单篇文献完整披露风险 | 至少一篇基准日前公开文献满足全部要素、同一方案、有效引文、上下文完整性及有效逐项复核要求 | 提示新颖性风险，仍需专业复核 |
-| 本次已复核文献中未发现完整披露 | 当前全部文献都已完整复核，无未知或其他缺口，且未发现单篇完整披露 | 仅说明本次证据范围内的结果，不能推导出可授权 |
-| 证据不足 | 检索或正文失败、日期不明、要素未知、尚未复核，或存在其他待核验情况 | 补充证据并重新判断 |
-
-FTO、侵权等其他任务返回 `out_of_scope`，不进入在线检索。
-
-## 三个 skill 与代码分工
-
-| Skill | 独立实现与说明 | 主要职责 |
-|---|---|---|
-| `patent-langgraph` | [langgraph_skill.py](skills/langgraph_skill.py) · [SKILL.md](.agents/skills/patent-langgraph/SKILL.md) | 状态图、同义词查询编排、有界获取、候选对照与规则调用 |
-| `patent-llamaindex` | [llamaindex_skill.py](skills/llamaindex_skill.py) · [SKILL.md](.agents/skills/patent-llamaindex/SKILL.md) | 本地嵌入与阅读线索，接入统一模型证据对照；返回原始父段和出处 |
-| `patent-deepeval` | [deepeval_skill.py](skills/deepeval_skill.py) · [SKILL.md](.agents/skills/patent-deepeval/SKILL.md) | 三个 skill 的独立基础 eval、裁判自测及回归记录 |
-
-其他关键文件：
-
-| 文件 | 用途 |
+| 变量 | 含义 |
 |---|---|
-| [app.py](app.py)、[novelty_ui.py](modules/novelty_ui.py) | 应用入口、会话状态、模型外发确认、逐项复核展示和报告下载 |
-| [patent_search.py](modules/patent_search.py)、[google_patent_documents.py](modules/google_patent_documents.py) | Google Patents 候选检索、正文解析和人工快照入口 |
-| [novelty_search.py](modules/novelty_search.py) | 原要素优先的类型预算、扩展记录、实际查询/成本及检索缺口 |
-| [candidate_ranking.py](modules/candidate_ranking.py)、[candidate_relevance.py](modules/candidate_relevance.py)、[candidate_ui.py](modules/candidate_ui.py) | 规则/模型元数据排序、补取正文、来源增量和有效正文相关性统计 |
-| [synonym_expansion.py](modules/synonym_expansion.py)、[synonym_ui.py](modules/synonym_ui.py) | 词典/LLM候选、漂移过滤、保护术语、审核和有界组合 |
-| [synonym_eval.py](modules/synonym_eval.py)、[run_synonym_eval.py](tools/run_synonym_eval.py) | 同一题目的原词/词典/原始LLM/过滤后扩展四组质量与成本对比 |
-| [novelty_models.py](modules/novelty_models.py) | 技术要素、原文段落、快照、对照及结果的数据契约 |
-| [novelty_matching.py](modules/novelty_matching.py)、[synonyms.json](config/synonyms.json) | 中英同义词规范化、查询扩展和候选匹配提示 |
-| [novelty_review.py](modules/novelty_review.py) | 模型逐项复核、提示词、输出校验、模型来源及输入绑定 |
-| [evidence_alignment.py](modules/evidence_alignment.py) | 逐篇生成本地阅读线索，统一候选来源并校验模型请求中的提示绑定 |
-| [novelty_rules.py](modules/novelty_rules.py) | 来源、时间、引文及逐篇要素覆盖规则 |
-| [novelty_report.py](modules/novelty_report.py) | Markdown 与 JSON 导出，保留判断输入和复核依据 |
+| `LLM_API_KEY` | 用户自己的模型密钥 |
+| `LLM_BASE_URL` | 兼容 Chat Completions 的服务基址；默认 `https://api.deepseek.com`，不要重复添加 `/chat/completions` |
+| `LLM_MODEL` | 服务支持的模型名称；模板值可按实际服务调整 |
 
-## 同义词如何处理
+保存材料不调用模型。在线 Google Patents 检索需要网络；模型术语生成、逐篇对照和独立语义裁判会单独请求模型，需先确认外发范围。独立评估沿用当前模型配置，指职责和调用阶段分离，不声称使用另一模型或独立专家。
 
-详细策略、流程图、候选格式、指标和真实固定池接入见[四层扩展说明](docs/synonym-expansion.md)。页面可直接运行离线示例Eval；默认合成题包含扩展改善与变差情形，不能证明真实Google Patents检索提升。
+网页支持保存附件，但保存成功不等于已经提取或理解附件。对话材料整理应读取实际原文；无法读取的附件保留未知，不能补造技术结构或效果。真实案件、原始附件、密钥及本地运行结果不提交到 Git。
 
-| 策略 | 理论类 | 工程类 |
+## 完成一次预筛
+
+1. 输入发明描述或保存附件；也可在本项目对话中使用 `$patent-precheck` 接手已保存案件。
+2. 整理并确认技术要素、材料出处、未知项和判断基准日。对话整理完成后，网页可载入 AI 整理的要素。
+3. 按技术语境审核扩展词，执行 Google Patents 检索或录入来源明确的原文快照；失败和未读范围保留记录。
+4. 预览并确认模型外发内容，逐篇对照全部要素、原文、同一方案、充分公开及上下文。阅读线索不自动成为披露判断。
+5. 查看预筛结论、证据位置和未知项，下载 Markdown / JSON；有关联案件时可保存本轮结果。
+6. 在报告下方展开“独立语义评估”，核对待发送的技能记录，另行确认后评估已完成技能。
+
+当前网页仍有材料确认、术语审核和模型外发等交互；尚未实现“上传任意附件后自动完成全部专业判断”。
+
+## 八个技能及其职责
+
+| 入口 | 主要输入 | 主要输出 |
 |---|---|---|
-| 重点 | 专有名词、固定译名、规范缩写 | 部件、结构、工艺、材料和功能的精确表达 |
-| 变体 | 每要素最多2个，仅单术语替换 | 每要素最多8个，含两个不重叠术语的组合 |
-| 查询预算 | 8条 | 16条 |
-| LLM未收录新词 | 待审核，不能默认当成同义 | 待审核；更多组合不放宽语义要求 |
+| [patent-precheck](.agents/skills/patent-precheck/SKILL.md) | 当前材料、任务和执行进度 | 调度六个业务阶段；公开接口 `skills.precheck_skill.NoveltyHarness` |
+| [patent-material-preparation](.agents/skills/patent-material-preparation/SKILL.md) | 实际材料原文或确认要素 | 带出处的要素、未知项和整理记录 |
+| [patent-synonym-expansion](.agents/skills/patent-synonym-expansion/SKILL.md) | 要素、语境、词典与保护术语 | 候选关系、审核状态和保留限定的查询变体 |
+| [patent-candidate-search](.agents/skills/patent-candidate-search/SKILL.md) | 查询计划、基准日或提供的快照 | 实际查询、候选文献、来源和检索缺口 |
+| [patent-evidence-alignment](.agents/skills/patent-evidence-alignment/SKILL.md) | 技术要素、选定原文及阅读线索 | 逐项支持/缺口/未知、原文位置和同一方案依据 |
+| [patent-novelty-assessment](.agents/skills/patent-novelty-assessment/SKILL.md) | 有效复核和来源/日期等约束 | 有范围边界的新颖性预筛结论 |
+| [patent-report-delivery](.agents/skills/patent-report-delivery/SKILL.md) | 实际执行结果、案件和证据 | 统一组装并绑定的 Markdown、JSON 与技能记录 |
+| [patent-semantic-eval](.agents/skills/patent-semantic-eval/SKILL.md) | 冻结的技能输入/输出、原文与可选参考 | 六维发现、语义裁决、引文、反例及后续动作 |
 
-术语表维护在 [config/synonyms.json](config/synonyms.json)，侧栏也可临时补充，每行一组，例如：
+主入口负责调度，独立裁判分别检查六个业务技能的实际输出。尚未完成的技能不作为已通过验收的技能。
+
+## 六维语义评估及结果解释
+
+| 维度 | 检查重点 |
+|---|---|
+| 术语与对象 | 技术语境中的等义、上下位、相关概念及指称对象 |
+| 结构与关系 | 连接、控制方向、施受角色、输入输出和组合 |
+| 逻辑与限定 | 条件、否定、范围、顺序、可选项、技术数值和单位 |
+| 语境与指称 | 指代、同一方案、背景、引述、假设与实际披露 |
+| 功能与效果 | 功能限定与实现手段；相同目的不能补足结构缺口 |
+| 评价与表达 | 评价措辞是否改变、掩盖或扩大技术含义和结论 |
+
+六维是本项目的任务检查维度，不声称语言学文献规定了固定六层理论。各技能均返回六维意见；必要维度不能跳过，其他维度不适用时须解释原因。维度不加权、不累加，不输出分数、概率、通过率或高中低评级。
+
+| 结果类别 | 可能结果 | 含义 |
+|---|---|---|
+| 业务预筛结论 | 单篇完整披露风险／本次已复核文献未发现完整披露／证据不足／超出范围 | 回答本次资料范围内的业务问题 |
+| 技能执行状态 | `completed` / `partial` / `not_executed` / `failed` | 说明业务步骤是否实际完成 |
+| 语义验收裁决 | 可接受 `acceptable`／需修订 `needs_revision`／待裁决 `pending_adjudication` | 说明实际输出是否忠于依据和任务义务 |
+| 整体评估执行 | `completed` / `incomplete` | 缺少必要技能或裁判失败时，不生成完整验收结论 |
+
+“证据不足”是业务结论，“待裁决”是验收意见，二者不相互替代。裁判返回 `activated_dimensions`，已触发维度不能跳过；确定的维度判断同时引用实际输出和原始依据；违反项提供反例及修订动作。裁判给出“需修订”不会自动改写业务结果。技术数值、日期、哈希以及内部运行成本可以保留，它们不作为语义质量分数。
+
+## 命令行评估与验证
+
+以下命令均在项目根目录执行，输出目录每次须使用新名称。无需激活环境，统一调用同一解释器。
+
+```powershell
+# 离线裁判契约自测，不调用模型、不产生业务语义验收
+.\.venv-novelty\Scripts\python.exe -X utf8 tools/check_semantic_contract.py
+# 工程及历史回归分组运行；历史 DeepEval 项需要可选依赖，否则明确跳过
+.\.venv-novelty\Scripts\python.exe -X utf8 tools/run_verification.py --output-dir .local/verification/release-check
+# 仅当前业务工程/语义契约；发现测试时也不导入历史可选依赖
+.\.venv-novelty\Scripts\python.exe -X utf8 tools/run_verification.py --current-only --output-dir .local/verification/current-check
+# 从实际导出 JSON 冻结技能记录，只生成外发预览
+.\.venv-novelty\Scripts\python.exe -X utf8 tools/run_semantic_eval.py --records .local/input/novelty_evidence.json --output-dir .local/evaluations/preview
+# 单独预览术语扩展；其他技能可通过 --skill 指定
+.\.venv-novelty\Scripts\python.exe -X utf8 tools/run_synonym_eval.py --records .local/input/novelty_evidence.json --output-dir .local/evaluations/synonyms
+```
+
+先将网页导出的证据 JSON 保存到示例中的输入路径，或替换为自己的实际路径。旧报告没有 `skill_records` 时，需要重新执行业务；不能把历史数值结果直接改名为语义结果。
+
+CLI 读取进程环境变量，**不会自动加载 `.env`**。实际模型评估前，在当前 PowerShell 会话配置 `LLM_API_KEY`、`LLM_BASE_URL` 和 `LLM_MODEL`，核对外发计划，再使用新的目录执行：
+
+```powershell
+.\.venv-novelty\Scripts\python.exe -X utf8 tools/run_semantic_eval.py --records .local/input/novelty_evidence.json --output-dir .local/evaluations/judged --run-model --confirm-external
+```
+
+可用 `--references` 提供与实际输出绑定的独立参考，或 `--skill` 仅评一个业务技能。缺少参考如实标为 `none`；`--demo` 仅生成教学计划，不能和 `--run-model` 一起使用。预览生成 `frozen_skill_outputs.json`、`semantic_eval_plan.json`；真实调用另生成 `semantic_eval.json` 和 `semantic_eval.md`。详见[结果和参考协议](docs/semantic-skills.md)。
+
+命令执行成功不等于验收可接受：实际运行在 `execution=completed` 时可正常退出，即使 `verdict=needs_revision`；执行不完整返回非零状态。自动化调用方应读取 JSON 中的执行状态和裁决。
+
+公开页面连通性可用 `tools/smoke_google.py` 显式检查。它只检索公开通用词、不发送用户发明，默认写入新的 `.local/verification/google-smoke-*` 目录。
+
+## 目录、升级与数据保留
 
 ```text
-压力传感器 | 压力感测器 | pressure sensor | pressure transducer
+.agents/skills/       八份技能定义
+skills/              八个业务程序入口
+modules/             当前业务实现、状态图、阅读线索与语义裁判
+engineering/legacy/  历史数值工程模块
+tools/               当前验证和语义评估入口；legacy/ 下为历史试验
+tests/               当前工程/语义契约；legacy/ 下为历史工程测试
+evals/legacy/        历史教学及固定候选池夹具
+docs/releases/       版本对比与迁移说明
+docs/history/        整理前设计文档快照
+reports/             既有历史报告与索引
+.local/              本地案件、运行、验证和备份（不提交）
 ```
 
-- 查询按完整术语替换，保留否定、数值、单位大小写和关系；工程类可组合两个不重叠术语。LLM新词不自动加入原文嵌入的归一化词典。
-- 中英同义词、大小写和空格变体用于改善召回；召回后返回原始段落，不把规范化文本冒充逐字引文。
-- 检索使用本地字符 TF-IDF 和人工术语表，是可解释基线，不能覆盖全部自然语言语义变化。
-- 同义词匹配不能自动确认技术披露。模型复核须检查否定、数值、顺序、连接方向以及具体技术含义，疑点仍可交专业人员核验。
-- 温度传感器与压力传感器、串联与并联、10 kPa 与 100 kPa、包含与不包含必须保持区别。
-- 未收录术语或低相似度应保留待复核，可补充术语表或使用模型建议。
+从 0.6.0 升级时，应更新旧 Python 导入和评测命令；旧框架命名的 skill 入口已经撤销。LangGraph 和 LlamaIndex 的实现仍保留，DeepEval 只在历史工程中使用。[完整迁移表](docs/releases/v1.0.0.md#迁移与不兼容变更)列出旧、新位置。
 
-## 真实工程试运行：旋转咔嗒圆珠笔
+原始附件、`case.json`、已有整理版本、原文快照、历史哈希和报告不自动迁移或覆盖。历史报告按原含义读取，不能自动补成新的语义验收记录。真实材料、凭据、依赖环境和新增运行记录保持本地。
 
-已用 [US4968168A](https://patents.google.com/patent/US4968168A/en) 做单点随机修改试验，补充对照文献为 [US5944436A](https://patents.google.com/patent/US5944436A/en)。随机种子 `3862674471` 选中了 F6：**把环形齿冠材料从金属改为聚甲醛（POM）**，其余五项技术要素保持不变。
+## 本次验证与能力边界
 
-以下为 0.1.0 流程下保存的历史试验，未使用 0.3.0 新增的模型逐项复核，也不改写原报告。两次真实 DeepSeek 调用均成功；公开页面和检索入口当轮也成功访问。模型对变更项给出 `not_found` 建议。由于没有专业人员人工复核，原方案和修改版的 Harness 结果均保留为 `insufficient_evidence`，没有自动宣告可授权。
+1.0.0发布时通过189项当前工程/语义契约、28项历史工程测试；1.1.0验证结果见[本次说明](docs/releases/v1.1.0.md)。八份技能定义继续保留。测试使用构造材料和模拟模型响应；这些次数是工程检查记录，不是语义质量分数或独立专利样本数。
 
-- [完整试运行结果 Markdown](reports/engineering_trial/engineering_trial.md)
-- [运行用量、随机种子与检索记录](reports/engineering_trial/run_metadata.json)
-- [原方案对照](reports/engineering_trial/original_report.md) · [修改版对照](reports/engineering_trial/modified_report.md)
-- [真实原文快照](reports/engineering_trial/US4968168A_source.json) · [补充文献快照](reports/engineering_trial/US5944436A_source.json)
-- [案例与候选变更配置](examples/engineering_trial.json) · [可复用试运行脚本](tools/run_engineering_trial.py)
+本次未证明真实模型专业语义准确率，也未证明 Google Patents 全库召回改善。真实能力仍需独立参考、隔离案例和有出处的语义复核。未发现完整披露不等于不存在相关现有技术；日期链、抵触申请及充分公开等特殊情况仍可能需要专业核验。
 
-使用已保存的真实快照复跑同一个修改点：
-
-```powershell
-.\.venv-novelty\Scripts\python.exe -X utf8 tools/run_engineering_trial.py --source-dir reports/engineering_trial --output-dir reports/engineering_trial_rerun --seed 3862674471
-```
-
-脚本通过隐藏输入读取 API Key，只在进程内存中使用；不要把密钥写入命令行或 Git。随机种子复现修改点选择，模型响应可能随运行变化。上传前可运行 `python tools/check_secrets.py --staged` 检查暂存区，扫描只输出可疑文件和行号。
-
-## 基础 eval 与验证记录
-
-0.6.0 本轮在隔离副本验证：186项当前工程测试、6项旧兼容测试、34条基础eval全部通过，含11项新增统一对照及界面回归。模拟响应验证模型纠正候选、采用未命中证据、空提示仍发送全文、外发预览一致与旧提示词失效；未调用真实模型，不代表专利语义准确率。
-
-0.5.0 本轮验证：181项自动化测试、34条原有基础eval、3份变更技能静态校验通过；固定查询/候选池/成本的旧新排序对照覆盖4道合成题。原变差题Recall@3由50%恢复至100%，Precision@3由33.3%恢复至66.7%，但该题新增相关为0。未调用新的付费API，未证明真实Google检索质量提高。见[候选排序说明](docs/candidate-ranking.md)。
-
-0.4.0 历史验证：154 项自动化测试通过（148 项当前工程、6 项旧兼容），34 条原有基础 eval 通过，3 份变更技能静态校验通过；另有27项成本/扩展专项回归通过。4道同义词冻结池示例包含改善和变差，仍为合成数据，未调用真实API，不证明Google真实召回改善。
-
-0.3.0 历史验证：123 项自动化测试通过（117 项当前工程、6 项旧模块兼容），三个 skill 的基础 eval 为20/20、10/10、4/4。模型接口使用模拟响应验证，未执行新的付费 API 试验；不证明真实模型的专利语义准确率。
-
-侧栏可一键运行三个 skill 的基础 eval；它是独立离线回归，无需 API Key，不调用付费模型。
-
-```powershell
-$runId = Get-Date -Format 'yyyyMMdd-HHmmss-ffffff'
-.\.venv-novelty\Scripts\python.exe -X utf8 -m skills.deepeval_skill --output ".local/verification/basic-$runId.json"
-.\.venv-novelty\Scripts\python.exe -X utf8 tools/run_verification.py --output-dir ".local/verification/engineering-$runId"
-```
-
-分别验证三个 skill：
-
-```powershell
-.\.venv-novelty\Scripts\python.exe -X utf8 -m unittest tests.test_novelty_skills.LangGraphSkillEvals -v
-.\.venv-novelty\Scripts\python.exe -X utf8 -m unittest tests.test_novelty_skills.LlamaIndexSkillEvals -v
-.\.venv-novelty\Scripts\python.exe -X utf8 -m unittest tests.test_novelty_skills.DeepEvalSkillEvals -v
-```
-
-2026-10-19 保存的验证记录：
-
-| 检查 | 已记录结果 | 记录位置 |
-|---|---|---|
-| LangGraph 基础 eval | 20 / 20 | [basic_eval.json](reports/basic_eval.json) |
-| LlamaIndex 基础 eval | 10 / 10 | [basic_eval.json](reports/basic_eval.json) |
-| DeepEval 基础 eval | 4 / 4 | [basic_eval.json](reports/basic_eval.json) |
-| 自动化测试 | 31 项通过，含界面操作、模型确认与结果失效 | [unittest.txt](reports/unittest.txt) |
-| 依赖一致性 | 通过 | [dependency_check.txt](reports/dependency_check.txt) |
-| Google Patents 实际连接 | 早期检查失败；后续工程案例已成功读取页面与检索 | [live_google_smoke.json](reports/live_google_smoke.json) |
-
-用例见 [evals/basic_cases.json](evals/basic_cases.json)，设计说明见 [docs/novelty_eval_design.md](docs/novelty_eval_design.md)。已覆盖跨文献拼接、未知与缺失、增加要素、中英同义词及语序、否定、数值和连接关系、空结果、网络失败、互斥实施例、假引文、公开日期与潜在抵触申请。原 FTO 情形作为越界测试保留。
-
-**34 条基础 eval 是教学合成回归，不代表实际专利专业准确率。** 正常预筛拒绝将 `synthetic_eval` 文献作为真实来源。真实金标准应由专业人员另行标注，记录来源、基准日、要素与引文，并隔离开发集和盲测集。界面外发流程使用模拟响应测试；真实工程案例另完成两次 DeepSeek 调用，记录见上方试运行报告。
-
-0.2.0将当前工程与旧模块兼容测试分组，新增两套不预设标签的真实来源运行及独立参考接口。没有独立参考时，漏报/误放为不可计算，拒答单独计数；AI草案不算人工金标准。详见[真实来源与评估说明](docs/real-evaluation.md)。合成eval、真实运行和工程试验均使用新文件或新目录，不覆盖历史报告。
-
-同义词扩展的独立成对检索评测：
-
-```powershell
-.\.venv-novelty\Scripts\python.exe -X utf8 tools/run_synonym_eval.py --k 3
-```
-
-默认使用4道明确标为合成的冻结结果题，输出新的JSON/Markdown；更换真实标注集用 `--dataset`。质量指标按理论/工程分别汇总，同时记录逐题Precision退化和查询/LLM成本。新词更多或查询更多不代表质量更好；无独立真实标注不声称召回提升。
-
-## 数据流与适用边界
-
-| 去向 | 发送或保存的内容 | 触发方式 |
-|---|---|---|
-| Google Patents | 检索词、扩展查询、单篇页面请求 | 点击在线检索 |
-| 用户配置的模型服务（术语生成） | 全部要素、类型、保护词和预定义词典 | 单独确认并点击生成术语 |
-| 用户配置的模型服务（逐项复核） | 全部确认要素、基准日、所选文献元数据、完整快照段落、哈希及候选对照 | 选择文献、确认外发并点击模型复核 |
-| 下载到本地的文件 | 原文段落快照及哈希、日期、要素、术语表、对照、结果与执行轨迹 | 点击报告或证据 JSON 下载 |
-| 基础 eval 记录 | 合成案例的逐条结果、各 skill 统计、数据和依赖版本 | 侧栏运行后下载，或使用 CLI 写入报告文件 |
-
-规则依据为 [CNIPA《专利法》第二十二条](https://www.cnipa.gov.cn/art/2020/11/23/art_97_155167.html)及 [CNIPA 新颖性审查说明](https://www.cnipa.gov.cn/module/download/downfile.jsp?classid=0&filename=c7bc94c506844c54918b0e08dfbc5708.pdf&showname=report.pdf)。新颖性只是授权条件之一；未发现完整披露不能推出“可以申请成功”。
-
-当前不自动判断优先权有效性、抵触申请成立条件、新颖性宽限期及其他特殊法律情形；需要核验的日期或申请历史保留为缺口。Google Patents 资料范围也不覆盖全部非专利文献、公开使用或其他公开证据。
-
-## 常见问题与维护
-
-**网页无法访问或只取得搜索摘要：**使用人工原文入口，粘贴同一 Google Patents 页面相关权利要求和说明书，保留链接、日期和上下文。已记录的检索错误不会自动消失，预筛仍会保留相应缺口；不要把失败或空结果解释为没有现有技术。
-
-**对照看似匹配，仍输出证据不足：**检查实际检索缺口、技术相关性及依据、完整性、公开日期、逐字引文、未知要素、同一方案和充分公开的确认。AI候选不能代替这些确认。
-
-**修改后仍看到旧记录：**改变输入、日期、检索设置或术语表后重新建立对照；改变对照或撤销复核确认后，重新运行第 3 步。
-
-**调整实现后：**重跑基础 eval 与相关测试；需要重查网站连接时，可运行只检索公开通用词的检查：
-
-```powershell
-.\.venv-novelty\Scripts\python.exe -X utf8 tools/smoke_google.py
-```
-
-原背景搜索、草稿生成和排序模块保留为已有代码，当前入口不再调用。原 Harness 曾参考 [PatentGuard AI](https://github.com/joshuapremkumar/patentguard-ai) 的流水线，原项目采用 MIT 许可。
+[材料留存](docs/local-integration.md) · [术语扩展](docs/synonym-expansion.md) · [候选检索](docs/candidate-ranking.md) · [证据对照](docs/model-evidence-alignment.md) · [历史工程](engineering/legacy/README.md) · [历史报告](reports/README.md)

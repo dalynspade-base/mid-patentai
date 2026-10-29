@@ -8,10 +8,12 @@ from modules.evidence_alignment import locate_evidence
 from modules.google_patent_documents import manual_google_document
 from modules.llm_client import LLMClient
 from modules.novelty_models import Feature
-from modules.novelty_report import report_payload, to_markdown
+from modules.novelty_report import to_markdown
+from skills.report_delivery_skill import build_report as report_payload
 from modules.novelty_review import model_review_documents, model_review_payload
 from modules.novelty_rules import assess_novelty
-from skills.langgraph_skill import NoveltyHarness, model_suggest_rows
+from skills.precheck_skill import NoveltyHarness
+from modules.precheck_graph import model_suggest_rows
 from tests.test_model_review import review_response
 
 

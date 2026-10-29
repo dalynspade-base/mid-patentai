@@ -55,7 +55,7 @@ class ModelReviewUITests(unittest.TestCase):
             app = self.ready()
             state = app.session_state["novelty_state"]
             preview = model_review_payload(state["features"], state["documents"][0], "2024-01-01",
-                                           state["suggestions"][0], state["hits"])
+                                           state["suggestions"][0], state["hits"],patent_context=state["patent_context"])
             self.submit(app)
             self.assertEqual(json.loads(model.call_args.args[1]), json.loads(json.dumps(preview)))
             self.assertEqual(preview["evidence_alignment"]["primary"], "model_semantics")
@@ -100,8 +100,8 @@ class ModelReviewUITests(unittest.TestCase):
 
     def test_online_journal_survives_manual_addition_and_model_review(self):
         doc = manual_google_document("https://patents.google.com/patent/US123/en", "fixture", "2023-01-01", "压力传感器")
-        with patch("skills.langgraph_skill.search_patents", return_value=[{"url": doc.url}]) as search, \
-             patch("skills.langgraph_skill.fetch_google_document", return_value=doc), \
+        with patch("skills.precheck_skill.search_patents", return_value=[{"url": doc.url}]) as search, \
+             patch("skills.precheck_skill.fetch_google_document", return_value=doc), \
              patch("modules.llm_client.LLMClient.complete", return_value=json.dumps(review_response())):
             app = self.app()
             app.date_input[0].set_value(date(2024, 1, 1))

@@ -12,11 +12,12 @@ from modules.google_patent_documents import manual_google_document
 from modules.llm_client import LLMClient
 from modules.novelty_matching import SynonymLexicon
 from modules.novelty_models import Feature
-from modules.novelty_report import report_payload, to_markdown
+from modules.novelty_report import to_markdown
+from skills.report_delivery_skill import build_report as report_payload
 from modules.novelty_search import lexical_hint
 from modules.novelty_review import model_review_documents
 from modules.synonym_expansion import build_expansion_plan
-from skills.langgraph_skill import NoveltyHarness
+from skills.precheck_skill import NoveltyHarness
 from tests.test_model_review import review_response
 
 

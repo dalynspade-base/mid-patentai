@@ -1,6 +1,6 @@
 interface:
-  display_name: "材料初筛接手"
-  short_description: "读取整合版案件，提取带出处的要素与未知，衔接现有预筛。"
-  default_prompt: "使用 $patent-precheck 接手本整合项目最近待整理的材料，保留原始输入与出处。"
+  display_name: "专利新颖性预筛"
+  short_description: "调度材料、检索、证据对照及判断，交付保留来源与未知的预筛报告。"
+  default_prompt: "使用 $patent-precheck 接手当前材料，完成六个业务阶段并衔接独立六维语义评估。"
 policy:
   allow_implicit_invocation: true

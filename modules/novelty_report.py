@@ -7,11 +7,18 @@ from datetime import datetime, timezone
 from urllib.parse import quote as url_quote
 
 
-def report_payload(state: dict, invention: str, cutoff: str, lexicon_groups: list) -> dict:
-    return {
+def build_payload(state: dict, invention: str, cutoff: str, lexicon_groups: list) -> dict:
+    from modules.patent_context import context_for
+    from modules.application_baselines import select_baselines
+    ctx=context_for(state["features"],cutoff,state.get("patent_context"),invention=invention)
+    target=ctx["target"]
+    scope=(f"Google Patents；版本{target['version_id']}；权利要求{target['claim_id']}；引用路径{' → '.join(target['path'])}"
+           if target.get("claim_id") else "Google Patents；整套用户确认要素")
+    payload = {
         "report_schema_version": 3,
         "created_at": datetime.now(timezone.utc).isoformat(), "task": "CN_novelty_precheck",
-        "scope": "Google Patents；整套用户确认要素；不展开独立/从属权利要求",
+        "scope": scope, "patent_context":ctx,
+        "application_baselines":select_baselines(ctx["baseline_topics"]),
         "cutoff": cutoff, "invention": invention,
         "features": [asdict(f) for f in state["features"]],
         "documents": [doc.to_dict() | {"snapshot_hash": doc.snapshot_hash} for doc in state["documents"]],
@@ -30,15 +37,32 @@ def report_payload(state: dict, invention: str, cutoff: str, lexicon_groups: lis
                    "Google Patents 不包含全部非专利现有技术；日期、抵触申请、充分公开等仍可能需要专业核验。",
                    "模型逐项复核不等于人工确认，不能作为真实专业准确率的金标准。"],
     }
+    if state.get("claim_history"):
+        payload["claim_history"]=state["claim_history"]
+    return payload
 
 
-def to_markdown(payload: dict) -> str:
+def to_markdown(payload: dict, *, include_skill_audit=True) -> str:
     from modules.novelty_models import LABELS
 
     lines = ["# 新颖性预筛报告", "", f"结论：**{LABELS[payload['decision']['label']]}**",
              f"判断基准日：{payload['cutoff']}", f"范围：{payload['scope']}",
              "", "## 发明描述", payload["invention"], "", "## 已确认技术要素"]
     lines += [f"- {f['id']}：{f['text']}" for f in payload["features"]]
+    target=payload.get("patent_context",{}).get("target",{})
+    if target.get("claim_id"):
+        lines += ["", "## 权利要求及修改范围", target["boundary"]]
+        lines += [f"- 权利要求{c['id']}（{c['kind']}）：{c['text']}" for c in target["claims"]]
+        for change in target["amendments"]:
+            before=(change["before"] or {}).get("text","本版本未记载")
+            after=(change["after"] or {}).get("text","本版本已删除")
+            lines += [f"- {change['version_id']} / {change['claim_id']}：{before} → {after}",
+                      "  修改依据：" + ("；".join(b["explanation"] for b in change["basis"]) or "未提供，不能确认修改支持或合法性。")]
+    if payload.get("application_baselines"):
+        lines += ["", "## 同类技术争议与申请底线", "以下为有出处的核查依据；须与本案具体限定及证据比对，不据此自动认定不过审。"]
+        for pattern in payload["application_baselines"]["patterns"]:
+            lines += [f"- **{pattern['problem']}**（{'、'.join(pattern['grounds'])}）：{pattern['baseline']}",
+                      f"  适用边界：{pattern['limit']} [来源]({pattern['source']['url']})"]
     if payload.get("evidence_alignment"):
         lines += ["", "证据对照以模型对技术含义及全部限定的理解为主；LlamaIndex提供本地阅读线索。"
                   "模型须检查全部输入原文，可以采用未命中段落，逐项说明支持关系、矛盾或不确定性。"]
@@ -82,7 +106,7 @@ def to_markdown(payload: dict) -> str:
         lines += [f"实际检索调用：{cost.get('search_calls', '未记录')}；正文尝试：{cost.get('page_attempts', '未记录')}；"
                   f"独立候选：{cost.get('unique_candidates', '未记录')}；检索耗时秒：{cost.get('elapsed_seconds', '未记录')}",
                   f"候选生成状态：{expansion['generation']['status']}；生成成本：{expansion['generation'].get('cost', {})}",
-                  "扩展前后质量需另跑成对检索Eval；本轮在线查询不自动证明Recall/Precision改善。"]
+                  "扩展质量需独立语义eval核验术语保真、证据价值与漂移；本轮在线查询本身不证明质量改善。"]
     ranking = audit.get("ranking")
     if ranking:
         lines += ["", "## 候选排序与相关性层级", f"排序器：{ranking.get('version')}；模式：{ranking.get('mode')}；"
@@ -180,5 +204,11 @@ def to_markdown(payload: dict) -> str:
                                   "not_machine_verified": "引文未机器校验"}.get(evidence.get("quote_validation"), "引文未机器校验")
                     lines += [f"- {feature['id']}：{evidence['source']} / {evidence['location']}；{validation}；原文：{evidence['quote']}"]
             lines += [f"- 材料未知项：{item}" for item in preparation["unknowns"]]
-    lines += ["", "基础 eval 是单独的合成回归测试，不是本报告的专业正确性认证。"]
+    if include_skill_audit and payload.get("skill_records"):
+        lines += ["", "## 六个业务技能执行记录"]
+        lines += [f"- {r['skill_name']}：{r['execution']}；来源：{r['producer']}；{r['note']}" for r in payload["skill_records"]]
+    if include_skill_audit and payload.get("semantic_evaluation"):
+        from modules.semantic_eval import evaluation_markdown
+        lines += ["", evaluation_markdown(payload["semantic_evaluation"])]
+    lines += ["", "独立语义评估按术语与对象、结构与关系、逻辑与限定、语境与指称、功能与效果、评价与表达核验；模型裁判不等于人工确认。"]
     return "\n\n".join(lines)

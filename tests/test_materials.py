@@ -198,8 +198,8 @@ class MaterialPersistenceTests(unittest.TestCase):
         self.assertEqual(loaded["preparation_ref"]["sha256"], hashlib.sha256(current.read_bytes()).hexdigest())
 
     def test_draft_copies_working_content_and_previous_report(self):
-        from modules.novelty_report import report_payload
-        from skills.langgraph_skill import NoveltyHarness
+        from skills.report_delivery_skill import build_report as report_payload
+        from skills.precheck_skill import NoveltyHarness
         state = NoveltyHarness().run(feature_text="压力传感器", cutoff="2024-01-01", documents=[])
         report = report_payload(state, "旧报告描述", "2024-01-01", [])
         path = save_working_draft(self.root, "完整工作描述", "压力传感器", report=report)
@@ -233,7 +233,7 @@ class MaterialAppTests(unittest.TestCase):
         return app.session_state["active_material_case"]
 
     def test_saving_does_not_call_model_or_search_and_can_reopen(self):
-        with patch("skills.langgraph_skill.search_patents") as search, patch("modules.llm_client.LLMClient.complete") as model:
+        with patch("skills.precheck_skill.search_patents") as search, patch("modules.llm_client.LLMClient.complete") as model:
             app = self.app()
             saved = self.save_in_app(app)
             self.assertEqual(self.labeled(app.text_area, "确认待判断的技术要素（每行一个）").value, "")

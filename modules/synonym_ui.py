@@ -8,10 +8,15 @@ import streamlit as st
 
 from modules.llm_client import LLMClient
 from modules.novelty_models import parse_features
-from modules.synonym_expansion import PROFILES, build_expansion_plan, generate_llm_candidates
+from modules.synonym_expansion import PROFILES
+from skills.synonym_expansion_skill import run as run_synonym_skill, generate as generate_llm_candidates
 
 
-def render_synonym_expansion(feature_text, lexicon, api_key, base_url, model):
+def build_expansion_plan(*args,**kwargs):
+    return run_synonym_skill(*args,**kwargs)[0]
+
+
+def render_synonym_expansion(feature_text, lexicon, api_key, base_url, model,*,features_override=None,patent_context=None):
     with st.expander("同义词四层扩展与检索评测", expanded=False):
         profile = st.selectbox("专利检索类型", list(PROFILES), index=1,
                                format_func=lambda key: PROFILES[key]["label"])
@@ -23,12 +28,12 @@ def render_synonym_expansion(feature_text, lexicon, api_key, base_url, model):
         st.caption("第一层使用预定义词典；第二层可选LLM生成中英文和缩写；第三层拦截语义漂移及限定变化。"
                    "词典外的新词需明确审核才进入查询，未审核项不自动当同义词。")
         try:
-            features = parse_features(feature_text) if feature_text.strip() else []
+            features = features_override if features_override is not None else (parse_features(feature_text) if feature_text.strip() else [])
         except ValueError as exc:
             st.warning(str(exc))
             return None
         payload = {"features": [asdict(f) for f in features], "profile": profile,
-                   "protected_terms": protected, "dictionary_groups": lexicon.groups}
+                   "protected_terms": protected, "dictionary_groups": lexicon.groups,"patent_context":patent_context}
         signature = hashlib.sha256(json.dumps([payload, base_url.strip(), model.strip()],
                                    ensure_ascii=False, sort_keys=True).encode()).hexdigest()[:20]
         consent = st.checkbox("我确认将技术要素、保护术语和词典发送到模型生成扩展候选",
@@ -40,7 +45,7 @@ def render_synonym_expansion(feature_text, lexicon, api_key, base_url, model):
             try:
                 with st.spinner("生成候选并检查术语与限定…"):
                     st.session_state[cache_key] = generate_llm_candidates(features, lexicon, profile, protected,
-                        LLMClient(api_key, base_url, model), consent)
+                        LLMClient(api_key, base_url, model), consent,patent_context=patent_context)
             except (ValueError, RuntimeError, PermissionError) as exc:
                 st.error(str(exc))
         generated = st.session_state.get(cache_key)
@@ -63,33 +68,19 @@ def render_synonym_expansion(feature_text, lexicon, api_key, base_url, model):
         if plan and approved and confirmation:
             plan = build_expansion_plan(features, lexicon, profile, protected, generated, approved)
         if plan:
+            if patent_context:
+                from modules.skill_contracts import digest
+                plan["context_binding"]=digest({k:patent_context[k] for k in ("features_hash","cutoff","scope","target")})
             st.dataframe(plan["candidates"], hide_index=True, width="stretch")
             st.caption(f"本轮有{len(plan['variants'])}个候选查询变体；按原要素优先、类型预算发送，多余或超长查询另行记录。")
             st.download_button("下载同义词扩展与审核记录", json.dumps(plan, ensure_ascii=False, indent=2),
                                "synonym_expansion.json", "application/json")
-        st.caption("第四层比较相同题目、K、排序器及最大查询预算下的Recall@K、Precision@K和成本；词多不代表效果好。")
-        if st.button("运行同义词扩展示例 Eval（离线）"):
-            from modules.synonym_eval import run_synonym_evaluation, ranking_comparison
-            dataset = json.loads((Path(__file__).parents[1] / "evals/synonym_retrieval_cases.json").read_text(encoding="utf-8"))
-            st.session_state["synonym-eval-result"] = run_synonym_evaluation(dataset, 3)
-            st.session_state["synonym-ranking-comparison"] = ranking_comparison(dataset, 3)
+        st.caption("第四层在报告的独立语义评估中核验术语保真、上下位关系、限定及检索价值，不计算数值质量指标。")
+        if st.button("查看术语扩展语义 eval 规范（离线）"):
+            from modules.skill_contracts import DIMENSIONS,SKILLS
+            st.session_state["synonym-eval-result"]={"execution":"not_executed","verdict":None,
+                "dimensions":DIMENSIONS,"obligations":SKILLS["patent-synonym-expansion"]["obligations"],
+                "note":"只展示规范；没有调用模型，也没有语义验收结果。"}
         if "synonym-eval-result" in st.session_state:
-            from modules.synonym_eval import evaluation_markdown
-            evaluation = st.session_state["synonym-eval-result"]
-            st.warning("这是4个作者编写的合成固定检索池，含改善与变差情形；没有调用模型或Google，不证明真实检索效果改善。")
-            st.dataframe([{"案例": row["id"], "类型": row["profile"], "方案": arm,
-                "Recall@K": value["metrics"]["recall_at_k"], "Precision@K": value["metrics"]["precision_at_k"],
-                "查询数": value["cost"]["planned_search_queries"]}
-                for row in evaluation["cases"] for arm, value in row["arms"].items()], hide_index=True, width="stretch")
-            st.download_button("下载同义词评测报告", evaluation_markdown(evaluation), "synonym_evaluation.md", "text/markdown")
-            comparison = st.session_state.get("synonym-ranking-comparison")
-            if comparison:
-                from modules.synonym_eval import ranking_comparison_markdown
-                st.caption("旧词汇排序与新规则排序使用相同查询、候选池、标签和成本。新增相关文献单独计数，排序修复不等于产生新增收益。")
-                st.dataframe([{"案例": r["case_id"], "方案": r["arm"], "旧Recall@K": r["before"]["recall_at_k"],
-                    "新Recall@K": r["after"]["recall_at_k"], "旧Precision@K": r["before"]["precision_at_k"],
-                    "新Precision@K": r["after"]["precision_at_k"], "新增相关": len(r["increment"]["new_relevant_ids"])
-                    if r["increment"]["new_relevant_ids"] is not None else None} for r in comparison["rows"]],
-                    hide_index=True, width="stretch")
-                st.download_button("下载候选排序前后对照", ranking_comparison_markdown(comparison), "ranking_comparison.md", "text/markdown")
+            st.json(st.session_state["synonym-eval-result"])
         return plan

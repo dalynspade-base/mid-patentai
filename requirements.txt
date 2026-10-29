@@ -3,10 +3,8 @@ requests>=2.32,<3
 python-dotenv>=1.0,<2
 numpy>=1.26,<3
 scikit-learn>=1.5,<2
-plotly>=5.22,<7
 beautifulsoup4>=4.12,<5
-# 以下三个版本已用离线 eval 和界面流程实际验证。
+# 编排与本地阅读线索；不是业务语义评估框架。
 langgraph==1.2.16
 llama-index-core==0.14.25
-deepeval==4.3.1
 PyYAML>=6,<7

@@ -197,7 +197,7 @@ def build_expansion_plan(features: list[Feature], lexicon: SynonymLexicon, profi
 
 
 def generate_llm_candidates(features: list[Feature], lexicon: SynonymLexicon, profile: str,
-                            protected_terms: list[str], client, confirmed: bool) -> dict:
+                            protected_terms: list[str], client, confirmed: bool, *, patent_context=None) -> dict:
     if not confirmed:
         raise PermissionError("请先确认将技术要素与术语表发送给模型生成候选。")
     if profile not in PROFILES:
@@ -210,7 +210,9 @@ def generate_llm_candidates(features: list[Feature], lexicon: SynonymLexicon, pr
         "保护术语不得扩展。缺乏依据时不生成。所有候选还须经过程序规则或人工审核，不属于已确认事实。"
         "仅返回JSON对象candidates数组，每项feature_id、source、term、language(zh/en/abbr)、"
         "category(term/component/structure/process/material/function)、relation(equivalent/broader/narrower/related/unknown)、rationale。")
+    from modules.patent_context import context_for
     payload = json.dumps({"features": [asdict(f) for f in features], "profile": profile,
+        "patent_context": context_for(features, context=patent_context),
         "policy": PROFILES[profile], "protected_terms": protected_terms, "dictionary_groups": lexicon.groups,
         "prompt_version": PROMPT_VERSION}, ensure_ascii=False)
     if len(payload) > 20000:

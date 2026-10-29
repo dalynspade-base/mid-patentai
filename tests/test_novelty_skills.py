@@ -1,4 +1,4 @@
-"""三个 skill 的基础行为与误判边界；所有来源均为明确标记的教学快照。"""
+"""预筛业务与取证的工程边界；所有来源均为明确标记的教学快照。"""
 
 from __future__ import annotations
 
@@ -8,17 +8,17 @@ import unittest
 from dataclasses import replace
 from unittest.mock import Mock
 
-from evals.fixtures import case_inputs, dataset
+from evals.legacy.fixtures import case_inputs, dataset
 from modules.google_patent_documents import fetch_google_document, manual_google_document, parse_google_page
 from modules.novelty_matching import SynonymLexicon
 from modules.novelty_models import EvidenceRow, Feature, PatentDocument, SourceSection, google_patent_url, parse_features
 from modules.novelty_rules import assess_novelty
-from skills.deepeval_skill import run_basic_evals
-from skills.langgraph_skill import NoveltyHarness, model_suggest_rows, suggest_rows
-from skills.llamaindex_skill import PatentRetriever
+from skills.precheck_skill import NoveltyHarness
+from modules.precheck_graph import model_suggest_rows, suggest_rows
+from modules.evidence_retriever import PatentRetriever
 
 
-class LangGraphSkillEvals(unittest.TestCase):
+class PrecheckFlowTests(unittest.TestCase):
     def test_all_labeled_boundary_cases(self):
         harness = NoveltyHarness(allow_synthetic=True)
         for case in dataset()["cases"]:
@@ -76,11 +76,7 @@ class LangGraphSkillEvals(unittest.TestCase):
                     self.assertTrue(state["decision"].warnings)
 
 
-class LlamaIndexSkillEvals(unittest.TestCase):
-    def test_synonyms_rank_same_original_source_first(self):
-        report = run_basic_evals()
-        failures = [case for case in report["cases"] if case["skill"] == "llamaindex" and not case["passed"]]
-        self.assertEqual(failures, [])
+class EvidenceReadingTests(unittest.TestCase):
 
     def test_unknown_terms_have_finite_scores_and_do_not_match(self):
         doc = PatentDocument("D1", "测试", "https://patents.google.com/patent/D1", "2023-01-01", (SourceSection("s1", "ABC"),))
@@ -113,13 +109,7 @@ class LlamaIndexSkillEvals(unittest.TestCase):
         self.assertEqual(lexicon.canonicalize("pressure sensing transducer"), lexicon.canonicalize("压力传感器"))
 
 
-class DeepEvalSkillEvals(unittest.TestCase):
-    def test_basic_report_includes_each_skill_and_judge_negative_controls(self):
-        report = run_basic_evals()
-        self.assertTrue(report["all_passed"])
-        self.assertEqual(set(report["summary"]), {"langgraph", "llamaindex", "deepeval"})
-        self.assertIn("synthetic", report["provenance"])
-        self.assertEqual(report["summary"]["deepeval"]["total"], 4)
+class SyntheticSourceBoundaryTests(unittest.TestCase):
 
     def test_synthetic_cases_cannot_enter_production(self):
         inputs = case_inputs(dataset()["cases"][0])

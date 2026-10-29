@@ -5,7 +5,7 @@ from dataclasses import asdict
 
 from modules.novelty_matching import SynonymLexicon
 from modules.novelty_models import DocumentReview, EvidenceRow, Feature, PatentDocument
-from skills.llamaindex_skill import PatentRetriever
+from modules.evidence_retriever import PatentRetriever
 
 
 def locate_evidence(features: list[Feature], documents: list[PatentDocument],

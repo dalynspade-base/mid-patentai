@@ -22,15 +22,9 @@ AI 客户端需要具备读取文件的工具；附件读取或解析失败应�
 
 按 README 安装 requirements.txt 到 `.venv-novelty` 后，在项目目录运行 `powershell -ExecutionPolicy Bypass -File start_novelty.ps1`，或 `.venv-novelty/Scripts/python.exe -m streamlit run app.py --server.address 127.0.0.1`。依赖环境不随 Git 同步，每台设备需分别安装。
 
-测试使用 `.venv-novelty/Scripts/python.exe -X utf8 -m unittest discover -s tests -v`。原有基础 eval 使用 `.venv-novelty/Scripts/python.exe -X utf8 -m skills.deepeval_skill --output .local/verification/basic_eval.json`，新记录留在独立目录，不覆盖组员提交的报告。测试和合成 eval 不代表实际专利专业准确率。
+当前工程和语义契约使用 `python tools/run_verification.py --current-only --output-dir 新运行目录`；完整运行去掉 `--current-only`，历史工程单列。离线契约使用 `python tools/check_semantic_contract.py`。真实语义评估使用 `tools/run_semantic_eval.py`，只有明确外发确认后才调用裁判。完整安装与启动步骤见 [README](../README.md)。
 
-0.1.0历史验证：39 项测试通过（原有 31 项，加新增 8 项）；34 项合成 eval 通过（20 + 10 + 4）；依赖一致性和新增技能静态校验通过。实际记录位于 `.local/verification/run-20261020-094028/`。没有调用付费模型或处理真实案件；AI 整理的衔接通过构造材料验证，完整自动化的专业判断能力尚未验证。后续版本的实际验证另存独立批次，不覆盖这份历史记录。
-
-0.2.0第一阶段验证（2026-10-20）：完整 unittest 51项断言通过，包含旧模块兼容性测试；独立基础 eval 为20/20、10/10、4/4，不能与 unittest 数量相加。技能静态校验通过。命令、Python 3.14.2解释器、基线提交、源码哈希和日志位于 `.local/verification/material-stage1-20261020-120854-353569/`。测试进程返回0，但退出时第三方临时目录清理出现权限异常；保留该环境问题，不计为断言失败，也不宣称已解决。
-
-浏览器另用隔离构造案件核对了保存时保留描述与要素、显式切换前留存草稿、载入整理时保留描述并展示未知项与版本；案件和浏览器验证记录位于 `.local/verification/browser-stage1-20261020-120936/`。浏览器截图接口不可用，此轮以页面状态读回及文件内容核对为依据。未调用付费模型、未开展真实专利检索。
-
-第二阶段增加[原文定位与复核记录](evidence-review.md)：候选不自动填入最终复核，人工提交须记录身份、时刻、同一方案依据及输入绑定；旧快照与历史报告保留，旧复核不自动升级为有效的新确认。
+早期验证次数、浏览器记录与人工复核阶段说明保留在[整理前快照](history/pre-1.0.0/local-integration.md)，不作为当前语义验收结果。
 
 ## 来源与后续协作
 
