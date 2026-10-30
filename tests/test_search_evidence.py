@@ -11,11 +11,11 @@ from modules.google_patent_documents import manual_google_document
 from modules.novelty_matching import SynonymLexicon
 from modules.novelty_models import DocumentReview, EvidenceRow, Feature, stamp_review
 from modules.novelty_report import to_markdown
-from skills.report_delivery_skill import build_report as report_payload
+from modules.patent_tools import build_report as report_payload
 from modules.novelty_rules import assess_novelty
 from modules.novelty_search import query_plan, search_warnings
 from modules.patent_search import search_patents
-from skills.precheck_skill import NoveltyHarness
+from modules.harness import NoveltyHarness
 
 
 class SearchEvidenceTests(unittest.TestCase):

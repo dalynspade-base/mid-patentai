@@ -4,7 +4,7 @@ import streamlit as st
 from modules.llm_client import LLMClient
 from modules.skill_contracts import DIMENSIONS,SKILLS,digest
 from modules.semantic_eval import RUBRIC_VERSION,VERDICTS,EXECUTION_LABELS,FINDING_LABELS,evaluation_packet,evaluation_markdown
-from skills.semantic_eval_skill import run
+from modules.semantic_eval import evaluate_records as run
 from modules.semantic_handoff import handoff_packet
 
 

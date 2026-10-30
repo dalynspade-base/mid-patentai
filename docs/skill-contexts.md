@@ -1,6 +1,8 @@
 # Skill上下文与权利要求版本协议
 
-共享上下文由 `modules/patent_context.py` 维护，专用合同集中在 `CONTRACTS`，避免在八份技能中复制整套规则。每份实际记录包含 `inputs.patent_context` 与直接上游 `upstream_records`；旧记录不改写。
+共享运行上下文由 `modules/patent_context.py` 维护。每个业务 Skill 的专用合同来自其 `SKILL.md` 的“上下文、核验、边界”，职责必查维度来自 `metadata.required_dimensions`。`modules/skill_library.py` 读取文档；`CONTRACTS`、`SKILLS` 只是派生视图，不再维护第二份规则。这三个标题与维度元数据是本项目约定，不是 Agent Skills 通用格式的额外要求。
+
+实际记录包含 `inputs.patent_context`、直接上游 `upstream_records` 和 `skill_document` 路径/指纹；模型调用加载当前所用指令，输入仍只含明确取得的材料。共享上下文含业务 Skill 文档集合指纹，文档改变后旧上下文与模型复核需重建。旧记录不改写，也不补造当时使用的文档。
 
 ## 共享部分
 
@@ -30,7 +32,7 @@
 例如 `1 → 3` 与 `1 → 2 → 3` 是两个目标。分别继承路径上的限定，原文、继承出处和修改摘要进入上下文及报告。描述/实施例可解释术语，不自动导入未要求的限制；多个独立项也分别判断。
 
 ```python
-from skills.precheck_skill import NoveltyHarness
+from modules.harness import NoveltyHarness
 
 # history 为已读取的记录；documents 为已取得的Google Patents快照。
 state = NoveltyHarness().run(claim_history=history, claim_target="1/2",

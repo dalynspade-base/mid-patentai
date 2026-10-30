@@ -32,7 +32,7 @@ class AppFlowTests(unittest.TestCase):
         return app
 
     def test_first_screen_has_no_network_or_paid_model_call(self):
-        with patch("skills.precheck_skill.search_patents") as search, patch("modules.llm_client.LLMClient.complete") as model:
+        with patch("modules.harness.search_patents") as search, patch("modules.llm_client.LLMClient.complete") as model:
             app = self.app()
             self.assertEqual(len(app.exception), 0)
             search.assert_not_called()
@@ -40,7 +40,7 @@ class AppFlowTests(unittest.TestCase):
             self.assertTrue(labeled(app.button, "1 · 检索 Google Patents 并定位证据").disabled)
 
     def test_manual_evidence_does_not_auto_judge_or_send_model(self):
-        with patch("skills.precheck_skill.search_patents") as search, patch("modules.llm_client.LLMClient.complete") as model:
+        with patch("modules.harness.search_patents") as search, patch("modules.llm_client.LLMClient.complete") as model:
             app = self.manual_snapshot(self.app())
             self.assertEqual(len(app.exception), 0)
             state = app.session_state["novelty_state"]

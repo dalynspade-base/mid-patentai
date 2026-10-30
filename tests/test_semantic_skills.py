@@ -9,8 +9,8 @@ from unittest.mock import Mock,patch
 from modules.skill_contracts import SKILLS,DIMENSIONS,make_record,validate_record,digest,serialized
 from modules.semantic_eval import evaluation_packet,validate_judgment,evaluate_skill,evaluate_records
 from modules.semantic_eval_examples import teaching_records,judgment_example,contract_demo
-from skills.precheck_skill import NoveltyHarness
-from skills.material_preparation_skill import prepare_with_model
+from modules.harness import NoveltyHarness
+from modules.patent_tools import prepare_materials_with_model as prepare_with_model
 
 
 def judge():
@@ -171,7 +171,7 @@ class BusinessSkillTests(unittest.TestCase):
             NoveltyHarness().run(feature_text="温度传感器",cutoff="2024-01-01",documents=[],material_skill_record=record)
 
     def test_report_record_does_not_include_itself_or_the_evaluation(self):
-        from skills.report_delivery_skill import build_report as report_payload
+        from modules.patent_tools import build_report as report_payload
         state=NoveltyHarness().run(feature_text="控制器",cutoff="2024-01-01",documents=[])
         report=report_payload(state,"控制器装置","2024-01-01",[])
         delivery=report["skill_records"][-1]
@@ -186,7 +186,7 @@ class BusinessSkillTests(unittest.TestCase):
 
     def test_report_refreshes_records_after_review_revocation(self):
         from evals.legacy.fixtures import case_inputs,dataset
-        from skills.report_delivery_skill import build_report as report_payload
+        from modules.patent_tools import build_report as report_payload
         from modules.novelty_rules import assess_novelty
         from modules.skill_contracts import plain
         state=NoveltyHarness(allow_synthetic=True).run(**case_inputs(dataset()["cases"][0]))

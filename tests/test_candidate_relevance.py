@@ -13,11 +13,11 @@ from modules.llm_client import LLMClient
 from modules.novelty_matching import SynonymLexicon
 from modules.novelty_models import Feature
 from modules.novelty_report import to_markdown
-from skills.report_delivery_skill import build_report as report_payload
+from modules.patent_tools import build_report as report_payload
 from modules.novelty_search import lexical_hint
 from modules.novelty_review import model_review_documents
 from modules.synonym_expansion import build_expansion_plan
-from skills.precheck_skill import NoveltyHarness
+from modules.harness import NoveltyHarness
 from tests.test_model_review import review_response
 
 

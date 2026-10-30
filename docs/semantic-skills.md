@@ -1,19 +1,19 @@
 # 专利预筛六个业务技能与独立语义评估
 
 当前架构包含主入口 patent-precheck、六个业务子skill、独立评估 patent-semantic-eval，共八份技能定义。
-LangGraph底层位于modules/precheck_graph.py，LlamaIndex阅读线索位于modules/evidence_retriever.py；旧数值工具位于engineering/legacy/，不再保留框架命名的Python skill入口。
+固定调度位于modules/harness.py，LlamaIndex阅读线索位于modules/evidence_retriever.py；旧数值工具位于engineering/legacy/，不再保留框架命名的Python skill入口。
 
-|业务技能|实现|输出|
+|业务 Skill|调用工具|输出|
 |---|---|---|
-|材料整理|skills/material_preparation_skill.py|带材料支持的要素、未知，或明确标记用户确认输入|
-|术语扩展|skills/synonym_expansion_skill.py|语境关系、候选处理状态、保护限定的查询变体|
-|候选检索|skills/candidate_search_skill.py|实际查询、原文快照、失败与范围|
-|证据对照|skills/evidence_alignment_skill.py|逐项支持/缺口/未知、原文和同一方案依据|
-|新颖性判断|skills/novelty_assessment_skill.py|原有四类有边界业务结论|
-|报告交付|skills/report_delivery_skill.py|忠于证据的JSON/Markdown及执行记录|
+|材料整理|modules.patent_tools.prepare_materials|带材料支持的要素、未知，或明确标记用户确认输入|
+|术语扩展|modules.patent_tools.expand_terms|语境关系、候选处理状态、保护限定的查询变体|
+|候选检索|modules.patent_tools.search_candidates|实际查询、原文快照、失败与范围|
+|证据对照|modules.patent_tools.review_evidence|逐项支持/缺口/未知、原文和同一方案依据|
+|新颖性判断|modules.patent_tools.assess_precheck|原有四类有边界业务结论|
+|报告交付|modules.patent_tools.deliver_report|忠于证据的JSON/Markdown及执行记录|
 
-主入口为 skills/precheck_skill.py，配置依赖并调用底层状态图。每步调用实际业务接口，并生成含输入、实际输出、来源及哈希的 skill_records；未完成模型对照的阅读线索保持partial。
-材料对话整理仍可由agent读取附件后保存；prepare_with_model只接收实际已提取文本，不假定附件已解析。
+Skill 指令位于 .agents/skills/；运行入口为 modules.harness.NoveltyHarness，配置依赖并顺序调度工具。每步调用实际业务接口，并生成含输入、实际输出、来源及哈希的 skill_records；未完成模型对照的阅读线索保持partial。
+材料对话整理仍可由agent读取附件后保存；prepare_materials_with_model只接收实际已提取文本，不假定附件已解析。
 
 ## 固定六维规范
 
@@ -42,7 +42,7 @@ status为satisfied/violated/undetermined/not_applicable；有违反则needs_revi
 `python tools/run_semantic_eval.py --records 已导出的证据JSON --output-dir 新目录` 默认仅生成评估计划，不调用模型。
 显式添加 `--run-model --confirm-external` 才调用配置的LLM_API_KEY/LLM_BASE_URL/LLM_MODEL；可用 `--references` 读取独立参考，先保存待评输入再读取参考。
 
-engineering/legacy/basic_contracts.py与旧指标函数只用于历史工程；tools/check_semantic_contract.py为独立离线契约入口。报告统一由skills/report_delivery_skill.py组装，modules/novelty_report.py只生成基础载荷和正文。历史报告不重写。
+engineering/legacy/basic_contracts.py与旧指标函数只用于历史工程；tools/check_semantic_contract.py为独立离线契约入口。报告统一由modules.patent_tools.deliver_report组装，modules/novelty_report.py只生成基础载荷和正文。历史报告不重写。
 新测试验证执行绑定、裁判正负对照、六维完整性、引文和失败处理，模拟响应不证明实际模型专业准确率。
 
 ## 上下文与跨步骤验收

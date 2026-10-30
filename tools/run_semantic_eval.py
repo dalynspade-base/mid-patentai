@@ -10,7 +10,7 @@ sys.path.insert(0,str(ROOT))
 from modules.skill_contracts import SKILLS,serialized,validate_record
 from modules.semantic_eval import evaluation_packet,evaluation_markdown
 from modules.semantic_eval_examples import teaching_records
-from skills.semantic_eval_skill import run
+from modules.semantic_eval import evaluate_records as run
 from modules.semantic_handoff import handoff_packet
 
 

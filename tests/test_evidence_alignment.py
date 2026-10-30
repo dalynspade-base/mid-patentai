@@ -9,11 +9,11 @@ from modules.google_patent_documents import manual_google_document
 from modules.llm_client import LLMClient
 from modules.novelty_models import Feature
 from modules.novelty_report import to_markdown
-from skills.report_delivery_skill import build_report as report_payload
+from modules.patent_tools import build_report as report_payload
 from modules.novelty_review import model_review_documents, model_review_payload
 from modules.novelty_rules import assess_novelty
-from skills.precheck_skill import NoveltyHarness
-from modules.precheck_graph import model_suggest_rows
+from modules.harness import NoveltyHarness
+from modules.harness import model_suggest_rows
 from tests.test_model_review import review_response
 
 

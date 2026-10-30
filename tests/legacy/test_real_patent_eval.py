@@ -122,7 +122,7 @@ class RealEvaluationTests(unittest.TestCase):
         output = self.folder() / "run"
         references = self.folder() / "references.json"
         write_json(references, [self.reference(case_id="ballpoint_original", label="no_complete_disclosure_found")])
-        from skills.precheck_skill import NoveltyHarness
+        from modules.harness import NoveltyHarness
         harness = NoveltyHarness()
         original_run = harness.run
         calls = []

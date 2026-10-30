@@ -6,32 +6,10 @@ from copy import deepcopy
 from modules.skill_contracts import DIMENSIONS, SKILLS, digest, make_record, plain
 
 CONTEXT_VERSION = "patent-context-v1"
-CONTRACTS = {
-    "patent-material-preparation": {
-        "needs": ["原始材料或明确的用户确认要素", "实际读取范围、未知项", "采用权利要求模式时的原文、版本与引用路径"],
-        "check": "从输出回查来源，再从原文反查遗漏；保留关系、条件、否定及继承限定。说明书用于解释，不擅自导入未要求的实施例细节。",
-        "boundary": "不补造实现；不把附件存在称为已经读取；不自行确认修改合法性。"},
-    "patent-synonym-expansion": {
-        "needs": ["确认要素及其完整关系", "发明描述、技术领域、专门定义（有则提供）", "保护术语、扩展词的关系与用途"],
-        "check": "将候选放回原关系中比较对象、范围和机制；等义、上下位、相关分别处理；检索有用不等于可替换。",
-        "boundary": "只扩展检索表达，不改写权利要求，不判技术披露或法律等同。"},
-    "patent-candidate-search": {
-        "needs": ["当前要素、基准日与来源范围", "实际查询、扩展来源、获取失败和未读记录"],
-        "check": "查询是否表达关键关系；同名提及与相关披露分开，元数据线索与正文分开；说明实际范围，不推定全网覆盖。",
-        "boundary": "返回候选不证明已披露；未找到、未读取或失败不证明不存在。"},
-    "patent-evidence-alignment": {
-        "needs": ["当前完整限定、基准日及目标版本", "该篇原文、定义、相邻语境和交叉引用", "方案归属、组合依据及必要附图的取得情况"],
-        "check": "逐项核验全部限定及限定间关系；引文真实还须语义支持；检查全文矛盾和互斥实施例。跨段组合须有文献自身依据。",
-        "boundary": "逐篇对照，不跨文献拼接；明确披露、必然隐含和仅相容分开；不推测示意图尺寸。"},
-    "patent-novelty-assessment": {
-        "needs": ["目标版本和完整限定集", "有效逐项复核、日期链与检索缺口", "法域、任务及适用规则说明"],
-        "check": "核验单篇文献同一披露方案是否支持完整目标；分支分别判断；检查证据资格、范围及未知，不以相同功能补足结构。",
-        "boundary": "仅新颖性预筛；创造性、公开充分性、支持、超范围等底线分别提示，不替代新颖性或承诺授权。"},
-    "patent-report-delivery": {
-        "needs": ["最终结构化业务结果与正文", "基准日、范围、目标版本及修改摘要", "来源、未知项与实际执行记录"],
-        "check": "双向核对结构化结果和正文，保留条件、缺口、意见来源与结论边界；不把局部结论扩展到其他权利要求或版本。",
-        "boundary": "评交付内容是否忠实；保存或下载成功不作为专业验收，评估附录不递归评估自身。"},
-}
+from modules.skill_library import context_contract, business_skills, skill_snapshot, library_hash, load_skill
+
+CONTRACTS = {name: context_contract(name) for name in business_skills()}
+
 CONDITIONAL_DIMENSIONS = {
     "functions_effects": "存在功能/结果限定、作用机制或效果主张时必查；由相同效果推定相同手段须判错误。",
     "structure_relations": "输出涉及对象间关系、依赖、过程或组合时必查。",
@@ -64,7 +42,7 @@ def context_for(features, cutoff="", context=None, *, invention=""):
         raise ValueError("专利上下文须为对象。")
     result = deepcopy(context or {})
     allowed={"schema","features_hash","cutoff","invention","technical_field","semantic_focus","target","scope",
-             "rule_profile","baseline_topics","definitions","reading_scope","context_notes"}
+             "rule_profile","baseline_topics","definitions","reading_scope","context_notes","skill_library_hash"}
     if set(result)-allowed:
         raise ValueError("上下文含未知字段；质量评分不进入上下文。")
     if result.get("schema", CONTEXT_VERSION) != CONTEXT_VERSION:
@@ -80,6 +58,10 @@ def context_for(features, cutoff="", context=None, *, invention=""):
     focus = result.get("semantic_focus", [])
     if not isinstance(focus, list) or any(not isinstance(d,str) or d not in DIMENSIONS for d in focus) or len(set(focus))!=len(focus):
         raise ValueError("动态必查维度无效。")
+    current_library = library_hash()
+    if result.get("skill_library_hash", current_library) != current_library:
+        raise ValueError("Skill 文档已变化，须重新建立上下文并复核。")
+    result["skill_library_hash"] = current_library
     result.update(schema=CONTEXT_VERSION, features_hash=expected, cutoff=cutoff or result.get("cutoff", ""))
     result.setdefault("invention", invention)
     if invention:
@@ -114,7 +96,7 @@ def stage_record(skill_id, inputs, output, *, features=(), cutoff="", context=No
     by_id = {r["skill_id"]: r for r in upstream}
     links = [{"skill_id": key, "record_hash": by_id[key]["record_hash"]}
              for key in PREDECESSORS[skill_id] if key in by_id]
-    return make_record(skill_id, dict(inputs, patent_context=ctx, upstream_records=links), output,
+    return make_record(skill_id, dict(inputs, patent_context=ctx, upstream_records=links, skill_document=skill_snapshot(skill_id)), output,
                        sources=sources, **kwargs)
 
 
@@ -131,7 +113,10 @@ def bind_material(record, features, cutoff, context):
 
 
 def required_dimensions(record):
-    required = set(SKILLS[record["skill_id"]]["required"])
+    metadata = load_skill(record["skill_id"])["metadata"]
+    required = set(metadata["required_dimensions"].split(","))
+    if not required or required - set(DIMENSIONS):
+        raise ValueError("Skill 文档含无效的必查维度。")
     ctx = record["inputs"].get("patent_context", {})
     required.update(ctx.get("semantic_focus", []))
     if ctx.get("target", {}).get("claim_id"):
@@ -149,7 +134,7 @@ def handoff_issues(records):
             issues.append({"skill_id": record["skill_id"], "status": "undetermined", "basis": "历史记录缺少上下文合同，无法确认步骤衔接。"})
             continue
         current = {key: ctx.get(key) for key in ("features_hash", "cutoff", "scope", "target", "technical_field",
-                   "definitions","semantic_focus","rule_profile","baseline_topics")}
+                   "definitions","semantic_focus","rule_profile","baseline_topics","skill_library_hash")}
         if identity is None:
             identity = current
         elif current != identity:

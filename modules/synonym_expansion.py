@@ -4,6 +4,7 @@
 规则不能证明任意新词语义等价，因此未收录的新词保持pending，需显式审核。
 """
 from __future__ import annotations
+from modules.skill_library import skill_prompt, skill_snapshot
 
 import hashlib
 import itertools
@@ -217,6 +218,7 @@ def generate_llm_candidates(features: list[Feature], lexicon: SynonymLexicon, pr
         "prompt_version": PROMPT_VERSION}, ensure_ascii=False)
     if len(payload) > 20000:
         raise ValueError("术语生成输入超过2万字符，未发送且未截断。")
+    system = skill_prompt("patent-synonym-expansion", system)
     started = time.perf_counter()
     result = {"status": "error", "candidates": [], "model": client.model,
               "provider_host": urlsplit(client.url).hostname, "prompt_version": PROMPT_VERSION,

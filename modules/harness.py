@@ -1,8 +1,4 @@
-"""专利预筛底层状态图；公开业务入口为 skills.precheck_skill。
-
-所有网络与模型依赖都可注入，基础 eval 可离线运行；正常运行不会使用合成案例。
-自动对照只是候选；通过校验并标明来源的模型复核或历史人工复核才进入规则判断。
-"""
+"""Bounded patent harness: task state, ordered tool calls, records and stopping points."""
 
 from __future__ import annotations
 
@@ -10,7 +6,6 @@ import json
 from dataclasses import asdict
 from typing import Callable, TypedDict
 
-from langgraph.graph import END, START, StateGraph
 
 from modules.google_patent_documents import fetch_google_document
 from modules.evidence_alignment import locate_evidence
@@ -24,9 +19,9 @@ from modules.candidate_relevance import incremental_summary
 from modules.patent_search import search_patents
 from modules.skill_contracts import upsert_record
 from modules.patent_context import context_for, bind_material, handoff_issues
+from modules import patent_tools as operations
+from modules.skill_library import skill_prompt
 from modules.claim_context import resolve_target, claim_targets, validate_history
-from skills import material_preparation_skill, synonym_expansion_skill, candidate_search_skill
-from skills import evidence_alignment_skill, novelty_assessment_skill
 
 
 class NoveltyState(TypedDict, total=False):
@@ -84,7 +79,7 @@ def model_suggest_rows(features: list[Feature], documents: list[PatentDocument],
     serialized = json.dumps(payload, ensure_ascii=False)
     if len(serialized) > 50000:
         raise ValueError("选定原文超过 5 万字，请缩小到需复核的完整相关段落；不要静默截断限定条件。")
-    data = parse_object(client.complete(system, serialized, max_tokens=6000))
+    data = parse_object(client.complete(skill_prompt("patent-evidence-alignment", system), serialized, max_tokens=6000))
     if not isinstance(data.get("reviews"), list):
         raise ValueError("模型对照缺少 reviews 数组。")
     docs = {doc.id: doc for doc in documents}
@@ -102,7 +97,7 @@ def model_suggest_rows(features: list[Feature], documents: list[PatentDocument],
     return result
 
 
-class PrecheckGraph:
+class NoveltyHarness:
     def __init__(self, *, searcher: Callable | None = None, fetcher: Callable | None = None,
                  lexicon: SynonymLexicon | None = None, max_documents: int = 6,
                  allow_synthetic: bool = False) -> None:
@@ -111,29 +106,13 @@ class PrecheckGraph:
         self.lexicon = lexicon or SynonymLexicon()
         self.max_documents = max(1, min(max_documents, 20))
         self.allow_synthetic = allow_synthetic
-        graph = StateGraph(NoveltyState)
-        graph.add_node("prepare", self._prepare)
-        graph.add_node("retrieve", self._retrieve)
-        graph.add_node("expand_terms", self._expand)
-        graph.add_node("locate_evidence", self._locate)
-        graph.add_node("decide", self._decide)
-        graph.add_node("deliver_report", self._deliver)
-        graph.add_edge(START, "prepare")
-        graph.add_conditional_edges("prepare", lambda s: "decide" if s["task"] != "novelty" else "expand_terms")
-        graph.add_edge("expand_terms", "retrieve")
-        graph.add_edge("retrieve", "locate_evidence")
-        graph.add_edge("locate_evidence", "decide")
-        graph.add_edge("decide", "deliver_report")
-        graph.add_edge("deliver_report", END)
-        # 运行记录由 UI/CLI 导出为本地 JSON；不启用外部追踪或付费服务。
-        self.graph = graph.compile()
 
     def _prepare(self, state: NoveltyState) -> dict:
         task = state.get("task", "novelty")
         if task != "novelty":
             return {"task": task, "features": [], "trace": ["prepare"]}
         check_cutoff(state["cutoff"])
-        features,record = material_preparation_skill.run(state.get("feature_text", ""),features=state.get("features"),
+        features,record = operations.prepare_materials(state.get("feature_text", ""),features=state.get("features"),
             original_text=state.get("material_original",""),unknowns=state.get("material_unknowns"),warnings=state.get("material_warnings"),
             cutoff=state["cutoff"],context=state.get("patent_context"),sources=state.get("claim_sources", []))
         ctx = record["inputs"]["patent_context"]
@@ -150,11 +129,11 @@ class PrecheckGraph:
     def _expand(self,state):
         if state.get("expansion") is not None:
             plan=state["expansion"]
-            record=synonym_expansion_skill.record_plan(state["features"],self.lexicon,plan,
+            record=operations.record_expansion(state["features"],self.lexicon,plan,
                 cutoff=state["cutoff"],context=state["patent_context"],upstream=state["skill_records"])
         else:
             # Keep the existing conservative search budget when no policy was selected.
-            plan,record=synonym_expansion_skill.run(state["features"],self.lexicon,"theoretical",
+            plan,record=operations.expand_terms(state["features"],self.lexicon,"theoretical",
                 cutoff=state["cutoff"],context=state["patent_context"],upstream=state["skill_records"])
             return {"skill_records":upsert_record(state.get("skill_records",[]),record)}
         return {"expansion":plan,"skill_records":upsert_record(state.get("skill_records",[]),record)}
@@ -162,7 +141,7 @@ class PrecheckGraph:
     def _retrieve(self, state: NoveltyState) -> dict:
         errors = list(state.get("errors", []))
         # 显式传入空快照集与未传快照不同：空集不会偷偷访问网络。
-        documents,audit,record=candidate_search_skill.run(state["features"],state["cutoff"],self.lexicon,
+        documents,audit,record=operations.search_candidates(state["features"],state["cutoff"],self.lexicon,
             self.searcher,self.fetcher,self.max_documents,query=state.get("query",""),expansion=state.get("expansion"),
             documents=state.get("documents"),supplied="documents" in state,audit=state.get("search_audit"),errors=errors,
             context=state["patent_context"],upstream=state["skill_records"])
@@ -171,16 +150,16 @@ class PrecheckGraph:
                 "skill_records":upsert_record(state.get("skill_records",[]),record)}
 
     def _locate(self, state: NoveltyState) -> dict:
-        hits,candidates,_=evidence_alignment_skill.locate(state["features"],state["documents"],self.lexicon,
+        hits,candidates,_=operations.locate_candidates(state["features"],state["documents"],self.lexicon,
             allow_synthetic=self.allow_synthetic,locator=locate_evidence)
-        record=evidence_alignment_skill.record_alignment(state["features"],state["documents"],hits,candidates,
+        record=operations.record_alignment(state["features"],state["documents"],hits,candidates,
             state.get("reviews",[]),state["cutoff"],context=state["patent_context"],upstream=state["skill_records"])
         return {"hits": hits, "suggestions": candidates,
                 "trace": state["trace"] + ["locate_evidence"],
                 "skill_records":upsert_record(state.get("skill_records",[]),record)}
 
     def _decide(self, state: NoveltyState) -> dict:
-        decision,record = novelty_assessment_skill.run(state["features"], state.get("documents", []), state.get("reviews", []),
+        decision,record = operations.assess_precheck(state["features"], state.get("documents", []), state.get("reviews", []),
                                   state.get("cutoff", "2000-01-01"), task=state["task"],
                                   patent_context=state.get("patent_context"),upstream=state.get("skill_records", []),
                                   handoff_errors=[i["basis"] for i in handoff_issues(state.get("skill_records", [])) if i["status"] == "violated"],
@@ -194,10 +173,9 @@ class PrecheckGraph:
                 "skill_records":upsert_record(state.get("skill_records",[]),record)}
 
     def _deliver(self,state):
-        from skills.report_delivery_skill import run
         ready=dict(state)
         ready.setdefault("documents",[])
-        payload,markdown=run(ready,state.get("material_original",""),state.get("cutoff",""),self.lexicon.groups)
+        payload,markdown=operations.deliver_report(ready,state.get("material_original",""),state.get("cutoff",""),self.lexicon.groups)
         return {"report_payload":payload,"markdown":markdown,"skill_records":payload["skill_records"]}
 
     def run(self, **state) -> NoveltyState:
@@ -214,7 +192,13 @@ class PrecheckGraph:
             ctx["target"]=target
             state.update(claim_history=history,features=features,claim_target=target["id"],claim_sources=sources,
                          patent_context=context_for(features,state["cutoff"],ctx,invention=state.get("material_original", "")))
-        return self.graph.invoke(state, config={"recursion_limit": 12})
+        current = dict(state)
+        stages = (self._prepare, self._expand, self._retrieve, self._locate, self._decide, self._deliver)
+        if current.get("task", "novelty") != "novelty":
+            stages = (self._prepare, self._decide, self._deliver)
+        for stage in stages:
+            current.update(stage(current))
+        return current
 
     def run_claims(self, claim_history, *, reviews_by_target=None, **state):
         """Evaluate every explicit branch separately; never aggregate sibling limitations or decisions."""

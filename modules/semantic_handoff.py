@@ -1,4 +1,5 @@
 """A scoped semantic comparison of handoffs; not a ninth business skill."""
+from modules.skill_library import skill_prompt, skill_snapshot
 from modules.skill_contracts import DIMENSIONS, SKILLS, digest, serialized
 from modules.patent_context import CONDITIONAL_DIMENSIONS, handoff_issues
 
@@ -26,6 +27,7 @@ def handoff_packet(records):
             if dimension not in required:
                 required.append(dimension)
     return {"kind":"cross_skill_handoff", "record":frozen, "dimensions":DIMENSIONS,
+        "judge_document":skill_snapshot("patent-semantic-eval"),
         "required_dimensions":required,"conditional_dimensions":CONDITIONAL_DIMENSIONS,
         "obligations":"核验六步之间的含义传递：原限定是否被扩展词改写、候选是否升级为披露、未知和条件是否丢失、结论是否被报告放大。版本、基准日、范围及上游绑定必须一致。",
         "context_contract":{"needs":["六步实际记录的衔接投影"],
@@ -39,7 +41,7 @@ def handoff_packet(records):
 def evaluate_handoff(packet,client):
     from modules.json_output import parse_object
     from modules.semantic_eval import JUDGE_SYSTEM, validate_judgment, _identity
-    data=validate_judgment(parse_object(client.complete(JUDGE_SYSTEM,serialized(packet),max_tokens=10000)),packet)
+    data=validate_judgment(parse_object(client.complete(skill_prompt("patent-semantic-eval", JUDGE_SYSTEM),serialized(packet),max_tokens=10000)),packet)
     # A judge cannot override a demonstrable binding contradiction with a semantic acceptance.
     issues=packet["binding_checks"]
     if any(i["status"]=="violated" for i in issues):

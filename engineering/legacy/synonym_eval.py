@@ -1,4 +1,4 @@
-"""历史数值检索工程基线，仅保留Python兼容；当前业务验收用skills.semantic_eval_skill。"""
+"""历史数值检索工程基线，仅保留Python兼容；当前业务验收用modules.semantic_eval。"""
 from __future__ import annotations
 
 from datetime import datetime, timezone

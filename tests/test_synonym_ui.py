@@ -25,7 +25,7 @@ class SynonymUITests(unittest.TestCase):
     def test_generation_requires_its_own_confirmation_and_new_terms_need_review(self):
         value = proposed("压力传感器", "压力探测器")
         with patch("modules.llm_client.LLMClient.complete", return_value=json.dumps({"candidates": [value]})) as llm, \
-             patch("skills.precheck_skill.search_patents", return_value=[]) as search:
+             patch("modules.harness.search_patents", return_value=[]) as search:
             app = self.configured()
             self.assertTrue(helpers.labeled(app.button, "生成中英文同义词候选").disabled)
             llm.assert_not_called()
@@ -46,7 +46,7 @@ class SynonymUITests(unittest.TestCase):
 
     def test_profile_change_invalidates_candidates_and_uses_theoretical_budget(self):
         with patch("modules.llm_client.LLMClient.complete", return_value='{"candidates":[]}') as llm, \
-             patch("skills.precheck_skill.search_patents", return_value=[]):
+             patch("modules.harness.search_patents", return_value=[]):
             app = self.configured()
             self.generate(app)
             helpers.labeled(app.selectbox, "专利检索类型").set_value("theoretical").run(timeout=60)
@@ -58,7 +58,7 @@ class SynonymUITests(unittest.TestCase):
             self.assertEqual(llm.call_count, 1)
 
     def test_example_eval_never_calls_network_or_model(self):
-        with patch("modules.llm_client.LLMClient.complete") as llm, patch("skills.precheck_skill.search_patents") as search:
+        with patch("modules.llm_client.LLMClient.complete") as llm, patch("modules.harness.search_patents") as search:
             app = self.app()
             helpers.labeled(app.button, "查看术语扩展语义 eval 规范（离线）").click().run(timeout=60)
             self.assertEqual(len(app.exception), 0)
@@ -72,7 +72,7 @@ class SynonymUITests(unittest.TestCase):
     def test_failed_regeneration_does_not_reuse_previously_approved_alias(self):
         value = proposed("压力传感器", "压力探测器")
         with patch("modules.llm_client.LLMClient.complete", return_value=json.dumps({"candidates": [value]})) as llm, \
-             patch("skills.precheck_skill.search_patents", return_value=[]) as search:
+             patch("modules.harness.search_patents", return_value=[]) as search:
             app = self.configured()
             self.generate(app)
             helpers.labeled(app.multiselect, "审核后允许用于查询的新增术语").set_value([candidate_id(value)]).run(timeout=60)

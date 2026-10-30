@@ -9,7 +9,7 @@ from modules.google_patent_documents import manual_google_document
 from modules.llm_client import LLMClient
 from modules.novelty_models import Feature, review_input_hash, stamp_review
 from modules.novelty_report import to_markdown
-from skills.report_delivery_skill import build_report as report_payload
+from modules.patent_tools import build_report as report_payload
 from modules.novelty_review import MODEL_REVIEW_PROMPT_VERSION, model_review_documents
 from modules.novelty_rules import assess_novelty
 
@@ -65,7 +65,7 @@ class ModelReviewTests(unittest.TestCase):
 
     def test_candidate_cannot_be_stamped_as_completed_review(self):
         from modules.novelty_matching import SynonymLexicon
-        from modules.precheck_graph import suggest_rows
+        from modules.harness import suggest_rows
         candidate = suggest_rows(self.features, [self.doc], SynonymLexicon())[0]
         self.assertEqual(candidate.review_method, "candidate")
         with self.assertRaises(ValueError):

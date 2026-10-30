@@ -13,7 +13,7 @@ import requests
 from modules.google_patent_documents import parse_google_page
 from modules.novelty_models import Feature, PatentDocument
 from modules.novelty_report import to_markdown
-from skills.report_delivery_skill import build_report as report_payload
+from modules.patent_tools import build_report as report_payload
 from modules.novelty_search import search_input_hash
 
 
@@ -162,7 +162,7 @@ def summarize_real(observations: list[dict], references: list[dict]) -> dict:
 
 def run_real_evaluation(root: Path, source_dir: Path, output: Path, references: Path | None = None,
                         harness=None) -> dict:
-    from skills.precheck_skill import NoveltyHarness
+    from modules.harness import NoveltyHarness
     definition, cases, publications = real_cases(root)
     documents = load_sources(source_dir, publications)
     output.mkdir(parents=True, exist_ok=False)

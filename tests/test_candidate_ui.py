@@ -23,8 +23,8 @@ class CandidateUITests(unittest.TestCase):
             return [{"url": self.docs["US124"].url, "title": "压力感测器"}]
         self.search = Mock(side_effect=search)
         self.fetch = Mock(side_effect=lambda url: self.docs[url.split("/patent/")[1].split("/")[0]])
-        self.patches = [patch("skills.precheck_skill.search_patents", self.search),
-            patch("skills.precheck_skill.fetch_google_document", self.fetch),
+        self.patches = [patch("modules.harness.search_patents", self.search),
+            patch("modules.harness.fetch_google_document", self.fetch),
             patch("modules.candidate_ui.fetch_google_document", self.fetch)]
         for item in self.patches:
             item.start()

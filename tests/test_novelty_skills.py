@@ -13,8 +13,8 @@ from modules.google_patent_documents import fetch_google_document, manual_google
 from modules.novelty_matching import SynonymLexicon
 from modules.novelty_models import EvidenceRow, Feature, PatentDocument, SourceSection, google_patent_url, parse_features
 from modules.novelty_rules import assess_novelty
-from skills.precheck_skill import NoveltyHarness
-from modules.precheck_graph import model_suggest_rows, suggest_rows
+from modules.harness import NoveltyHarness
+from modules.harness import model_suggest_rows, suggest_rows
 from modules.evidence_retriever import PatentRetriever
 
 

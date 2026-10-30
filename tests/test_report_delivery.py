@@ -4,8 +4,8 @@ import unittest
 
 from modules.novelty_report import to_markdown
 from modules.skill_contracts import validate_record
-from skills.precheck_skill import NoveltyHarness
-from skills.report_delivery_skill import run
+from modules.harness import NoveltyHarness
+from modules.patent_tools import deliver_report as run
 
 
 class ReportDeliveryTests(unittest.TestCase):

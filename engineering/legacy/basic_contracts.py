@@ -1,4 +1,4 @@
-"""历史DeepEval工程契约兼容；主语义验收见skills.semantic_eval_skill。
+"""历史DeepEval工程契约兼容；主语义验收见modules.semantic_eval。
 
 基础 eval 不使用 LLM 裁判、不需要 API Key、不上传云端。合成题用于回归，不能
 作为真实专利准确率。真实金标准应另由专业人员标注并隔离盲测集。
@@ -22,7 +22,7 @@ from deepeval.test_case import LLMTestCase
 from evals.legacy.fixtures import case_inputs, dataset
 from modules.novelty_matching import SynonymLexicon
 from modules.novelty_models import LABELS, PatentDocument, SourceSection
-from skills.precheck_skill import NoveltyHarness
+from modules.harness import NoveltyHarness
 from modules.evidence_retriever import PatentRetriever
 
 

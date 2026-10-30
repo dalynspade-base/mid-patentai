@@ -9,7 +9,7 @@ from modules.google_patent_documents import manual_google_document, parse_google
 from modules.novelty_models import (DocumentReview, EvidenceRow, Feature, PatentDocument,
                                     review_input_hash, stamp_review)
 from modules.novelty_report import to_markdown
-from skills.report_delivery_skill import build_report as report_payload
+from modules.patent_tools import build_report as report_payload
 from modules.novelty_review import adopt_candidate_quotes, edited_review_rows, empty_review_rows
 from modules.novelty_rules import assess_novelty
 

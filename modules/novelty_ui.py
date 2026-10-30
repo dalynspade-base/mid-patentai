@@ -20,13 +20,13 @@ from modules.material_ui import cases_root, render_material_intake
 from modules.novelty_matching import SynonymLexicon
 from modules.novelty_review import MODEL_REVIEW_PROMPT_VERSION, model_review_payload
 from modules.novelty_report import to_markdown
-from skills.report_delivery_skill import run as deliver_report
+from modules.patent_tools import deliver_report
 from modules.synonym_ui import render_synonym_expansion
 from modules.candidate_ui import render_candidate_tools, render_increment
 from modules.candidate_relevance import valid_body_review, model_endpoint
-from skills.precheck_skill import NoveltyHarness
+from modules.harness import NoveltyHarness
 from modules.semantic_eval_ui import render_semantic_evaluation
-from skills.evidence_alignment_skill import review as run_evidence_review
+from modules.patent_tools import review_evidence as run_evidence_review
 from modules.claim_ui import render_claim_input
 from modules.patent_context import context_for
 from modules.novelty_models import parse_features

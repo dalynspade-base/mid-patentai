@@ -12,7 +12,7 @@ from modules.semantic_eval import evaluation_packet, validate_judgment, evaluate
 from modules.semantic_eval_examples import judgment_example
 from modules.skill_contracts import digest, make_record
 from modules.novelty_models import DocumentReview, EvidenceRow, PatentDocument, SourceSection, stamp_review
-from skills.precheck_skill import NoveltyHarness
+from modules.harness import NoveltyHarness
 
 ROOT=Path(__file__).parents[1]
 

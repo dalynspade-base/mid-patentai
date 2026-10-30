@@ -46,10 +46,10 @@ def main() -> int:
     from modules.novelty_matching import SynonymLexicon
     from modules.novelty_models import Feature, PatentDocument
     from modules.novelty_report import to_markdown
-    from skills.report_delivery_skill import build_report as report_payload
+    from modules.patent_tools import build_report as report_payload
     from modules.patent_search import search_patents
-    from skills.precheck_skill import NoveltyHarness
-    from modules.precheck_graph import model_suggest_rows
+    from modules.harness import NoveltyHarness
+    from modules.harness import model_suggest_rows
     from engineering.legacy.basic_contracts import run_basic_evals
 
     case_path = args.case or args.project_root / "examples" / "engineering_trial.json"
@@ -148,7 +148,7 @@ def main() -> int:
     for feature in case["features"]:
         changed = feature["id"] == mutation["feature_id"]
         lines.append(f"| {feature['id']} | {feature['zh']} | {mutation['text'] if changed else '保持不变'} |")
-    lines += ["", "## 实际运行链路", "Google Patents 真实页面 → 原文快照 → LlamaIndex 候选检索 → DeepSeek 真实对照 → 引文校验 → LangGraph 规则判断 → Markdown/JSON。",
+    lines += ["", "## 实际运行链路", "Google Patents 真实页面 → 原文快照 → LlamaIndex 候选检索 → DeepSeek 真实对照 → 引文校验 → harness 调度规则判断 → Markdown/JSON。",
               "检索探针与固定两篇文献的前后对照分别记录；没有把两篇文献覆盖范围说成全库覆盖率。",
               f"在线检索探针：{'成功' if search['ok'] else '失败或不可用'}。详见 run_metadata.json。",
               "", "## 原方案与修改版结果", "| 版本 | 真实模型对照 | Harness 结果 |", "|---|---|---|"]

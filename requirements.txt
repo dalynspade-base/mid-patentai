@@ -4,7 +4,6 @@ python-dotenv>=1.0,<2
 numpy>=1.26,<3
 scikit-learn>=1.5,<2
 beautifulsoup4>=4.12,<5
-# 编排与本地阅读线索；不是业务语义评估框架。
-langgraph==1.2.16
+# 本地阅读线索；六步固定流程由轻量 harness 编排。
 llama-index-core==0.14.25
 PyYAML>=6,<7

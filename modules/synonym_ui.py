@@ -9,11 +9,12 @@ import streamlit as st
 from modules.llm_client import LLMClient
 from modules.novelty_models import parse_features
 from modules.synonym_expansion import PROFILES
-from skills.synonym_expansion_skill import run as run_synonym_skill, generate as generate_llm_candidates
+from modules.patent_tools import expand_terms as run_synonym_tool
+from modules.synonym_expansion import generate_llm_candidates
 
 
 def build_expansion_plan(*args,**kwargs):
-    return run_synonym_skill(*args,**kwargs)[0]
+    return run_synonym_tool(*args,**kwargs)[0]
 
 
 def render_synonym_expansion(feature_text, lexicon, api_key, base_url, model,*,features_override=None,patent_context=None):

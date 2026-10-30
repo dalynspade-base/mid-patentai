@@ -1,6 +1,6 @@
 # 候选排序与证据价值
 
-当前候选检索入口是 `skills.candidate_search_skill`。`modules.novelty_search` 记录实际查询与正文获取，`modules.candidate_ranking` 安排有界阅读顺序，`modules.candidate_relevance` 区分元数据线索和正文复核。
+当前候选检索入口是 `modules.patent_tools.search_candidates`。`modules.novelty_search` 记录实际查询与正文获取，`modules.candidate_ranking` 安排有界阅读顺序，`modules.candidate_relevance` 区分元数据线索和正文复核。
 
 同名词、标题重合或排序靠前仅是阅读提示。候选应结合对象与技术关系判断：背景中的真实技术描述仍可能相关；目的相同不能补足技术手段，正文未读取和获取失败必须保留未知。来源快照与在线检索范围分别记录。
 

@@ -100,8 +100,8 @@ class ModelReviewUITests(unittest.TestCase):
 
     def test_online_journal_survives_manual_addition_and_model_review(self):
         doc = manual_google_document("https://patents.google.com/patent/US123/en", "fixture", "2023-01-01", "压力传感器")
-        with patch("skills.precheck_skill.search_patents", return_value=[{"url": doc.url}]) as search, \
-             patch("skills.precheck_skill.fetch_google_document", return_value=doc), \
+        with patch("modules.harness.search_patents", return_value=[{"url": doc.url}]) as search, \
+             patch("modules.harness.fetch_google_document", return_value=doc), \
              patch("modules.llm_client.LLMClient.complete", return_value=json.dumps(review_response())):
             app = self.app()
             app.date_input[0].set_value(date(2024, 1, 1))

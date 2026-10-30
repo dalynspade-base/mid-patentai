@@ -1,5 +1,6 @@
 """候选元数据模型判断、扩展增量归因及追加正文。各证据层级不互相冒充。"""
 from __future__ import annotations
+from modules.skill_library import skill_prompt, skill_snapshot
 
 import hashlib
 import json
@@ -143,6 +144,7 @@ def model_judge_candidates(features, candidates, client, confirmed):
     if len(payload) > 40000:
         raise ValueError("候选判断输入超过4万字符，未发送且未截断；请减少所选文献。")
     started = time.perf_counter()
+    system = skill_prompt("patent-candidate-search", system)
     result = {"status": "error", "reviews": {}, "cost": {"llm_calls": 1,
         "input_characters": len(system) + len(payload), "output_characters": 0}}
     try:

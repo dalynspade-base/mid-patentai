@@ -1,4 +1,4 @@
-"""Business skill contracts. Operational frameworks are not business skills."""
+"""Execution record schema; skill definitions are loaded from Markdown."""
 from __future__ import annotations
 
 from dataclasses import asdict, is_dataclass
@@ -13,20 +13,10 @@ DIMENSIONS = {
     "logic_constraints": "逻辑与限定", "context_reference": "语境与指称",
     "functions_effects": "功能与效果", "evaluation_expression": "评价与表达",
 }
-SKILLS = {
-    "patent-material-preparation": {"name": "材料整理", "required": ("terms_objects", "structure_relations", "logic_constraints", "context_reference"),
-        "obligations": "逐项保留材料支持的对象、关系和限定；不补造结构或效果；未知不改为不存在；用户确认输入不冒称模型读过附件。"},
-    "patent-synonym-expansion": {"name": "术语扩展", "required": ("terms_objects", "logic_constraints", "context_reference"),
-        "obligations": "结合技术语境区分等义、上下位和相关概念；保护原子术语、否定、方向、单位和完整关系；检索有用不证明语义等价；新增词不自动成为法律等同。"},
-    "patent-candidate-search": {"name": "候选检索", "required": ("terms_objects", "structure_relations", "context_reference"),
-        "obligations": "说明实际查询与读取范围；区分同名提及与技术关系、元数据线索与正文披露；背景中的真实技术描述仍可相关；失败和未读保留未知。"},
-    "patent-evidence-alignment": {"name": "证据对照", "required": ("terms_objects", "structure_relations", "logic_constraints", "context_reference"),
-        "obligations": "逐项用原文支持完整限定；核查方向、条件、指代、可选与互斥方案；不只引用相似名词；引文真实不等于语义支持；阅读线索不是最终披露判断。"},
-    "patent-novelty-assessment": {"name": "新颖性判断", "required": ("structure_relations", "logic_constraints", "context_reference"),
-        "obligations": "根据有效逐项复核核验同一方案整体公开；不跨文献或互斥方案拼接；区分明确支持、必然隐含与仅相容；材料充分时不能泛泛拒答；结论仅限预筛范围。"},
-    "patent-report-delivery": {"name": "报告交付", "required": ("logic_constraints", "context_reference", "evaluation_expression"),
-        "obligations": "报告忠于输入、证据和决定；保留检索缺口和未知；不把模型意见称人工确认；不把未找到扩大为不存在或可授权；表达修饰不改变技术结论。"},
-}
+from modules.skill_library import business_specs
+
+SKILLS = business_specs()
+
 EXECUTIONS = {"completed", "partial", "not_executed", "failed"}
 # These fields may exist in retrieval audit logs, but never enter a semantic judge's quality input.
 OPERATIONAL_FIELDS = {"score", "threshold", "rank", "ranking_hint", "lexical_hint", "relation_score", "cost",
