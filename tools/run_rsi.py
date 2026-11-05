@@ -111,6 +111,7 @@ def main():
         from modules.llm_client import LLMClient
         from modules.rsi_trial import ModelPatentTrial, ModelSkillProposer
         from modules.google_patents_transport import configured_entry
+        from modules.patent_http import retry_policy
         load_dotenv(ROOT/'.env', override=False)
         client = LLMClient(os.getenv('LLM_API_KEY', ''), os.getenv('LLM_BASE_URL', 'https://api.deepseek.com'), os.getenv('LLM_MODEL', ''))
         predictor, proposer = ModelPatentTrial(client), ModelSkillProposer(client)
@@ -119,7 +120,7 @@ def main():
             assessor = ModelRubricAssessor(client)
         runtime = {'adapter': 'ModelPatentTrial', 'model': client.model,
                    'provider_host': urlsplit(client.url).hostname, 'temperature': 0.2,
-                   'search_entry': configured_entry()}
+                   'search_entry': configured_entry(), 'http_retry_policy': retry_policy()}
     anchor = (lambda: (load(args.anchor_input), load(args.anchor_gold))) if args.anchor_input else None
     result = run_experiment(inputs, gold, args.output_dir, predictor, proposer,
         formal_root=ROOT/'.agents/skills', rounds=args.rounds, budget=budget, weights=weights,

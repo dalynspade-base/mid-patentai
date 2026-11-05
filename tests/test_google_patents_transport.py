@@ -24,6 +24,7 @@ def response(status=200, *, location='', body='{}'):
     result.url = URL
     result.encoding = 'utf-8'
     result._content = body.encode('utf-8')
+    result._content_consumed = True
     if location:
         result.headers['Location'] = location
     return result
@@ -34,6 +35,9 @@ class GooglePatentsTransportTests(unittest.TestCase):
         self.config = patch.dict(os.environ, {ENTRY_VARIABLE: LEGACY_ENTRY})
         self.config.start()
         self.addCleanup(self.config.stop)
+        self.sleeper = patch('modules.patent_http.time.sleep')
+        self.sleeper.start()
+        self.addCleanup(self.sleeper.stop)
 
     def test_search_uses_legacy_then_full_original_query(self):
         query = 'x' * 399 + '齿'
@@ -102,13 +106,15 @@ class GooglePatentsTransportTests(unittest.TestCase):
                 get = Mock(return_value=response(503))
                 with self.assertRaises(RuntimeError):
                     operation(argument, get=get)
-                get.assert_called_once()
+                self.assertEqual(get.call_count, 3)
+                self.assertEqual(len({c.args[0] for c in get.call_args_list}), 1)
 
     def test_final_503_remains_failure(self):
-        get = Mock(side_effect=[response(302, location=CANONICAL_ENTRY), response(503)])
+        get = Mock(side_effect=[response(302, location=CANONICAL_ENTRY),
+                                response(503), response(503), response(503)])
         with self.assertRaises(RuntimeError):
             search_patents('fixture', get=get)
-        self.assertEqual(get.call_count, 2)
+        self.assertEqual(get.call_count, 4)
 
     def test_unexpected_second_document_redirect_is_rejected(self):
         get = Mock(side_effect=[response(301, location=URL), response(302, location=URL)])

@@ -5,6 +5,7 @@ import os
 from urllib.parse import urljoin, urlsplit
 
 from modules.novelty_models import google_patent_url
+from modules.patent_http import get_patent
 
 CANONICAL_ENTRY = 'https://patents.google.com/'
 LEGACY_ENTRY = 'https://www.google.com/patents/'
@@ -35,14 +36,14 @@ def _official_redirect(response, requested_url: str):
 def search_response(query: str, inner_query: str, get):
     entry = configured_entry()
     if entry == LEGACY_ENTRY:
-        landing = get(entry, params={'q': query}, headers=HEADERS,
+        landing = get_patent(get, entry, params={'q': query}, headers=HEADERS,
                       timeout=TIMEOUT, allow_redirects=False)
         target = _official_redirect(landing, entry)
         if target.path not in {'', '/'} or target.fragment:
             raise RuntimeError('Google Patents 检索入口跳转路径异常；停止请求。')
     # The legacy entry redirects its UI, not the JSON endpoint. Send the full
     # original query to the canonical XHR endpoint after validating that redirect.
-    return get(CANONICAL_ENTRY + 'xhr/query', params={'url': inner_query, 'exp': ''},
+    return get_patent(get, CANONICAL_ENTRY + 'xhr/query', params={'url': inner_query, 'exp': ''},
                headers={**HEADERS, 'Accept': 'application/json'},
                timeout=TIMEOUT, allow_redirects=False)
 
@@ -52,7 +53,7 @@ def document_response(url: str, get):
     if configured_entry() == LEGACY_ENTRY:
         publication = url.split('/patent/', 1)[1].split('/')[0]
         entry = LEGACY_ENTRY + publication
-        landing = get(entry, headers=HEADERS, timeout=TIMEOUT, allow_redirects=False)
+        landing = get_patent(get, entry, headers=HEADERS, timeout=TIMEOUT, allow_redirects=False)
         target = _official_redirect(landing, entry)
         if target.query or target.fragment:
             raise RuntimeError('Google Patents 单篇入口跳转路径异常；停止请求。')
@@ -61,5 +62,5 @@ def document_response(url: str, get):
         if redirected_id != publication:
             raise RuntimeError('Google Patents 跳转后的公开号不一致；停止请求。')
     # Keep the requested language and canonical source URL for snapshot hashes.
-    return get(url, headers={'User-Agent': 'PatentNoveltyHarness/1.0'},
+    return get_patent(get, url, headers={'User-Agent': 'PatentNoveltyHarness/1.0'},
                timeout=TIMEOUT, allow_redirects=False)
