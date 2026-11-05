@@ -1,6 +1,6 @@
 # Google Patents 专利新颖性预筛
 
-**版本：2.0.0** · [本次架构与迁移](docs/releases/v2.0.0.md) · [1.1.0历史说明](docs/releases/v1.1.0.md) · [变更记录](CHANGELOG.md)
+**版本：2.2.0** · [临时 Skill RSI 实验](docs/rsi-experiment.md) · [2.0.0 架构迁移](docs/releases/v2.0.0.md) · [1.1.0历史说明](docs/releases/v1.1.0.md) · [变更记录](CHANGELOG.md)
 
 本项目把用户想法或已保存材料整理为技术要素，检索或接收 Google Patents 原文快照，逐篇对照技术关系与全部限定，再给出有证据范围的新颖性预筛报告。八份 Markdown Skill 描述任务与上下文，Python 工具执行具体操作，harness 管理状态和调用。
 
@@ -14,13 +14,17 @@
 | Tool | `modules/patent_tools.py` 及专用模块 | 可调用的整理、检索、复核、规则和报告函数；参数校验及实际执行 |
 | Harness | `modules/harness.py` | 管理本轮状态、固定六步调用、记录、依赖注入和结束条件 |
 | 模型与会话 | `modules/llm_client.py` 与宿主 | 解释当前 Skill 指令与材料；程序模型调用使用显式输入包，不假装拥有完整聊天历史 |
-| Eval | `patent-semantic-eval/SKILL.md` + `modules/semantic_eval.py` | 冻结业务后独立验收，六维文字裁决及跨阶段核验 |
+| Eval | [patent-semantic-eval](.agents/skills/patent-semantic-eval/SKILL.md) + `modules/semantic_eval.py` | 冻结业务后独立验收，六维文字裁决及跨阶段核验 |
 
 2.0.0 删除将 Python 函数冒称 Skill 的 `skills/` 包；六步工具集中命名，固定调度不再依赖 LangGraph。LlamaIndex 仍只提供本地阅读线索。六份专用上下文与必查维度只维护在对应 `SKILL.md`，运行器和评估器读取同一来源，执行记录绑定实际指令文档。
 
 这是本项目的有限任务 harness，不是通用自主 agent。对话中的任务理解、材料读取、工具选择由宿主执行 Skill；网页保留确认交互，Python 运行器负责已明确输入的业务流程。没有“运行函数即完成语义理解”的假设。
 
 普通要素及独立/从属权利要求、择一分支、修改历史继续可用。界面可导入 [教学示例](examples/claim_history.json)，批量入口为 `NoveltyHarness.run_claims`；详见[上下文协议](docs/skill-contexts.md)。六维 Eval 的动态必查、跨阶段衔接、四类业务结论与来源/日期规则均保留。
+
+## 可选：临时 Skill 的 RSI 实验
+
+提供隔离的五轮“提议—对照试跑—固定评分—采纳”循环，每轮新建临时 SKILL.md，只增补实验文字，正式八份 Skill 不变。默认只验证/预览，真实调用需显式启用。线上 #8 公开材料与用户本地材料分开保存；自动选择 evidence-v2 证据评分或 manual-v1.2 原35/45/20手册，旧整案标签协议继续兼容。语义评分先冻结输出再单独复核，数学分数由代码计算。详见[双材料评分与运行](docs/dual-material-scoring.md)、[实验架构](docs/rsi-experiment.md)及[2.2.0整合边界](docs/releases/v2.2.0.md)。数字只属于该实验的外部目标，正式六维语义验收保持原协议。
 
 ## 安装与启动
 
@@ -66,16 +70,88 @@ if (-not (Test-Path -LiteralPath .env)) { Copy-Item .env.example .env }
 
 网页支持保存附件，但保存成功不等于已经提取或理解附件。对话材料整理应读取实际原文；无法读取的附件保留未知，不能补造技术结构或效果。真实案件、原始附件、密钥及本地运行结果不提交到 Git。
 
-## 完成一次预筛
+## 完成一次预筛：逐个 Skill 的操作与交接
 
-1. 输入发明描述或保存附件；也可在本项目对话中使用 `$patent-precheck` 接手已保存案件。
-2. 整理并确认技术要素、材料出处、未知项和判断基准日。对话整理完成后，网页可载入 AI 整理的要素。
-3. 按技术语境审核扩展词，执行 Google Patents 检索或录入来源明确的原文快照；失败和未读范围保留记录。
-4. 预览并确认模型外发内容，逐篇对照全部要素、原文、同一方案、充分公开及上下文。阅读线索不自动成为披露判断。
-5. 查看预筛结论、证据位置和未知项，下载 Markdown / JSON；有关联案件时可保存本轮结果。
-6. 在报告下方展开“独立语义评估”，核对待发送的技能记录，另行确认后评估已完成技能。
+下面是正式业务流程：主入口组织六个业务 Skill，业务输出冻结后再按需交给独立语义评估。每个阶段标题都链接到实际 `SKILL.md`，执行该阶段前读取相应指令。RSI 是旁路实验，入口见上方[临时 Skill 的 RSI 实验](#可选临时-skill-的-rsi-实验)，不自动改写正式技能。
 
-当前网页仍有材料确认、术语审核和模型外发等交互；尚未实现“上传任意附件后自动完成全部专业判断”。
+### 0. 接手任务：[patent-precheck](.agents/skills/patent-precheck/SKILL.md)
+
+输入发明描述、附件或已保存案件；在本项目对话中可使用 `$patent-precheck`。先确认当前案件、已完成阶段、完整限定、判断基准日及 CN 新颖性 / Google Patents 范围。采用权利要求模式时，还需明确文本版本、引用路径和修改依据。
+
+主入口按实际进度读取后续 Skill，沿用已提供的信息和已批准的外发范围。交接的是本轮目标、材料位置、执行范围与待补项；文件保存成功不代表附件已读取。默认对话取证边界见[主入口指令](.agents/skills/patent-precheck/SKILL.md)，网页预算见[检索协议](docs/search-evidence.md)。
+
+### 1. 整理材料：[patent-material-preparation](.agents/skills/patent-material-preparation/SKILL.md)
+
+读取实际原文或用户明确确认的要素，将部件、连接关系、条件、否定、数值及单位整理为带出处的技术要素，同时列出未读范围与未知项。权利要求目标沿指定引用路径继承限定，不合并其他分支。已保存案件按[案件整理协议](.agents/skills/patent-material-preparation/references/case-preparation.md)处理。
+
+**交付并确认：**要素清单、材料出处、整理版本、未知项和基准日；网页可载入 AI 整理结果供确认。确认后进入术语扩展，原始附件、`case.json` 和旧整理版本另存保留。无法读取的内容不能补造为技术事实。
+
+### 2. 审核检索表达：[patent-synonym-expansion](.agents/skills/patent-synonym-expansion/SKILL.md)
+
+基于已确认要素和技术语境生成中英文译名、缩写等候选，分别标明等义、上下位、相关或未知。保留原词、专名、关系方向、否定及数值限定，将候选放回原句检查范围是否变化。
+
+**交付并确认：**候选关系、审核状态、保护术语和查询变体。审核后的表达用于检索；拒绝或待审核词仍保留记录。扩展词不改写权利要求，也不直接成为披露或法律等同判断。具体预算见[术语扩展协议](docs/synonym-expansion.md)。
+
+### 3. 检索与取得原文：[patent-candidate-search](.agents/skills/patent-candidate-search/SKILL.md)
+
+按查询计划执行 Google Patents 检索，或录入来源明确的原文快照；记录实际查询、来源 URL、公开号、日期、取得范围及失败。候选排序和标题/摘要相关性用于安排阅读，不能代替正文对照。显式提供空快照集时不自动联网。
+
+**交付：**候选文献、已取得快照、来源/日期和检索缺口。未取到正文或日期不明的文献保持未知，失败不能记成“没有相关专利”。需要补证时继续检索；达到预算则保留缺口收束。操作字段见[检索协议](docs/search-evidence.md)与[候选排序](docs/candidate-ranking.md)。
+
+### 4. 逐篇对照证据：[patent-evidence-alignment](.agents/skills/patent-evidence-alignment/SKILL.md)
+
+先预览并确认向模型发送的完整要素、选定原文和阅读线索，再在批准范围内逐篇复核全部输入段落。每项返回 `disclosed` / `not_found` / `unknown`、逐字引文、原文位置、方案归属与理由；同时检查限定间关系、相邻语境、全文矛盾及互斥实施例。
+
+**交付：**与当前要素和快照绑定的有效复核、同一方案及充分公开依据、未解决缺口。阅读命中不自动成为证据，不跨文献拼接；缺少有效全文复核时保持 `partial`。需补原文则回到检索，发现要素失真则返回材料整理。详见[模型证据协议](docs/model-evidence-alignment.md)。
+
+### 5. 形成预筛结论：[patent-novelty-assessment](.agents/skills/patent-novelty-assessment/SKILL.md)
+
+读取有效逐项复核，检查单篇文献同一披露方案是否覆盖全部限定，并核对来源、日期链、基准日和范围。各权利要求版本与引用分支分别判断；上游绑定冲突时退回最早受影响步骤重建。
+
+**交付：**单篇完整披露风险、本次已复核文献未发现完整披露、证据不足或超出范围四类结论，以及相应证据和缺口。“未发现”只限本次实际复核范围，不能改写为不存在现有技术或保证授权。
+
+### 6. 冻结并交付报告：[patent-report-delivery](.agents/skills/patent-report-delivery/SKILL.md)
+
+统一组装已确认输入、逐篇证据、复核和预筛结论，双向核对 Markdown 正文与 JSON。保留基准日、目标版本、引用路径、意见来源、未知项及各阶段实际执行记录 `skill_records`；模型意见和历史人工意见分别标明。
+
+**交付：**可下载的 Markdown / JSON，以及关联案件的新一轮结果。冻结本轮业务输出后才进入独立验收；下载或保存成功不作为专业验收通过。已完成报告及原始材料不覆盖，操作见[材料留存](docs/local-integration.md)。
+
+### 7. 独立验收：[patent-semantic-eval](.agents/skills/patent-semantic-eval/SKILL.md)
+
+在报告下方展开“独立语义评估”，或使用下方 CLI；核对冻结的实际输入/输出、原文、执行状态、Skill 指纹及可选独立参考，预览外发包并在批准范围内执行。逐技能按六维验收，六步均完成后再核查限定、未知、证据身份和结论的跨阶段传递。
+
+**交付：**每维依据、引文、反例和后续动作，以及 `acceptable` / `needs_revision` / `pending_adjudication` 文字裁决。只评已完成阶段；缺步或裁判失败时整体为 `incomplete`。验收不自动改写业务结论；需要修订时返回对应业务步骤，重建受影响的下游结果，重新冻结后再评。详见[六维语义规范](docs/semantic-skills.md)。
+
+### 流程图
+
+图中每个 `patent-*` 节点对应上方同名 Skill 链接。主入口负责调度，六步业务由 harness 和工具执行；独立验收在业务冻结之后按需启动。
+
+```mermaid
+flowchart TD
+    I[发明描述 / 附件 / 已保存案件] --> P["0 主入口<br/>patent-precheck"]
+    P --> M["1 材料整理<br/>patent-material-preparation"]
+    M --> MC{要素、基准日与范围已确认?}
+    MC -->|补充或修订| M
+    MC -->|是| T["2 术语扩展<br/>patent-synonym-expansion"]
+    T --> TC{检索表达已审核?}
+    TC -->|调整候选| T
+    TC -->|是| S["3 候选检索与原文获取<br/>patent-candidate-search"]
+    S --> EC{模型外发包已确认?}
+    EC -->|调整原文或范围| S
+    EC -->|是| E["4 逐篇证据对照<br/>patent-evidence-alignment"]
+    E -.->|需补原文且预算允许| S
+    E --> N["5 新颖性判断<br/>patent-novelty-assessment"]
+    N --> R["6 报告交付<br/>patent-report-delivery"]
+    R --> F["冻结业务 Markdown / JSON / skill_records<br/>保留证据缺口、失败及未知"]
+    F --> Q{是否开展独立语义验收?}
+    Q -->|否| D[交付本轮报告与下一步]
+    Q -->|是：核对并确认外发包| V["7 独立语义评估<br/>patent-semantic-eval"]
+    V --> B[逐技能六维文字裁决<br/>六步齐全后核验跨阶段衔接]
+    B --> D
+    B -.->|需修订：返回对应阶段，重建下游| P
+```
+
+检索失败、未读范围和缺步如实进入记录；这些记录不代表业务或验收完成。目标、限定、版本、基准日或输入绑定变化时，从最早受影响阶段重做，不沿用失效复核。当前网页仍有材料确认、术语审核和模型外发等交互；尚未实现“上传任意附件后自动完成全部专业判断”。
 
 ## 八个技能及其职责
 
@@ -159,17 +235,17 @@ tests/               当前工程/语义契约；legacy/ 下为历史工程测�
 evals/legacy/        历史教学及固定候选池夹具
 docs/releases/       版本对比与迁移说明
 docs/history/        整理前设计文档快照
-reports/             既有历史报告与索引
+reports/             已纳入版本历史的报告与索引；新增本地汇报不提交
 .local/              本地案件、运行、验证和备份（不提交）
 ```
 
 从 1.x 升级时，将 `skills.precheck_skill.NoveltyHarness` 改为 `modules.harness.NoveltyHarness`；业务函数使用 `modules.patent_tools`，评估使用 `modules.semantic_eval.evaluate_records`。详见[2.0.0 迁移表](docs/releases/v2.0.0.md)。历史依赖无需删除。
 
-原始附件、`case.json`、已有整理版本、原文快照、历史哈希和报告不自动迁移或覆盖。历史报告按原含义读取，不能自动补成新的语义验收记录。真实材料、凭据、依赖环境和新增运行记录保持本地。
+原始附件、`case.json`、已有整理版本、原文快照、历史哈希和报告不自动迁移或覆盖。历史报告按原含义读取，不能自动补成新的语义验收记录。真实材料、凭据、依赖环境和新增运行记录保持本地。`.local/`（含 RSI 的 `failure.json` / `failure.md`）、`tests/.artifacts/`、未跟踪的本地汇报与 QA 产物不纳入发布；保留失败处理逻辑及其回归测试源代码。
 
 ## 本次验证与能力边界
 
-隔离副本通过 213 项当前工程/语义契约与 28 项历史工程测试，八份 SKILL.md 通过结构校验。测试使用构造材料和模拟模型；次数不表示语义质量或专业准确率。目标目录验证记录另存于 .local/verification/。
+2.2.0 发布前在本地目标目录通过 303 项当前工程/语义契约与 28 项历史工程测试，零失败、零跳过；八份 SKILL.md 通过结构校验，README 的 43 个本地链接均可定位。测试使用构造材料和模拟模型；次数不表示语义质量或专业准确率。验证记录另存于 `.local/verification/`，不纳入上传。
 
 本次未证明真实模型专业语义准确率，也未证明 Google Patents 全库召回改善。真实能力仍需独立参考、隔离案例和有出处的语义复核。未发现完整披露不等于不存在相关现有技术；日期链、抵触申请及充分公开等特殊情况仍可能需要专业核验。
 

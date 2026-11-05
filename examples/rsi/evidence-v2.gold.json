@@ -1,0 +1,66 @@
+{
+  "schema": "patent-rsi-v1",
+  "dataset_id": "synthetic-evidence",
+  "cases": [
+    {
+      "case_id": "case-01",
+      "risk_label": "H",
+      "source_target_id": "A",
+      "targets": [
+        {
+          "target_id": "A",
+          "title": "合成对照",
+          "publication_ids": [
+            "US123A"
+          ],
+          "title_aliases": [],
+          "publication_date": "2020-01-01"
+        }
+      ],
+      "assessment": {
+        "profile": "evidence-v2",
+        "references": [
+          {
+            "document_id": "US123A",
+            "target_id": "C1",
+            "label": {
+              "relevance": "related",
+              "prior_art_at_cutoff": true,
+              "coverage": "full_disclosure",
+              "feature_status": {
+                "F1": "disclosed",
+                "F2": "disclosed"
+              },
+              "evidence_sections": {
+                "F1": [
+                  "claim-1"
+                ],
+                "F2": [
+                  "claim-1"
+                ]
+              }
+            }
+          },
+          {
+            "document_id": "US123A",
+            "target_id": "C2",
+            "label": {
+              "relevance": "related",
+              "prior_art_at_cutoff": true,
+              "coverage": "partial_coverage",
+              "feature_status": {
+                "F1": "disclosed",
+                "F2": "not_found"
+              },
+              "evidence_sections": {
+                "F1": [
+                  "claim-1"
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

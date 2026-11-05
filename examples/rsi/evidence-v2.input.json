@@ -1,0 +1,49 @@
+{
+  "schema": "patent-rsi-v1",
+  "dataset_id": "synthetic-evidence",
+  "provenance": "teaching_demo",
+  "risk_levels": [
+    "H",
+    "P",
+    "C",
+    "U"
+  ],
+  "abstain_label": "U",
+  "cases": [
+    {
+      "case_id": "case-01",
+      "text": "模拟控制装置和调节方法。",
+      "cutoff": "2024-01-01",
+      "assessment_targets": [
+        {
+          "id": "C1",
+          "title": "装置权项",
+          "features": [
+            {
+              "id": "F1",
+              "text": "控制器连接泵。"
+            },
+            {
+              "id": "F2",
+              "text": "反馈电路调节泵。"
+            }
+          ]
+        },
+        {
+          "id": "C2",
+          "title": "方法权项",
+          "features": [
+            {
+              "id": "F1",
+              "text": "控制器连接泵。"
+            },
+            {
+              "id": "F2",
+              "text": "双向试探后缩小步长。"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

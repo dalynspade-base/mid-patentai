@@ -1,0 +1,14 @@
+{
+  "schema": "patent-rsi-v1",
+  "dataset_id": "replace-with-real-test-set-id",
+  "provenance": "template_unfilled",
+  "risk_levels": ["低", "中", "高", "待核实"],
+  "abstain_label": "待核实",
+  "cases": [
+    {
+      "case_id": "copy-01",
+      "cutoff": "2020-01-01",
+      "text": "请替换为修改后的完整技术方案或权利要求文本，并填写真实判断基准日。不要在此写原专利身份、应找回名单或正确风险标签。"
+    }
+  ]
+}

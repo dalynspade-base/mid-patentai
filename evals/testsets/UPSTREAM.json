@@ -1,0 +1,20 @@
+{
+  "pull_request": 8,
+  "source_commit": "91ba465f79422bee965568872a74343d8c3a8aa7",
+  "main_merge_commit": "ac498c051b0fbc5255cd619a9f78446407b99352",
+  "retained_files": {
+    "theory_cases.json": "5db66ed722755875faea514d90816e88c97c60810c611b5d45a4b41d8c591f1a",
+    "engineering_cases.json": "04bad776074841e955f6bfdd3cc76984d88f7d9981896f96e48def78d0c5d3e8",
+    "patents.json": "6e41e80299096bab525ebfccf2c520eb5450cc6f6803d86f8361f34809df3841",
+    "rsi_case.json": "f2f75f380f4293346a3cae0e8c650f055467365242b48b7acc9bee06360007eb",
+    "policy.py": "b4ecbb8d68a84ed1a9d6ee5f7549f0b55fc38cf84bca1a351c9a8557bf77af2c",
+    "score.py": "bcd7513b6d5efec6e3962d2220a792dd08bb99ccd8a4f5deaf830f8d125df97f",
+    "rsi_scoring.py": "53d7f415ded03e3a9ef12b1166385ecd3304e01942e801bbe993925509fde559"
+  },
+  "anchor_usage": "archive_only_not_automatically_loaded",
+  "excluded_workflows": [
+    "rsi_loop.py",
+    "BLIND_TEST_WORKSPACE.md",
+    "tests/test_rsi_loop.py"
+  ]
+}
