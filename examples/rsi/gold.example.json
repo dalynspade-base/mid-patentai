@@ -1,0 +1,20 @@
+{
+  "schema": "patent-rsi-v1",
+  "dataset_id": "replace-with-real-test-set-id",
+  "cases": [
+    {
+      "case_id": "copy-01",
+      "risk_label": "请替换为已有标注，必须属于输入中的risk_levels",
+      "source_target_id": "patent-a",
+      "targets": [
+        {
+          "target_id": "patent-a",
+          "title": "请填写原专利A名称，并继续添加其余约十九篇应找回的专利",
+          "publication_ids": [],
+          "title_aliases": [],
+          "publication_date": ""
+        }
+      ]
+    }
+  ]
+}
