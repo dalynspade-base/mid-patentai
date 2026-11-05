@@ -47,7 +47,8 @@ def validate_assessment(case, reference):
         fids = {f['id'] for f in by_target[key[1]]['features']}
         statuses = label['feature_status']
         if (label['relevance'] not in {'related', 'unrelated'} or type(label['prior_art_at_cutoff']) is not bool
-                or label['coverage'] not in COVERAGE or not isinstance(statuses, dict) or set(statuses) != fids
+                or label['coverage'] not in COVERAGE or not isinstance(statuses, dict) or set(statuses) - fids
+                or (label['relevance'] == 'related' and label['coverage'] != 'insufficient_evidence' and set(statuses) != fids)
                 or any(s not in FEATURE_STATUS for s in statuses.values())):
             raise ValueError('Invalid or incomplete per-target labels.')
         scope = label['evidence_sections']
@@ -57,7 +58,7 @@ def validate_assessment(case, reference):
             raise ValueError('Reference evidence positions must be nonempty lists.')
         values = list(statuses.values())
         derived = ('not_applicable' if label['relevance'] == 'unrelated' else
-                   'insufficient_evidence' if 'unknown' in values else
+                   'insufficient_evidence' if len(statuses) != len(fids) or 'unknown' in values else
                    'full_disclosure' if all(s == 'disclosed' for s in values) else
                    'partial_coverage' if 'disclosed' in values else 'local_association')
         if label['coverage'] != derived:

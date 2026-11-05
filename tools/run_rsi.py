@@ -58,7 +58,7 @@ def main():
     parser.add_argument('--rounds', type=int, default=5, choices=range(1, 6))
     parser.add_argument('--max-queries', type=int, default=4)
     parser.add_argument('--max-documents', type=int, default=20)
-    parser.add_argument('--retrieval-weight', type=float, default=0.5)
+    parser.add_argument('--retrieval-weight', type=float, default=None)
     parser.add_argument('--run-model', action='store_true')
     parser.add_argument('--confirm-external', action='store_true')
     parser.add_argument('--demo', action='store_true', help='只用虚构数据和预设响应，无网络、无模型')
@@ -67,7 +67,7 @@ def main():
         parser.error('Demo cannot be mixed with real data/model execution.')
     if bool(args.anchor_input) != bool(args.anchor_gold):
         parser.error('Both anchor input and gold are required.')
-    if not 0 <= args.retrieval_weight <= 1 or not 1 <= args.max_queries <= 20 or not 1 <= args.max_documents <= 100:
+    if (args.retrieval_weight is not None and not 0 <= args.retrieval_weight <= 1) or not 1 <= args.max_queries <= 20 or not 1 <= args.max_documents <= 100:
         parser.error('Invalid frozen score weights or retrieval budget.')
     if args.demo:
         inputs, gold = teaching_dataset()
@@ -77,21 +77,30 @@ def main():
     else:
         parser.error('Provide completed --input and --gold, or use --demo.')
     budget = {'max_queries': args.max_queries, 'max_documents': args.max_documents}
-    weights = (args.retrieval_weight, 1-args.retrieval_weight)
+    profiles = [c.get('assessment', {}).get('profile', 'legacy-label-v1') for c in gold['cases']]
+    handbook = profiles == ['manual-v1.2'] or set(profiles) == {'manual-v1.2'}
+    if handbook and args.retrieval_weight is not None:
+        parser.error('manual-v1.2 fixes weights at 35/45/20; --retrieval-weight does not apply.')
+    retrieval_weight = 0.5 if args.retrieval_weight is None else args.retrieval_weight
+    weights = (retrieval_weight, 1-retrieval_weight)
+    component_weights = {'retrieval':35,'document_evidence':45,'claim_conclusion':20} if handbook else {'retrieval':weights[0],'risk':weights[1]}
     case_count = len(inputs['cases'])
     if not args.run_model and not args.demo:
         print(json.dumps({'execution': 'not_executed', 'cases': case_count, 'expected_per_case': [len(c['targets']) for c in gold['cases']],
             'rounds': args.rounds, 'paired_trials_per_case': 1+2*args.rounds,
-            'max_model_requests_without_anchor': sum((1 + args.max_documents * len(c['assessment_targets'])
+            'max_model_requests_without_anchor': sum((1+args.max_documents+2 + args.max_documents+2
+                if c.get('scoring_profile')=='manual-v1.2' else 1 + args.max_documents * len(c['assessment_targets'])
                 if c.get('assessment_targets') else 2 + args.max_documents) * (1+2*args.rounds) for c in inputs['cases']) + args.rounds,
-            'budget_per_trial': budget, 'weights': weights,
-            'scoring_profiles': ['evidence-v2' if c.get('assessment_targets') else 'legacy-label-v1' for c in inputs['cases']],
+            'budget_per_trial': budget, 'component_weights': component_weights,
+            'scoring_profiles': profiles,
+            'private_review_external': handbook,
             'note': '仅验证与预览；尚未调用检索、模型或生成真实分数。'}, ensure_ascii=False, indent=2))
         return 0
     if not args.output_dir:
         parser.error('Execution requires a new --output-dir.')
     if args.run_model and not args.confirm_external:
         parser.error('Live model/search calls require --confirm-external.')
+    assessor = None
     if args.demo:
         predictor, proposer = TeachingTrial(), TeachingProposer()
         runtime = {'adapter': 'scripted_teaching_no_model'}
@@ -102,12 +111,15 @@ def main():
         load_dotenv(ROOT/'.env', override=False)
         client = LLMClient(os.getenv('LLM_API_KEY', ''), os.getenv('LLM_BASE_URL', 'https://api.deepseek.com'), os.getenv('LLM_MODEL', ''))
         predictor, proposer = ModelPatentTrial(client), ModelSkillProposer(client)
+        if handbook:
+            from modules.rsi_rubric_review import ModelRubricAssessor
+            assessor = ModelRubricAssessor(client)
         runtime = {'adapter': 'ModelPatentTrial', 'model': client.model,
                    'provider_host': urlsplit(client.url).hostname, 'temperature': 0.2}
     anchor = (lambda: (load(args.anchor_input), load(args.anchor_gold))) if args.anchor_input else None
     result = run_experiment(inputs, gold, args.output_dir, predictor, proposer,
         formal_root=ROOT/'.agents/skills', rounds=args.rounds, budget=budget, weights=weights,
-        mode='teaching_demo' if args.demo else 'live', anchor=anchor, runtime=runtime)
+        mode='teaching_demo' if args.demo else 'live', anchor=anchor, runtime=runtime, assessor=assessor)
     print(json.dumps({'execution': result['execution'], 'mode': result['mode'], 'selected_round': result['selected_round'],
         'accepted_rounds': result['accepted_rounds'], 'report': str(args.output_dir/'result.md'),
         'note': '教学分数为预设响应产生。' if args.demo else '同一集合优化，独立泛化情况见报告。'}, ensure_ascii=False, indent=2))

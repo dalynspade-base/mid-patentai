@@ -24,18 +24,19 @@ def inspect_archive(root):
     source = next(d for d in docs if d['publication_id'] == standard['gold_claims']['1']['document'])
     checks['source_claims_distinguished'] = source['claim_1'] == 'high' and source['claim_2'] == 'partial'
     blockers = [
-        '这是评分手册格式，不是 RSI input/gold 接口；需要另存适配文件，不能直接作为 --gold。',
-        '需要从副本提取并核对两条完整目标权项及逐要素 ID/文本，形成公开 assessment_targets。',
-        '需要逐文献、逐权项的 feature_status 和 evidence_sections，绑定实际原文快照位置；概括性的 overlap/gap/evidence_location 不能自动变成已核验要素证据。',
-        '评分手册的 35/45/20、R3/R2/R1 加权召回和 NDCG，与 evidence-v2 的检索比例和证据分不是同一公式；保留手册做独立评分，转换评分口径需明确标记并另定版本。',
-        '尚无独立案件锚集；两条权项与 25 篇对照属于同一副本，不能当成 25 个独立案件，也不能用同案文献分池替代本地锚集。',
+        '使用 tools/prepare_rsi_dataset.py --archive 生成分开的公开 input 与私有 gold；无需补成 #8 的逐要素金标准。',
+        '评分自动选择 manual-v1.2，保留35/45/20、R3/R2/R1加权召回及NDCG；语义评分由单独复核步骤给布尔判断和依据，数学计算由代码完成。',
+        '运行中保存实际取得原文、逐篇输出、逐权项结论和绑定的独立评分复核。缺少复核时仅报告检索分，完整分数为待评分。',
+        '尚无独立案件锚集；可运行当前材料的实验，但不能据此报告独立泛化提升。25篇文献不是25个独立案件。',
     ]
     missing_md = not (root/'public'/standard['target']['filename']).exists()
     if missing_md:
-        blockers.append('标准中的 target.sha256 指向未提供的 Markdown；PDF 原件哈希已核对，但二者不能互相替代，派生输入须另记 PDF 来源哈希。')
+        blockers.append('未提供标准指向的Markdown不再阻止接入；适配器从现有PDF派生文本并另记来源哈希，不替代原target.sha256。')
     result = {'dataset_id': standard['dataset_id'], 'standard_version': standard['version'], 'software_version': '2.2.0',
-              'status': 'compatible_source_requires_explicit_adapter' if all(checks.values()) else 'source_consistency_failed',
-              'ready_for_rsi_cli': False, 'checks': checks, 'blockers': blockers,
+              'status': 'supported_manual_v1_2' if all(checks.values()) else 'source_consistency_failed',
+              'ready_for_rsi_cli': False, 'ready_after_preparation': all(checks.values()),
+              'scoring_supported': all(checks.values()), 'scoring_profile': 'manual-v1.2', 'checks': checks,
+              'blockers': [] if all(checks.values()) else ['Original archive consistency checks failed.'], 'usage_notes': blockers,
               'reference_documents': len(docs), 'claims': standard['target']['claims'],
               'manual_score_weights': standard['scoring']['weights'], 'reference_labels_rewritten': False,
               'default_document_budget': 20, 'minimum_document_budget_for_full_reference_recall': len(docs),
@@ -46,15 +47,15 @@ def inspect_archive(root):
 
 def markdown(result):
     lines = ['# v1.2 材料与 2.2.0 RSI 机制兼容性', '',
-             '**结论：材料可继续使用，原评分标准保留；尚不能直接作为新版自动评测输入。**', '',
+             '**结论：新版已支持此材料的原35/45/20评分；可自动生成运行输入，无需补成逐要素金标准。**', '',
              '本检查核对原件哈希、JSON 计数、标签单位及机制接口；不证明参考标签专业正确。', '',
              '## 已符合', '',
              f"- {result['reference_documents']} 篇对照，目标权项 {result['claims']}；公开副本与私有答案已分开。",
              '- 原本对权1为 H、权2为 P，符合新版逐文献逐权项记录方式。',
              '- H/P/C/U 可分别映射完整披露/部分覆盖/局部关联/证据不足，但映射不能补造逐要素证据。',
              '- 检索命中、判断正确性、误报漏报分开，符合新版评价边界。', '',
-             '## 正式接入前需要', '']
-    lines += [f'{i}. {text}' for i, text in enumerate(result['blockers'], 1)]
+             '## 接入方式与结果边界', '']
+    lines += [f'{i}. {text}' for i, text in enumerate(result['usage_notes'], 1)]
     lines += ['', '## 预算', '', result['document_budget_note'], '', '## 一致性检查', '',
               '```json', json.dumps(result['checks'], ensure_ascii=False, indent=2), '```', '',
               '原始附件与 v1.2 标准均未修改。没有自动生成新金标准、执行真实检索或调用模型。']

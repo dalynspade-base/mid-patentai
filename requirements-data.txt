@@ -1,0 +1,2 @@
+# Optional: derive RSI public text from an archived PDF. Runtime evaluation uses prepared JSON.
+pypdf

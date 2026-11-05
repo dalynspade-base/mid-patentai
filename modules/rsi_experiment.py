@@ -39,12 +39,14 @@ def validate_inputs(inputs):
         raise ValueError('Supply cases and an explicit abstention label.')
     ids = set()
     for case in inputs['cases']:
-        if (set(case) - {'case_id', 'cutoff', 'text', 'assessment_targets'}
+        if (set(case) - {'case_id', 'cutoff', 'text', 'assessment_targets', 'scoring_profile'}
                 or not all(isinstance(case.get(k), str) and case[k].strip() for k in ('case_id', 'cutoff', 'text'))):
             raise ValueError('Public cases contain only opaque case_id, cutoff and modified text.')
         date.fromisoformat(case['cutoff'])
         if case['case_id'] in ids:
             raise ValueError('Duplicate case id.')
+        if case.get('scoring_profile') not in {None, 'manual-v1.2', 'evidence-v2'}:
+            raise ValueError('Unknown scoring profile.')
         ids.add(case['case_id'])
     return deepcopy(inputs)
 
@@ -82,10 +84,17 @@ def validate_gold(inputs, gold):
                 raise ValueError('Target aliases overlap; merge duplicate/family entries explicitly.')
             identities.update(keys)
         if public[case['case_id']].get('assessment_targets') or 'assessment' in case:
-            from modules.rsi_scoring import validate_assessment
-            validate_assessment(public[case['case_id']], case)
+            if case.get('assessment', {}).get('profile') == 'manual-v1.2':
+                from modules.rsi_manual_scoring import validate_manual
+                validate_manual(public[case['case_id']], case)
+            else:
+                from modules.rsi_scoring import validate_assessment
+                validate_assessment(public[case['case_id']], case)
             if any(t['publication_date'] and t['publication_date'] >= public[case['case_id']]['cutoff'] for t in targets):
                 raise ValueError('Evidence-v2 retrieval targets must be published strictly before the cutoff.')
+    profiles = {c.get('assessment', {}).get('profile', 'legacy-label-v1') for c in gold['cases']}
+    if len(profiles) != 1:
+        raise ValueError('Keep different material scoring profiles in separate experiment runs.')
     return deepcopy(gold)
 
 
@@ -95,7 +104,7 @@ def match_target(document, target):
     return title_key(document['title']) in {title_key(s) for s in [target['title'], *target['title_aliases']]}
 
 
-def score_predictions(inputs, gold, predictions, weights):
+def score_predictions(inputs, gold, predictions, weights, *, reviews=None):
     from modules.rsi_scoring import finite_weights, score_evidence
     finite_weights(weights)
     references = {c['case_id']: c for c in gold['cases']}
@@ -114,7 +123,11 @@ def score_predictions(inputs, gold, predictions, weights):
             if date.fromisoformat(doc['publication_date']) > date.fromisoformat(case['cutoff']):
                 raise ValueError('Retrieved future evidence cannot earn historical retrieval credit.')
         if case.get('assessment_targets'):
-            rows.append(score_evidence(case, reference, prediction, weights))
+            if reference.get('assessment', {}).get('profile') == 'manual-v1.2':
+                from modules.rsi_manual_scoring import score_manual
+                rows.append(score_manual(case, reference, prediction, (reviews or {}).get(case['case_id'])))
+            else:
+                rows.append(score_evidence(case, reference, prediction, weights))
             continue
         found = [t['target_id'] for t in reference['targets'] if any(match_target(d, t) for d in documents)]
         count = len(reference['targets'])
@@ -125,10 +138,19 @@ def score_predictions(inputs, gold, predictions, weights):
                      'source_A_found': reference['source_target_id'] in found})
     retrieval = sum(r['retrieval_score'] for r in rows) / len(rows)
     risk = None if any(r['risk_score'] is None for r in rows) else sum(r['risk_score'] for r in rows) / len(rows)
-    return {'retrieval_score': retrieval, 'risk_score': risk,
+    profiles = {r.get('scoring_profile', 'legacy-label-v1') for r in rows}
+    if len(profiles) != 1:
+        raise ValueError('Different scoring profiles cannot be averaged into one adoption signal.')
+    profile = profiles.pop()
+    manual = profile == 'manual-v1.2'
+    components = ({key: None if any(r['components'][key] is None for r in rows) else sum(r['components'][key] for r in rows)/len(rows)
+                   for key in ('retrieval', 'document_evidence', 'claim_conclusion')} if manual else
+                  {'retrieval': retrieval, 'risk': risk})
+    return {'retrieval_score': retrieval, 'risk_score': risk, 'components': components,
             'adoption_eligible': all(r.get('adoption_eligible', True) for r in rows),
-            'scoring_profile': 'evidence-v2' if any(c.get('assessment_targets') for c in inputs['cases']) else 'legacy-label-v1',
-            'total_score': None if risk is None else weights[0] * retrieval + weights[1] * risk, 'cases': rows}
+            'scoring_profile': profile,
+            'total_score': (None if risk is None else sum(components.values())) if manual else
+                (None if risk is None else weights[0] * retrieval + weights[1] * risk), 'cases': rows}
 
 
 def _formal_fingerprints(root):
@@ -178,7 +200,7 @@ def _validate_proposal(proposal, gold, prior):
 
 
 def run_experiment(inputs, gold, output, predictor, proposer, *, formal_root, rounds=5,
-                   budget=None, weights=(0.5, 0.5), mode='live', anchor=None, runtime=None):
+                   budget=None, weights=(0.5, 0.5), mode='live', anchor=None, runtime=None, assessor=None):
     """P: prose proposal; F: fresh paired trials; R: strict Pareto improvement.
 
     Callbacks receive data/text only. The controller never exposes a filesystem edit tool.
@@ -212,7 +234,10 @@ def run_experiment(inputs, gold, output, predictor, proposer, *, formal_root, ro
                      'reference': 'https://share.onorca.dev/a/akZtQQ86ZK-C'}
     configuration['scorer_sha256'] = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
     scorer_paths = [Path(__file__), Path(__file__).with_name('rsi_scoring.py'),
+                    Path(__file__).with_name('rsi_manual_scoring.py'), Path(__file__).with_name('rsi_rubric_review.py'),
                     Path(__file__).resolve().parents[1]/'evals/testsets/rsi_scoring.py']
+    configuration['scoring_profiles'] = sorted({c.get('assessment', {}).get('profile', 'legacy-label-v1') for c in gold['cases']})
+    configuration['component_weights'] = {'retrieval': 35, 'document_evidence': 45, 'claim_conclusion': 20} if configuration['scoring_profiles'] == ['manual-v1.2'] else {'retrieval': weights[0], 'risk': weights[1]}
     scorer_hashes = {str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in scorer_paths}
     configuration['scoring_implementation'] = {p.name+':'+str(i): scorer_hashes[str(p)] for i, p in enumerate(scorer_paths)}
     runtime = runtime or {}
@@ -245,12 +270,32 @@ def run_experiment(inputs, gold, output, predictor, proposer, *, formal_root, ro
         save(folder/'predictions.json', predictions)  # Freeze predictions before scoring.
         return predictions
 
+    def evaluate(cases, references, predictions, folder):
+        frozen = digest(predictions)
+        reviews = {}
+        if assessor is not None:
+            for case in cases['cases']:
+                reference = next(r for r in references['cases'] if r['case_id'] == case['case_id'])
+                prediction = next(p for p in predictions if p['case_id'] == case['case_id'])
+                if reference.get('assessment', {}).get('profile') == 'manual-v1.2':
+                    review_folder = folder/('review-'+str(len(reviews)+1))
+                    review_folder.mkdir(exist_ok=False)
+                    reviews[case['case_id']] = assessor(deepcopy(case), deepcopy(reference), deepcopy(prediction), review_folder)
+            guard()
+            if digest(predictions) != frozen:
+                raise ValueError('The review modified frozen predictions.')
+            if hashlib.sha256((output/'config.json').read_bytes()).hexdigest() != manifest_hash or any(
+                    hashlib.sha256(Path(p).read_bytes()).hexdigest() != h for p, h in scorer_hashes.items()):
+                raise ValueError('The review changed frozen scoring configuration or code.')
+            save(folder/'rubric_reviews.json', reviews)
+        return score_predictions(cases, references, predictions, weights, reviews=reviews)
+
     history, additions = [], []
     initial = output/'baseline/patent-rsi-trial/SKILL.md'
     initial_binding = _make_skill(initial, base, additions, {})
     try:
         predictions = trial(initial, inputs, output/'baseline/trial')
-        initial_score = score_predictions(inputs, gold, predictions, weights)
+        initial_score = evaluate(inputs, gold, predictions, output/'baseline/trial')
         save(output/'baseline/score.json', initial_score)
         incumbent, last_feedback = initial, _feedback(initial_score)
         selected, previous_attempt = 0, None
@@ -266,13 +311,15 @@ def run_experiment(inputs, gold, output, predictor, proposer, *, formal_root, ro
             binding = _make_skill(candidate, base, additions+[addition], last_feedback)
             save(folder/'proposal.json', proposal)
             control_predictions = trial(incumbent, inputs, folder/'control')
-            control_score = score_predictions(inputs, gold, control_predictions, weights)
+            control_score = evaluate(inputs, gold, control_predictions, folder/'control')
             candidate_predictions = trial(candidate, inputs, folder/'candidate')
-            candidate_score = score_predictions(inputs, gold, candidate_predictions, weights)
+            candidate_score = evaluate(inputs, gold, candidate_predictions, folder/'candidate')
             accepted = (candidate_score.get('adoption_eligible', True) and control_score.get('adoption_eligible', True)
                         and candidate_score['total_score'] > control_score['total_score']
                         and candidate_score['retrieval_score'] >= control_score['retrieval_score']
                         and candidate_score['risk_score'] >= control_score['risk_score'])
+            accepted = accepted and all(candidate_score['components'][key] is not None
+                and candidate_score['components'][key] >= value for key, value in control_score['components'].items())
             record = {'round': number, 'parent_skill': str(incumbent), 'candidate_skill': binding,
                 'control_score': control_score, 'candidate_score': candidate_score, 'accepted': accepted,
                 'reason': 'strict_gain_without_component_regression' if accepted else 'no_strict_gain_or_component_regression'}
@@ -296,6 +343,7 @@ def run_experiment(inputs, gold, output, predictor, proposer, *, formal_root, ro
             'accepted_rounds': [r['round'] for r in history if r['accepted']], 'last_incumbent_score': last_feedback,
             'generalization': 'not_measured_no_anchor', 'anchor': None}
         result.update(score_weights=list(weights), trial_budget=deepcopy(budget))
+        result.update(scoring_profile=initial_score['scoring_profile'], component_weights=configuration['component_weights'])
         result['formal_skills_unchanged'] = _formal_fingerprints(formal_root) == protected
         result['best_skill_sha256'] = hashlib.sha256(incumbent.read_bytes()).hexdigest()
         # Anchor data is read only after selection, and never sent to the optimizer.
@@ -307,8 +355,10 @@ def run_experiment(inputs, gold, output, predictor, proposer, *, formal_root, ro
                 raise ValueError('Anchor cases overlap the optimization set.')
             if {digest((c['cutoff'], c['text'].strip())) for c in anchor_inputs['cases']} & {digest((c['cutoff'], c['text'].strip())) for c in inputs['cases']}:
                 raise ValueError('Renaming a training case does not create an independent anchor.')
-            before = score_predictions(anchor_inputs, anchor_gold, trial(initial, anchor_inputs, output/'anchor/baseline'), weights)
-            after = score_predictions(anchor_inputs, anchor_gold, trial(incumbent, anchor_inputs, output/'anchor/selected'), weights)
+            if {c.get('assessment', {}).get('profile', 'legacy-label-v1') for c in anchor_gold['cases']} != set(configuration['scoring_profiles']):
+                raise ValueError('Anchor must use the same frozen scoring profile.')
+            before = evaluate(anchor_inputs, anchor_gold, trial(initial, anchor_inputs, output/'anchor/baseline'), output/'anchor/baseline')
+            after = evaluate(anchor_inputs, anchor_gold, trial(incumbent, anchor_inputs, output/'anchor/selected'), output/'anchor/selected')
             result.update(anchor={'baseline': before, 'selected': after}, generalization='separate_anchor_observation_not_statistical_proof')
         guard()
         save(output/'result.json', result)
@@ -333,7 +383,7 @@ def report_markdown(result):
     initial = result['initial_score']
     lines = ['# 专利临时 Skill RSI 结果', '', label, '',
         f"基线：检索 {number(initial['retrieval_score'])} / 风险 {number(initial['risk_score'])} / 总分 {number(initial['total_score'])}", '',
-        f"总分权重：检索 {result['score_weights'][0]:g} / 风险 {result['score_weights'][1]:g}；每次试跑预算：{result['trial_budget']['max_queries']} 条查询、{result['trial_budget']['max_documents']} 次正文获取尝试。", '',
+        f"评分协议：{result.get('scoring_profile', 'legacy-label-v1')}；分项权重：{json.dumps(result.get('component_weights', result['score_weights']),ensure_ascii=False)}。每次试跑预算：{result['trial_budget']['max_queries']} 条查询、{result['trial_budget']['max_documents']} 次正文获取尝试。", '',
         '|轮次|当前版总分（重测）|候选找回/应找回|A找回|候选检索分|候选风险分|候选总分|采纳|', '|---|---:|---|---|---:|---:|---:|---|']
     for row in result['rounds']:
         score = row['candidate_score']
@@ -342,7 +392,7 @@ def report_markdown(result):
         lines.append(f"|{row['round']}|{number(row['control_score']['total_score'])}|{retrieved}|{source_a}|{number(score['retrieval_score'])}|{number(score['risk_score'])}|{number(score['total_score'])}|{'是' if row['accepted'] else '否'}|")
     lines += ['', f"保留版本：第 {result['selected_round']} 轮（0 为基线）。", f"临时 Skill：{result['best_skill']}",
         '', '每轮均重新测试当前版与候选版；分数相同不采纳，任一分项退步不采纳。正式 Skill 未自动替换。',
-        '', '检索分按实际取得的参考目标去重计算。legacy-label-v1 使用整案等级一致分；evidence-v2 使用逐文献/逐权项的相关性 F1 与证据判断正确率，详见 score.json。两种协议分开报告，不跨协议比较。',
+        '', 'legacy-label-v1 使用整案等级一致分；evidence-v2 使用逐文献/逐权项的相关性 F1 与证据判断正确率；manual-v1.2 使用35/45/20原始手册和独立复核。各协议分开报告，不跨协议比较。逐项分数及错误见 score.json。',
         '', '同一副本反复优化只反映该集合拟合；约二十篇参考文献不是二十个独立风险样本。']
     if result['anchor'] is None:
         lines.append('未提供独立锚集，不能据此声称对新案件普遍提高。')
