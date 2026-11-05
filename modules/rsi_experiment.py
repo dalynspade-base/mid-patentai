@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 import re
 import unicodedata
+from modules.rsi_limits import MAX_INPUT_CHARACTERS
 
 SCHEMA = 'patent-rsi-v1'
 
@@ -229,11 +230,13 @@ def run_experiment(inputs, gold, output, predictor, proposer, *, formal_root, ro
     guard = lambda: _guard(formal_root, protected)
     output.mkdir(parents=True, exist_ok=False)
     configuration = {'schema': SCHEMA, 'rounds': rounds, 'budget': budget, 'weights': list(weights),
+                     'max_input_characters': MAX_INPUT_CHARACTERS,
                      'selection': 'strict_total_gain_and_no_component_regression', 'mode': mode,
                      'input_hash': digest(inputs), 'gold_hash': digest(gold), 'formal_skills': protected,
                      'reference': 'https://share.onorca.dev/a/akZtQQ86ZK-C'}
     configuration['scorer_sha256'] = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
     scorer_paths = [Path(__file__), Path(__file__).with_name('rsi_scoring.py'),
+                    Path(__file__).with_name('rsi_limits.py'),
                     Path(__file__).with_name('rsi_manual_scoring.py'), Path(__file__).with_name('rsi_rubric_review.py'),
                     Path(__file__).resolve().parents[1]/'evals/testsets/rsi_scoring.py']
     configuration['scoring_profiles'] = sorted({c.get('assessment', {}).get('profile', 'legacy-label-v1') for c in gold['cases']})

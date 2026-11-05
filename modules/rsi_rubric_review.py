@@ -4,6 +4,7 @@ from urllib.parse import urlsplit
 
 from modules.json_output import parse_object
 from modules.rsi_manual_scoring import PROFILE, CRITERIA, digest
+from modules.rsi_limits import check_input_size
 
 
 class ModelRubricAssessor:
@@ -24,8 +25,7 @@ class ModelRubricAssessor:
 
         def request(name, system, packet):
             serialized = json.dumps(packet, ensure_ascii=False)
-            if len(serialized) > 50000:
-                raise ValueError('Independent rubric review exceeds 50,000 characters; no silent truncation.')
+            check_input_size(serialized, 'Independent rubric review')
             (target/(name+'.prompt.json')).write_text(json.dumps({'system': system, 'user': packet}, ensure_ascii=False, indent=2), encoding='utf-8')
             raw = self.client.complete(system, serialized, max_tokens=3000)
             (target/(name+'.raw.txt')).write_text(raw, encoding='utf-8')

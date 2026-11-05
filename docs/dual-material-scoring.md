@@ -44,6 +44,7 @@ python -X utf8 tools/run_rsi.py --input .local/datasets/pr8-train/public/input.j
 
 预览会显示实际评分协议、分项权重、请求预算和私有评分参考是否参与外发。正式运行需另加新的 `--output-dir`、`--run-model --confirm-external`。
 默认正文预算仍20，v1.2完整名单25篇，需显式提高预算；失败和非目标也占尝试预算。
+单篇/单次序列化输入包上限为100,000字符，执行、复核、汇总和改进环节统一；预览和运行配置均记录该值。超过上限仍拒绝，不截断必要限定。
 
 ## v1.2 原公式
 

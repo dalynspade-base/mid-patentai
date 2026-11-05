@@ -9,6 +9,7 @@ from urllib.parse import urlsplit
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from modules.rsi_experiment import SCHEMA, run_experiment, validate_inputs, validate_gold
+from modules.rsi_limits import MAX_INPUT_CHARACTERS
 
 
 def load(path):
@@ -92,6 +93,7 @@ def main():
                 if c.get('scoring_profile')=='manual-v1.2' else 1 + args.max_documents * len(c['assessment_targets'])
                 if c.get('assessment_targets') else 2 + args.max_documents) * (1+2*args.rounds) for c in inputs['cases']) + args.rounds,
             'budget_per_trial': budget, 'component_weights': component_weights,
+            'max_input_characters': MAX_INPUT_CHARACTERS,
             'scoring_profiles': profiles,
             'private_review_external': handbook,
             'note': '仅验证与预览；尚未调用检索、模型或生成真实分数。'}, ensure_ascii=False, indent=2))
