@@ -112,6 +112,16 @@ RSI 已取消本地单篇/单次序列化输入的字符上限；执行、独立
 真实 evidence-v2 每次试跑最多 `1 + 文档预算×目标权项数` 次模型请求，另有每轮一次改进请求；默认五轮含11次试跑。CLI 预览按目标数计算预算。
 `--max-documents` 默认仍为20，允许预先明确设置1—100；失败/未来文献也占获取尝试预算。公开日严格早于基准日才计入新协议。
 
+## Google Patents 旧入口
+
+在本地 `.env` 中配置 `GOOGLE_PATENTS_ENTRY_URL=https://www.google.com/patents/` 后，
+检索先将完整查询发给该入口，核验它返回的官方跳转，再通过 `patents.google.com/xhr/query` 取得结果。
+单篇先访问 `www.google.com/patents/公开号`，核对跳转仍是同一公开号，再按原请求语言取正文。
+这条旧入口仍依赖 `patents.google.com`，不属于独立镜像，不能保证解决该站的 503。
+新运行的 `config.json` 在 `runtime.search_entry` 中记录选定入口；网络观察日志分别记录实际请求。
+规范来源 URL、原材料、历史快照及其哈希规则保持原样；不接受其他域名或不同公开号的跳转。
+未配置该变量时沿用直接访问 `patents.google.com` 的方式。
+
 ## 用户归档材料的兼容检查
 
 ```powershell

@@ -10,6 +10,8 @@ from urllib.parse import urlencode, urljoin, urlparse
 
 import requests
 
+from modules.google_patents_transport import search_response
+
 
 GOOGLE_PATENTS_XHR = "https://patents.google.com/xhr/query"
 GOOGLE_PATENTS_HOME = "https://patents.google.com/"
@@ -104,12 +106,7 @@ def search_patents(
     count = max(1, min(max_results, 20))
     inner_query = urlencode({"q": query.strip(), "num": count})
     try:
-        response = get(
-            GOOGLE_PATENTS_XHR,
-            params={"url": inner_query, "exp": ""},
-            headers={"Accept": "application/json", "User-Agent": "PatentWorkflowHarness/0.1"},
-            timeout=(5, 30),
-        )
+        response = search_response(query.strip(), inner_query, get)
         response.raise_for_status()
         payload = _normalize_response(response.json())
     except requests.RequestException as exc:

@@ -10,6 +10,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from modules.novelty_models import PatentDocument, SourceSection, google_patent_url
+from modules.google_patents_transport import document_response
 
 
 def parse_google_page(url: str, html: str) -> PatentDocument:
@@ -87,8 +88,7 @@ def fetch_google_document(url: str, get: Callable | None = None) -> PatentDocume
     url = google_patent_url(url)
     get = get or requests.get
     try:
-        response = get(url, headers={"User-Agent": "PatentNoveltyHarness/1.0"},
-                       timeout=(5, 30), allow_redirects=False)
+        response = document_response(url, get)
         if 300 <= response.status_code < 400:
             raise RuntimeError("Google Patents 返回重定向，请人工打开并核对单篇来源。")
         response.raise_for_status()

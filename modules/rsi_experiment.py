@@ -244,8 +244,12 @@ def run_experiment(inputs, gold, output, predictor, proposer, *, formal_root, ro
     scorer_hashes = {str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in scorer_paths}
     configuration['scoring_implementation'] = {p.name+':'+str(i): scorer_hashes[str(p)] for i, p in enumerate(scorer_paths)}
     runtime = runtime or {}
-    if set(runtime)-{'adapter', 'model', 'provider_host', 'temperature'}:
+    if set(runtime)-{'adapter', 'model', 'provider_host', 'temperature', 'search_entry'}:
         raise ValueError('Runtime metadata must not contain credentials or arbitrary settings.')
+    if 'search_entry' in runtime:
+        from modules.google_patents_transport import CANONICAL_ENTRY, LEGACY_ENTRY
+        if runtime['search_entry'] not in {CANONICAL_ENTRY, LEGACY_ENTRY}:
+            raise ValueError('Search entry must be an official Google Patents entry.')
     configuration['runtime'] = deepcopy(runtime)
     save(output/'config.json', configuration)
     manifest_hash = hashlib.sha256((output/'config.json').read_bytes()).hexdigest()
