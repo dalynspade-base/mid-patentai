@@ -1,8 +1,10 @@
-"""Shared serialized-input budget for the isolated RSI experiment."""
+"""RSI sends complete serialized inputs without an application character ceiling."""
 
-MAX_INPUT_CHARACTERS = 100_000
+# None is deliberately recorded as JSON null in previews and frozen run configs.
+# Provider context windows still apply; their failures must propagate without truncation.
+MAX_INPUT_CHARACTERS = None
 
 
 def check_input_size(text, context):
-    if len(text) > MAX_INPUT_CHARACTERS:
+    if MAX_INPUT_CHARACTERS is not None and len(text) > MAX_INPUT_CHARACTERS:
         raise ValueError(f'{context} exceeds {MAX_INPUT_CHARACTERS:,} characters; no silent truncation.')
