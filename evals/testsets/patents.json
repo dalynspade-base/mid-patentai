@@ -1,0 +1,983 @@
+{
+  "dataset_version": "patent-corpus-2.0",
+  "corpus_note": "十篇真实公开专利，摘要/权利要求/说明书段落为 2026-11-04 从 Google Patents 页面逐字转录（空白折叠为单空格，原文的机器翻译痕迹一律保留，如 'Cs (volatile organic Compounds)2AgBiBr6'、'turpentine absolute alcohol'、'tHe'）。每篇的公开号、标题、日期与正文均对照抓取页面核对；引文核对按 policy.py 的空白归一化逐字匹配。 2026-11-05 追加6篇基准日前反溶剂/钙钛矿近邻及 CN108559503A 中文证据；原有理论/工程段落保留。",
+  "patents": {
+    "US4968168A": {
+      "title": "Ballpoint pen with clicking",
+      "url": "https://patents.google.com/patent/US4968168A/en",
+      "jurisdiction": "US",
+      "language": "en",
+      "publication_date": "1990-11-06",
+      "filing_date": "1989-01-04",
+      "priority_date": "1989-01-04",
+      "assignee": "Individual (Hann-Tzong Chern)",
+      "sections": {
+        "US4968168A:abstract": {
+          "location": "Abstract",
+          "text": "This invention discloses a ballpoint pen which is capable of generating a \"click\" sound when the first tube of the pen is rotated over either of two predetermined positions. The ballpoint pen includes a first engaging member, a second engaging member, a medium tube, an ink reservoir tube, a sleeve, a compression spring, a support, and a rod. Thus, the main principle of the present invention is to cause a \"click\" sound to be produced as the ballpoint of the pen is extended or withdrawn, through the interaction of the first and second engaging members when the first tube of the pen is rotated."
+        },
+        "US4968168A:bg-defects": {
+          "location": "Background of the Invention",
+          "text": "It is well known that rotatable ballpoint pens are commonly used nowadays. However, the known rotatable ballpoint pens still suffer from many defects. For example, the ballpoint of the pen tends to either not the fully extended or not be fully withdrawn, in relation to the pen case, when the pen is in use or at rest."
+        },
+        "US4968168A:desc-intermediate": {
+          "location": "Detailed description",
+          "text": "The intermediate tube 10 which is sleeved within the first tube 2 has one end 32 on which is disposed a female thread 321 for accommodating the male thread 522 on the hollow rod 5, and another end 33 which is rotatably seated in the connector 8."
+        },
+        "US4968168A:desc-toothed": {
+          "location": "Detailed description",
+          "text": "First engaging member 6 and second engaging member 9 are seated together by the interlocking of two annular toothed racks 61. 92, as shown in FIGS. 1 and 3."
+        },
+        "US4968168A:desc-spring": {
+          "location": "Detailed description",
+          "text": "Compression spring 74 is held within sleeves 7, one end of which is engaged to connector 8 and the other end of which is engaged to the second engaging member 9, thereby biasing the second engaging member 9 to engage with the first engaging member 6."
+        },
+        "US4968168A:desc-metal": {
+          "location": "Detailed description",
+          "text": "the first and second engaging members 6, 9, are preferably made of metal material to create a \"clicking\" sound."
+        },
+        "US4968168A:desc-helical": {
+          "location": "Another embodiment",
+          "text": "a hollow rod 42 has a helical bar 421 protruding at its lower outer end so as to slide along helical slot 321 of the intermediate tube 20."
+        }
+      },
+      "evidence_scope": {
+        "complete_for_target": false,
+        "note": "现有摘要/权项用于相关性分类；无关文献不据此作完整披露结论。"
+      }
+    },
+    "US5944436A": {
+      "title": "Pen possible to sound",
+      "url": "https://patents.google.com/patent/US5944436A/en",
+      "jurisdiction": "US",
+      "language": "en",
+      "publication_date": "1999-08-31",
+      "filing_date": "1998-04-08",
+      "priority_date": "1998-04-08",
+      "assignee": "Hau Mei Ind Co Ltd (Tu-Tan Huang)",
+      "sections": {
+        "US5944436A:abstract": {
+          "location": "Abstract",
+          "text": "A pen possible to sound includes a housing, an ink holder, a fit member, a gear set, and an operative member combined together. An elastic strip is provided in an intermediate portion of the housing, and the ink holder is movably located in a lower portion of the housing. An operative member is positioned in and on the outer surface of the housing, having a rack engaging a pinion of a main gear of the gear set. If the operative member is repeatedly pushed down, the elastic strip is snapped by an eccentric gear of the gear set, giving out sounds."
+        },
+        "US5944436A:desc-elastic-strip": {
+          "location": "Detailed description",
+          "text": "The securing member 2 has a circular shape, and the elastic strip 21 is formed to extend to the left side from the circular body."
+        },
+        "US5944436A:desc-fit-u": {
+          "location": "Detailed description",
+          "text": "The fit member 4 has an elastic U-shaped portion 41, and a stud 42 is provided on an outer side of the elastic U-shaped portion 41 to engage or disengage from a fit hole 121 provided in the lower portion of the housing 1."
+        },
+        "US5944436A:desc-ratchet": {
+          "location": "Detailed description",
+          "text": "On the contrary, if the pinion 611 is rotated counterclockwise, as shown in FIG. 6, the ratchet teeth 613 cannot engage the ratchet teeth 615 so that the large gear rotates only clockwise."
+        },
+        "US5944436A:desc-eccentric": {
+          "location": "Detailed description",
+          "text": "the eccentric gear 622 rotates to snap intermittently the elastic strip 21 to produce intermittent and light-and-heavy sounds."
+        },
+        "US5944436A:desc-repeat": {
+          "location": "Detailed description",
+          "text": "Thus, if the operating member 5 is pressed repeatedly, the elastic strip 21 is continued to be snapped to give out sounds."
+        }
+      },
+      "evidence_scope": {
+        "complete_for_target": false,
+        "note": "现有摘要/权项用于相关性分类；无关文献不据此作完整披露结论。"
+      }
+    },
+    "US8053972B2": {
+      "title": "Quantum dot white and colored light-emitting devices",
+      "url": "https://patents.google.com/patent/US8053972B2/en",
+      "jurisdiction": "US",
+      "language": "en",
+      "publication_date": "2011-11-08",
+      "filing_date": "2010-02-04",
+      "priority_date": "1998-04-01",
+      "assignee": "Massachusetts Institute of Technology / Philips Lumileds (Bawendi et al.)",
+      "sections": {
+        "US8053972B2:abstract": {
+          "location": "Abstract",
+          "text": "A light-emitting device comprising a population of quantum dots (QDs) embedded in a host matrix and a primary light source which causes the QDs to emit secondary light and a method of making such a device. The size distribution of the QDs is chosen to allow light of a particular color to be emitted therefrom. The light emitted from the device may be of either a pure (monochromatic) color, or a mixed (polychromatic) color, and may consist solely of light emitted from the QDs themselves, or of a mixture of light emitted from the QDs and light emitted from the primary source. The QDs desirably are composed of an undoped semiconductor such as CdSe, and may optionally be overcoated to increase photoluminescence."
+        },
+        "US8053972B2:claim1": {
+          "location": "Claim 1",
+          "text": "1. A white light emitting device comprising: a primary light source; and at least a first layer in optical communication with the primary light source and comprising a matrix including a polydisperse size distribution of quantum dots adapted to convert light from the light source to a mixed color or white light; wherein the matrix is physically separated from the primary light source and is formed in a concentric conformation."
+        },
+        "US8053972B2:claim2": {
+          "location": "Claim 2",
+          "text": "2. The white light emitting device of claim 1, wherein the primary light source comprises a blue LED light source and wherein the matrix comprises a first population of quantum dots of a material and size adapted to emit red secondary light and a second population of quantum dots of a material and size adapted to emit green secondary light."
+        },
+        "US8053972B2:claim3": {
+          "location": "Claim 3",
+          "text": "3. The white light emitting device of claim 2, wherein the quantum dots in the first and second population each comprise a core comprising a material independently selected from the group comprising CdS, CdSe, CdTe, InP, alloys thereof, and mixtures thereof."
+        }
+      },
+      "evidence_scope": {
+        "complete_for_target": false,
+        "note": "现有摘要/权项用于相关性分类；无关文献不据此作完整披露结论。"
+      }
+    },
+    "CN108559503B": {
+      "title": "Cs2AgBiBr6 double perovskite and preparation method thereof (machine-translated title: 'Cs (volatile organic Compounds)2AgBiBr6Double perovskite and preparation method thereof')",
+      "url": "https://patents.google.com/patent/CN108559503B/en",
+      "jurisdiction": "CN",
+      "language": "zh (page shown via machine translation)",
+      "publication_date": "2020-07-07",
+      "publication_date_A": "2018-09-21",
+      "filing_date": "2018-03-30",
+      "priority_date": "2018-03-30",
+      "assignee": "Huazhong University of Science and Technology",
+      "sections": {
+        "CN108559503B:abstract": {
+          "location": "Abstract (machine translation)",
+          "text": "The invention discloses a Cs2AgBiBr6The preparation method introduces two-step crystallization process to avoid Cs2AgBiBr6The perovskite has the phenomenon of component segregation in an organic solvent. Mainly comprises the following steps: adopting an anti-solvent to titrate a precursor solution, removing early crystallization byproducts, and obtaining clear liquid as Cs after centrifugal separation2AgBiBr6The perovskite crystal growth solution is slowly synthesized into Cs through the antisolvent crystallization process2AgBiBr6A perovskite material."
+        },
+        "CN108559503B:claim1": {
+          "location": "Claim 1 (machine translation)",
+          "text": "1. Cs (volatile organic Compounds)2AgBiBr6A method for preparing a double perovskite, comprising: (1) cesium bromide, silver bromide and bismuth tribromide are reacted in a ratio of 2: 1: dissolving the mixture in an organic solvent after mixing the molar ratio of X to obtain a precursor solution; (2) and (3) dropwise adding an anti-solvent into the precursor solution to ensure that the volume ratio of the precursor solution to the anti-solvent is 1: y, removing segregated crystals to obtain a solid-liquid mixture; (3) centrifuging the solid-liquid mixture, loading the supernatant into a first container, sealing the first container with a sealing film, uniformly pricking a plurality of holes on the sealing film with needles, placing the first container into a second container containing an anti-solvent with the same volume as the supernatant, sealing the second container, and separating out pure-phase Cs after the anti-solvent volatilizes into the first container2AgBiBr6A double perovskite; wherein X is more than or equal to 1, and Y is more than or equal to 1; the organic solvent is DMF, DMSO or a mixed solution of the DMF and the DMSO in any proportion, and the anti-solvent is dichloromethane, chlorobenzene or turpentine absolute alcohol."
+        },
+        "CN108559503B:claim2": {
+          "location": "Claim 2 (machine translation)",
+          "text": "2. A Cs of claim 12AgBiBr6The preparation method of the double perovskite is characterized in that the value range of X is preferably as follows: x is more than or equal to 1 and less than or equal to 5."
+        },
+        "CN108559503B:claim5": {
+          "location": "Claim 5 (machine translation)",
+          "text": "5. A Cs according to claim 1 or 22AgBiBr6A process for the preparation of a double perovskite, characterized in that the cesium bromide concentration is in the range of 0.1 to 0.5 mol/L."
+        },
+        "CN108559503B:claim6": {
+          "location": "Claim 6 (machine translation)",
+          "text": "6. A Cs according to claim 1 or 22AgBiBr6The preparation method of the double perovskite is characterized in that the temperature of the anti-solvent volatilization in the step (3) is controlled to be 20-40 ℃."
+        },
+        "CN108559503B:claim7": {
+          "location": "Claim 7 (machine translation)",
+          "text": "7. A Cs according to claim 62AgBiBr6The preparation method of the double perovskite is characterized in that the temperature of the anti-solvent volatilization in the step (3) is controlled at 30 ℃."
+        },
+        "CN108559503B:desc-steps": {
+          "location": "Disclosure of Invention (machine translation)",
+          "text": "(1) mixing cesium bromide, silver bromide and bismuth tribromide according to the molar ratio of 2: 1: X, and dissolving in an organic solvent to obtain a precursor solution; (2) dropwise adding an anti-solvent into the precursor solution to enable the volume ratio of the precursor solution to the anti-solvent to be 1: Y, and removing the meta-crystallization to obtain a solid-liquid mixture; (3) centrifuging the solid-liquid mixture, loading the supernatant into a first container, sealing the first container with a sealing film, uniformly pricking holes on the sealing film with needles, placing the first container into a second container containing an anti-solvent with the same volume as the supernatant, sealing the second container, and separating out the anti-solvent when the anti-solvent volatilizes into the first containerPure phase Cs2AgBiBr6A double perovskite;"
+        },
+        "CN108559503B:desc-example1": {
+          "location": "Example 1 (machine translation)",
+          "text": "1. 0.212g CsBr, 0.0939g AgBr and 0.224g BiBr were weighed out3(the molar ratio is 2: 1), dissolving in 5ml of DMF, heating and stirring at 60 ℃ for dissolving for about 2h to obtain 0.1mol/L CABB precursor solution."
+        },
+        "CN108559503B:desc-example2": {
+          "location": "Example 2 (machine translation)",
+          "text": "1. 0.212g CsBr, 0.0939g AgBr and 0.448g BiBr were weighed out3(the molar ratio is 2: 1: 2), dissolving in 5ml of a 1: 1 mixed solvent of DMF and DMSO, and heating and stirring at 50 ℃ for about 2h to obtain a CABB precursor solution."
+        },
+        "CN108559503A:claim1": {
+          "location": "CN108559503A Claim 1 (Chinese original)",
+          "text": "1.一种Cs2AgBiBr6双钙钛矿的制备方法，其特征在于，包括：(1)将溴化铯、溴化银和三溴化铋按照2∶1∶X的摩尔比混合后溶解于有机溶剂，得到前驱体溶液；(2)向前驱体溶液中滴加反溶剂，使前驱体溶液与反溶剂的体积比为1∶Y，去除偏析晶，得到固液混合物；(3)将固液混合物离心后，取上层清液装入第一容器，用封口膜将第一容器密封，用针头在封口膜上均匀扎若干孔，然后将第一容器放入装有与上层清液等体积反溶剂的第二容器中，密封第二容器，当反溶剂挥发进入第一容器后析出纯相Cs2AgBiBr6双钙钛矿；其中，X≥1，Y≥1。"
+        },
+        "CN108559503A:claim2": {
+          "location": "CN108559503A Claim 2 (Chinese original)",
+          "text": "2.如权利要求1所述的一种Cs2AgBiBr6双钙钛矿的制备方法，其特征在于，所述X的取值范围优选为：1≤X≤5。"
+        },
+        "CN108559503A:claim3": {
+          "location": "CN108559503A Claim 3 (Chinese original)",
+          "text": "3.如权利要求1或2所述的一种Cs2AgBiBr6双钙钛矿的制备方法，其特征在于，所述Y的取值范围优选为：1≤Y≤2。"
+        },
+        "CN108559503A:claim4": {
+          "location": "CN108559503A Claim 4 (Chinese original)",
+          "text": "4.如权利要求1或2所述的一种Cs2AgBiBr6双钙钛矿的制备方法，其特征在于，所述有机溶剂为DMF、DMSO或它们的任意比例混合溶液。"
+        },
+        "CN108559503A:claim5": {
+          "location": "CN108559503A Claim 5 (Chinese original)",
+          "text": "5.如权利要求1或2所述的一种Cs2AgBiBr6双钙钛矿的制备方法，其特征在于，所述反溶剂为二氯甲烷、氯苯或松节油透醇。"
+        },
+        "CN108559503A:claim6": {
+          "location": "CN108559503A Claim 6 (Chinese original)",
+          "text": "6.如权利要求1或2所述的一种Cs2AgBiBr6双钙钛矿的制备方法，其特征在于，所述步骤(1)中溶解时的温度为50℃-70℃。"
+        },
+        "CN108559503A:claim7": {
+          "location": "CN108559503A Claim 7 (Chinese original)",
+          "text": "7.如权利要求1或2所述的一种Cs2AgBiBr6双钙钛矿的制备方法，其特征在于，所述溴化铯的浓度范围在0.1-0.5mol/L。"
+        },
+        "CN108559503A:claim8": {
+          "location": "CN108559503A Claim 8 (Chinese original)",
+          "text": "8.如权利要求1或2所述的一种Cs2AgBiBr6双钙钛矿的制备方法，其特征在于，所述步骤(3)中反溶剂挥发时的温度控制在20℃-40℃。"
+        },
+        "CN108559503A:claim9": {
+          "location": "CN108559503A Claim 9 (Chinese original)",
+          "text": "9.如权利要求8所述的一种Cs2AgBiBr6双钙钛矿的制备方法，其特征在于，所述步骤(3)中反溶剂挥发时的温度控制在30℃。"
+        },
+        "CN108559503A:claim10": {
+          "location": "CN108559503A Claim 10 (Chinese original)",
+          "text": "10.一种Cs2AgBiBr6双钙钛矿，其特征在于，所述Cs2AgBiBr6双钙钛矿由权利要求1-9任一所述的一种Cs2AgBiBr6双钙钛矿的制备方法制备得到。"
+        },
+        "CN108559503A:abstract": {
+          "location": "CN108559503A Abstract (Chinese original)",
+          "text": "本发明公开了一种Cs2AgBiBr6双钙钛矿及其制备方法，该制备方法引入两步析晶过程，避免Cs2AgBiBr6钙钛矿在有机溶剂中组分偏析现象。主要在于：采用反溶剂滴定前驱体溶液，去除早期析晶副产物，离心分离后获得清液作为Cs2AgBiBr6钙钛矿长晶溶液，再通过反溶剂析晶过程缓慢合成出Cs2AgBiBr6钙钛矿材料。本发明制备方法能有效避免由于组分溶解度不同导致的偏析现象。相对于用酸作为溶剂，有机溶剂的溶解度更大，对密封性和容器的抗腐蚀性要求更低，能够显著提高合成效率。"
+        },
+        "CN108559503A:desc-method": {
+          "location": "CN108559503A 具体实施方式总方法",
+          "text": "如图1所示，一种Cs2AgBiBr6双钙钛矿的制备方法，包括：(1)将溴化铯、溴化银和三溴化铋按照2∶1∶X的摩尔比混合后溶解于有机溶剂，溶解时的温度为50℃-70℃，有机溶剂为DMF、DMSO或它们的任意比例混合溶液，得到前驱体溶液；(2)向前驱体溶液中滴加反溶剂，反溶剂为二氯甲烷、氯苯或松节油透醇，溶液析出白色沉淀，使前驱体溶液与反溶剂的体积比为1∶Y，去除偏析晶(白色沉淀)，此时沉淀出现橙色，立即停止滴加，得到固液混合物；(3)将固液混合物离心后，取上层清液装入第一容器，用封口膜将第一容器密封，用针头在封口膜上均匀扎若干孔，然后将第一容器放入装有与上层清液等体积反溶剂的第二容器中，密封第二容器，在20℃-40℃下，当反溶剂挥发进入第一容器后析出纯相Cs2AgBiBr6双钙钛矿；其中，X≥1，Y≥1。"
+        },
+        "CN108559503A:desc-example3": {
+          "location": "CN108559503A 实施例3",
+          "text": "实施例3一种Cs2AgBiBr6双钙钛矿的制备方法，包括：1、称取0.212g CsBr、0.0939g AgBr和1.12g BiBr3(摩尔比为2∶1∶5)，溶于5mlDMSO，于70℃加热搅拌溶解约2h，得到0.1mol/L的CABB前驱体溶液。2、用洗涤剂的去离子水溶液、丙酮、异丙醇和乙醇分别清洗玻璃瓶、离心管10min，于烘箱中干燥。3、取5ml前驱体溶液于离心管中，再取5ml松节油透醇(前驱体与反溶剂体积比为1∶1)。4、向前驱体溶液中滴加松节油透醇，边滴边振荡，溶液析出白色沉淀。持续滴加至5ml松节油透醇后，沉淀出现橙色，立即停止滴加。5、用3000转/分的转速离心5分钟，取上层清液装入玻璃瓶中。6、用parafilm将玻璃瓶口密封，并用1ml注射器针头在膜上均匀扎5个孔。7、取20ml松节油透醇装在与玻璃瓶体积匹配的烧杯中，将玻璃瓶置于烧杯中，密封烧杯，并置于40℃热台上反应。8、反溶剂挥发进入玻璃瓶后析出纯相Cs2AgBiBr6双钙钛矿。"
+        }
+      },
+      "evidence_scope": {
+        "complete_for_target": true,
+        "note": "摘要及权利要求/关键说明书足以完成本次目标比对。"
+      }
+    },
+    "US20170194101A1": {
+      "title": "Halide double perovskite Cs2AgBiBr6 solar-cell absorber having long carrier lifetimes",
+      "url": "https://patents.google.com/patent/US20170194101A1/en",
+      "jurisdiction": "US",
+      "language": "en",
+      "publication_date": "2017-07-06",
+      "filing_date": "2017-01-03",
+      "priority_date": "2015-12-31",
+      "assignee": "Leland Stanford Junior University (Karunadasa, Slavney)",
+      "sections": {
+        "US20170194101A1:abstract": {
+          "location": "Abstract",
+          "text": "A solar-cell absorber layer for use in solar cells including tandem solar cells, is made of a metal-halide double perovskite material. The metal-halide double perovskite material has the formula A2BB′X6, where A is an inorganic cation, an organic cation, or a mixture of organic and inorganic cations where B and B′ are metals, and where X is a halide or a mixture of halides. For example, A can be Cs, Rb, K, Ba, CH3NH3, (NH2)2CH, or a mixture where B is Bi, Ag, Sn, In, Sb, Cu, Na, K, or Au of a predetermined oxidation state, and where B′ is Bi, Ag, Sn, In, Sb, Ga, Cu, or Au of various oxidation states, and where X is Br, I, Cl, F, or a mixture. One example of the metal-halide double perovskite material is Cs2BiAgBr6."
+        },
+        "US20170194101A1:claim1": {
+          "location": "Claim 1",
+          "text": "1. A solar cell comprising a solar-cell absorber layer made of a metal-halide double perovskite material."
+        },
+        "US20170194101A1:claim2": {
+          "location": "Claim 2",
+          "text": "2. The solar cell of claim 1, further comprising a hole-selective contact layer, an electron-selective contact layer, and first and second electrode layers."
+        },
+        "US20170194101A1:claim5": {
+          "location": "Claim 5",
+          "text": "5. The solar cell of claim 1, wherein the metal-halide double perovskite material is Cs2BiAgBr6."
+        }
+      },
+      "evidence_scope": {
+        "complete_for_target": true,
+        "note": "摘要及权利要求/关键说明书足以完成本次目标比对。"
+      }
+    },
+    "US7802572B2": {
+      "title": "Face mask",
+      "url": "https://patents.google.com/patent/US7802572B2/en",
+      "jurisdiction": "US",
+      "language": "en",
+      "publication_date": "2010-09-28",
+      "filing_date": "2005-09-20",
+      "priority_date": "2004-09-20",
+      "assignee": "Sutter Bay Hospitals (Jeanne Hahne)",
+      "sections": {
+        "US7802572B2:abstract": {
+          "location": "Abstract",
+          "text": "A medical face mask comprising a central transparent portion, an outer filter portion and, optionally, one or more antimicrobial agents is described."
+        },
+        "US7802572B2:claim1": {
+          "location": "Claim 1",
+          "text": "1. A face mask comprising (a) a transparent air-impermeable central portion that directs a wearer's breath downward; (b) an air-permeable outer portion surrounding and secured to the central transparent portion; (c) a head strap affixed to the outer portion or transparent portion; (d) one or more antimicrobial agents coated onto or embedded into the air-permeable outer portion; and (e) a rigid portion that defines a single conic section that extends into the transparent portion at an approximately 90° angle relative to the top edge of the transparent portion to form a beak-shaped mask."
+        },
+        "US7802572B2:desc-transparent-def": {
+          "location": "Detailed description",
+          "text": "transparent refers to any material which permits a sufficient amount of visible light having wavelengths within the range of about 3900 angstroms to about 7700 angstroms to pass therethrough such that a viewer on one side of such material may discern an object or a feature of an object on the other side of and in relatively close proximity to such material."
+        },
+        "US7802572B2:desc-transparent-term": {
+          "location": "Detailed description",
+          "text": "the term encompasses materials that are translucent, tinted, frosted or the like."
+        },
+        "US7802572B2:desc-lips": {
+          "location": "Detailed description",
+          "text": "the central transparent portion 11 is of sufficient size and is secured to the outer filter portion 10 so as to permit viewing of at least a portion of at least one and preferably both of the wearer's lips."
+        }
+      },
+      "evidence_scope": {
+        "complete_for_target": false,
+        "note": "现有摘要/权项用于相关性分类；无关文献不据此作完整披露结论。"
+      }
+    },
+    "CN115863457A": {
+      "title": "Solar cell based on non-lead Cs2AgBiBr6 double perovskite thin film and preparation method thereof",
+      "url": "https://patents.google.com/patent/CN115863457A/en",
+      "jurisdiction": "CN",
+      "language": "zh (page shown via machine translation)",
+      "publication_date": "2023-03-28",
+      "filing_date": "2022-11-30",
+      "priority_date": "2022-11-30",
+      "assignee": "Yunnan Normal University",
+      "legal_status": "Pending",
+      "sections": {
+        "CN115863457A:abstract": {
+          "location": "Abstract (machine translation)",
+          "text": "The invention relates to a method for preparing a lead-free Cs-based composite material 2 AgBiBr 6 A solar cell with double perovskite thin films and a preparation method thereof belong to the technical field of novel perovskite solar cells. The perovskite solar cell device structure sequentially comprises a transparent conductive glass cathode, an electron transmission layer, a perovskite light absorption layer and a counter electrode from bottom to top; the perovskite light absorption layer is prepared by adopting a two-step spin coating method, and AgBr and BiBr are firstly adopted 3 Dissolving in dimethyl sulfoxide, fully dissolving, spin-coating on a transparent conductive glass cathode substrate, and annealing at a certain temperature to remove the dimethyl sulfoxide solvent; then, csBr is dissolved by adopting green solvent water and is coated beforeAnnealing at a certain temperature on a one-step substrate to obtain the required Cs 2 AgBiBr 6 A film."
+        },
+        "CN115863457A:claim1": {
+          "location": "Claim 1 (machine translation)",
+          "text": "1. Based on non-lead Cs 2 AgBiBr 6 The solar cell of the double perovskite thin film is characterized by sequentially comprising a transparent conductive glass cathode, a compact titanium dioxide layer, a mesoporous titanium dioxide layer, a perovskite light absorption layer and a counter electrode from bottom to top, wherein the transparent conductive glass cathode is fluorine-doped indium tin oxide, and the perovskite light absorption layer is Cs 2 AgBiBr 6 And the counter electrode is a carbon electrode."
+        },
+        "CN115863457A:claim7": {
+          "location": "Claim 7 (machine translation)",
+          "text": "7. The non-lead Cs-based composition of claim 6 2 AgBiBr 6 The preparation method of the solar cell with the double perovskite thin film is characterized by comprising the following steps: in the step (A), the spin coating speed is 2000rpm, and the time is 30s; the annealing temperature is 80-150 ℃ and the annealing time is 10-30min."
+        },
+        "CN115863457A:claim8": {
+          "location": "Claim 8 (machine translation)",
+          "text": "8. The non-lead Cs-based composition of claim 7 2 AgBiBr 6 The preparation method of the solar cell with the double perovskite thin film is characterized by comprising the following steps: and (B) the concentration of the CsBr precursor solution in the step (B) is 0.1-5.8M."
+        },
+        "CN115863457A:claim10": {
+          "location": "Claim 10 (machine translation)",
+          "text": "10. The non-lead Cs-based product of claim 9 2 AgBiBr 6 The preparation method of the solar cell with the double perovskite thin film is characterized by comprising the following steps: the annealing temperature in the step (B) is 250-290 ℃, and the time is 3-30min."
+        },
+        "CN115863457A:desc-perf": {
+          "location": "Description, beneficial effects (machine translation)",
+          "text": "Cs prepared based on the structure 2 AgBiBr 6 The efficiency of the double perovskite solar cell can reach 4.25%, and the double perovskite solar cell has a high open-circuit voltage of 1.201V and a filling factor of 71.1%."
+        }
+      },
+      "evidence_scope": {
+        "complete_for_target": true,
+        "note": "摘要及权利要求/关键说明书足以完成本次目标比对。"
+      }
+    },
+    "CN110408993A": {
+      "title": "Preparation method of Cs2AgBiBr6 double-perovskite crystal for X-ray detection",
+      "url": "https://patents.google.com/patent/CN110408993A/en",
+      "jurisdiction": "CN",
+      "language": "zh (page shown via machine translation)",
+      "publication_date": "2019-11-05",
+      "filing_date": "2019-07-17",
+      "priority_date": "2019-06-29",
+      "assignee": "Ningbo University",
+      "legal_status": "Granted (B: CN110408993B, 2020-10-27)",
+      "sections": {
+        "CN110408993A:abstract": {
+          "location": "Abstract (machine translation)",
+          "text": "The invention discloses a kind of Cs for X-ray detection2AgBiBr6The preparation method of double-perovskite crystal comprising following steps: by cesium bromide, sodium acetate, bismuth bromide, four kinds of raw materials of silver bromide according to the ratio between amount of substance be (1.8~0.6): (0.2~1.4): 1: 1 mixing, obtain mixture；Hydrobromic acid solution is added into mixture and obtains growth raw material；Growth raw material is placed in a vial again, and carries out excellent sealing；Vial equipped with growth raw material is placed in controllable temperature container, growth raw material is heated at a temperature of 120 DEG C~130 DEG C, until generating transparent bright yellow solution；After generating transparent bright yellow solution, it is cooled to room temperature by 120 DEG C~130 DEG C by slow cooling three times, obtains the Cs of red, transparent2AgBiBr6Monocrystalline；Wherein, start crystallization at a temperature of 70 DEG C~85 DEG C；Advantage is that solve multicore crystallization, the lesser problem of crystalline size, and preparation cost is low."
+        },
+        "CN110408993A:claim1": {
+          "location": "Claim 1 (machine translation)",
+          "text": "1. a kind of Cs for X-ray detection2AgBiBr6The preparation method of double-perovskite crystal, it is characterised in that including following step It is rapid: Step 1: by cesium bromide, sodium acetate, bismuth bromide, four kinds of raw materials of silver bromide according to the ratio between amount of substance be (1.8~0.6): (0.2~1.4): 1: 1 mixing obtains mixture；Then the hydrobromic acid solution that concentration is 0.007mol/mL is added into mixture Obtain growth raw material, the additional amount of hydrobromic acid solution limits benchmark to be added in the bismuth bromide or silver bromide with every 1mmol On the basis of the hydrobromic acid solution of 10mL~15mL；Growth raw material is placed in a vial again, and carries out excellent sealing；Step 2: the vial equipped with growth raw material is placed in controllable temperature container, to growth at a temperature of 120 DEG C~130 DEG C Raw material is heated, until generating transparent bright yellow solution；Step 3: after generating transparent bright yellow solution, being cooled to room temperature for 120 DEG C~130 DEG C by slow cooling three times, Obtain the Cs of red, transparent2AgBiBr6Monocrystalline；Wherein, start crystallization at a temperature of 70 DEG C~85 DEG C."
+        },
+        "CN110408993A:desc-field": {
+          "location": "Technical field (machine translation)",
+          "text": "The present invention relates to a kind of preparation methods of crystal, more particularly, to a kind of Cs for X-ray detection2AgBiBr6It is double The preparation method of perovskite crystal."
+        },
+        "CN110408993A:desc-bg-uses": {
+          "location": "Background (machine translation)",
+          "text": "Cs2AgBiBr6Unleaded double-perovskite is a kind of novel semiconductor material, is solved by way of aliovalent substitution The problem of toxicity of Pb based perovskite, and since it is with long carrier lifetime and more excellent structural stability, by It has been widely used in the fields such as photovoltaic cell, photodetection and X-ray detection."
+        },
+        "CN110408993A:desc-emb1": {
+          "location": "Embodiment 1, step 1 (machine translation)",
+          "text": "Step 1: by the cesium bromide (CsBr) of 5.6mmol, the sodium acetate (CH of 2.4mmol3COONa), the bromine of 4.0mmol Change bismuth (BiBr3), the four kinds of raw materials mixing of the silver bromide (AgBr) of 4.0mmol, obtain mixture；Then it is added into mixture 50mL concentration is that the hydrobromic acid solution of 0.007mol/mL obtains growth raw material"
+        },
+        "CN110408993A:desc-resistivity": {
+          "location": "Embodiment 1, FIG. 3 discussion (machine translation)",
+          "text": "As can be known from Fig. 3, Cs2AgBiBr6The resistivity of double-perovskite crystal is 6.04 × 109Ω cm, is more nowadays reported 2.59×109Ω cm is big, and higher resistivity makes background current and noise current lower, so that prepared by the present invention Cs2AgBiBr6Double-perovskite crystal is more suitable for X-ray detection."
+        }
+      },
+      "evidence_scope": {
+        "complete_for_target": true,
+        "note": "摘要及权利要求/关键说明书足以完成本次目标比对。"
+      }
+    },
+    "US20240423306A1": {
+      "title": "Antimicrobial face mask",
+      "url": "https://patents.google.com/patent/US20240423306A1/en",
+      "jurisdiction": "US",
+      "language": "en",
+      "publication_date": "2024-12-26",
+      "filing_date": "2024-08-23",
+      "priority_date": "2022-02-23",
+      "assignee": "Nexvera LLC",
+      "legal_status": "Pending",
+      "sections": {
+        "US20240423306A1:abstract": {
+          "location": "Abstract",
+          "text": "An antimicrobial face mask that includes a triboelectric nanogenerator (TENG) membrane interior portion. The face mask also includes one or more antimicrobial substances. In some examples, the face mask includes both copper and silver, each of which has antimicrobial properties and together have a greater antimicrobial effect than each of them individually. The face mask improves upon existing personal protective equipment (PPE) face masks to reduce transmission and infection from microbial pathogens, including SARS-CoV-2, its variants, other viruses and various forms of bacteria."
+        },
+        "US20240423306A1:claim1": {
+          "location": "Claim 1",
+          "text": "1. A face mask comprising: an interior antimicrobial layer and an exterior antimicrobial layer; and a triboelectric nanogenerator (TENG) membrane located between the interior and exterior antimicrobial layers, wherein the TENG membrane comprises two different flexible layers having distinct triboelectric polarities."
+        },
+        "US20240423306A1:claim3": {
+          "location": "Claim 3",
+          "text": "3. The face mask of claim 1, wherein the exterior antimicrobial layer comprises copper."
+        },
+        "US20240423306A1:claim4": {
+          "location": "Claim 4",
+          "text": "4. The face mask of claim 3, wherein the exterior antimicrobial layer comprises a sputtered copper polyester fabric."
+        },
+        "US20240423306A1:desc-virion": {
+          "location": "Background (machine-free)",
+          "text": "The SARS-CoV-2 virion is measured at 0.05 to 0.12 microns and therefore may penetrate through the filter fabric of the N95 mask."
+        }
+      },
+      "evidence_scope": {
+        "complete_for_target": false,
+        "note": "现有摘要/权项用于相关性分类；无关文献不据此作完整披露结论。"
+      }
+    },
+    "US3664335A": {
+      "title": "Surgical face mask",
+      "url": "https://patents.google.com/patent/US3664335A/en",
+      "jurisdiction": "US",
+      "language": "en",
+      "publication_date": "1972-05-23",
+      "filing_date": "1970-02-24",
+      "priority_date": "1970-02-24",
+      "assignee": "International Paper Company (Boucher, Kurilla, Slepp)",
+      "sections": {
+        "US3664335A:abstract": {
+          "location": "Abstract",
+          "text": "Disposable surgical face mask comprising a flexible porous pad capable of covering the nose and the mouth of the wearer, the flexible porous pad having an inner layer of non-woven fiber material, an outer layer of non-woven fiber material, and a central layer of filter material. The three layers are stitched together along their horizontal and vertical edges. An elastic binding is secured onto each vertical edge of the flexible porous pad. The flexible porous pad has a first vertical double pleat structure and a second vertical double pleat structure. The first and second vertical double pleat structures are parallel to one another and are spaced a horizontal distance from one another."
+        },
+        "US3664335A:claim1": {
+          "location": "Claim 1 (single claim; original typos preserved)",
+          "text": "1. A surgical face mask, comprising: a. a generally rectangular flexible porous pad having a pair of opposed parallel horizontal edges and a pair of opposed parallel vertical edges, said pad having an inner layer and an outer layer of non-woven material and a central layer of filter material, said layers being secured together along their horizontal and vertical edges to form said flexible porous pad; b. a pair of elastic binding elements each having a relaxed length which is substantially shorter than the vertical dimension of said pad and each having a distended length substantially equal to the vertical dimension of said pad, said binding elements each being secured to a respective vertical edge of said pad while distended to said distended length thereof so that each of said vertical edges of said pad will be crimped throughout their lengths upon relaxation of said elastic binding elements; c. a pair of spaced parallel vertical pleats in said pad extending from the top horizontal edge to the bottom horizontal edge of said pad and defining, respectively, a ''''Z'''' configuration and a reversed ''''Z'''' configuration in a plane parallel to said horizontal edges, said pleats together defining therebetween a configuration adapted to be popped out into a generally C-shaped vertical cavity extending substantially from the top horizontal edge to the bottom horizontal edge of said pad and being semirigid to maintain said pad away from tHe wearer''s nose and mouth in service; and d. means for retaining said flexible porous pad over the nose and mouth of a wearer."
+        }
+      },
+      "evidence_scope": {
+        "complete_for_target": false,
+        "note": "现有摘要/权项用于相关性分类；无关文献不据此作完整披露结论。"
+      }
+    },
+    "CN111233035A": {
+      "title": "Lead-free perovskite Cs2AgBiBr6 and preparation method and method for obtaining diffusion coefficient thereof",
+      "url": "https://patents.google.com/patent/CN111233035A/en",
+      "jurisdiction": "CN",
+      "language": "zh (page shown via machine translation)",
+      "publication_date": "2020-06-05",
+      "filing_date": "2018-11-29",
+      "priority_date": "2018-11-29",
+      "assignee": "Dalian Institute of Chemical Physics, CAS",
+      "legal_status": "Pending",
+      "sections": {
+        "CN111233035A:abstract": {
+          "location": "Abstract (machine translation)",
+          "text": "The invention discloses a lead-free perovskite Cs2AgBiBr6And a method for preparing the same and a method for obtaining the diffusion coefficient thereof. Belonging to the field of material luminescence. Method for synthesizing lead-free perovskite Cs by adopting crystallization method2AgBiBr6. Lead-free perovskite Cs collected at low energy2AgBiBr6The fluorescent imaging light spot is normalized by extracting the light spots at different moments and then taking the intensity of the light spot at the moment 0 as a reference, so that the diameter of the light spot can be clearly seen to be enlarged, and the lead-free perovskite Cs can be observed through direct evidence2AgBiBr6The diffusion process of (1). Obtaining Cs by Gaussian fitting of fluorescence intensity2AgBiBr6By conversion to obtain Cs2AgBiBr6Mobility of (2). By fitting diffusion coefficient D at different temperatures, Cs is obtained2AgBiBr6The carrier scattering is in an optical wave scattering mode, and provides guiding significance for the research and development of the lead-free perovskite."
+        }
+      },
+      "evidence_scope": {
+        "complete_for_target": false,
+        "note": "当前证据范围不足以完成逐要素覆盖判断。"
+      }
+    },
+    "CN113753951A": {
+      "title": "Preparation method of Cs2AgBiBr6 double perovskite film with excellent nonlinear optical performance",
+      "url": "https://patents.google.com/patent/CN113753951A/en",
+      "jurisdiction": "CN",
+      "language": "zh (page shown via machine translation)",
+      "publication_date": "2021-12-07",
+      "filing_date": "2021-08-24",
+      "priority_date": "2021-08-24",
+      "assignee": "Tongji University",
+      "legal_status": "Pending",
+      "sections": {
+        "CN113753951A:abstract": {
+          "location": "Abstract (machine translation)",
+          "text": "The invention relates to a method for preparing a high-performance Cs with excellent nonlinear optical properties2AgBiBr6The preparation method of the double perovskite thin film comprises the following steps: taking Cs2AgBiBr6The crystal powder of the double perovskite is coated into a film by spin coating, and the Cs can be realized by adopting different adding ratios of silver bromide in the process of preparing the crystal powder2AgBiBr6The ordered-disordered phase change of the double perovskite thin film can adjust the nonlinear optical performance of the double perovskite thin film. Compared with the prior art, the invention controls the conversion of the ordered phase and the disordered phase by controlling the adding amount of the silver bromide raw material, and the Cs of the disordered phase2AgBiBr6The double perovskite thin film has a large number of Bi-related defects (Bi)AgThe anti-site and Br defects). The defect state can change the energy band structure of the material to adjust the nonlinear optical property of the Cs2AgBiBr6 double perovskite film, thereby proving that the Cs2AgBiBr6The potential of double perovskite thin films in optoelectronic devices. Compared with the prior art, the invention has simple process flow and operationEasy and low cost, and is expected to be produced in large scale."
+        }
+      },
+      "evidence_scope": {
+        "complete_for_target": false,
+        "note": "当前证据范围不足以完成逐要素覆盖判断。"
+      }
+    },
+    "CN109874347A": {
+      "title": "Perovskite, preparation method and the solar battery including perovskite",
+      "url": "https://patents.google.com/patent/CN109874347A/en",
+      "jurisdiction": "CN",
+      "language": "zh (page shown via machine translation)",
+      "publication_date": "2019-06-11",
+      "filing_date": "2016-07-18",
+      "priority_date": "2015-11-24",
+      "assignee": "Seoul National University R&DB Foundation / Global Frontier Center for Multiscale Energy Systems",
+      "legal_status": "Pending",
+      "sections": {
+        "CN109874347A:abstract": {
+          "location": "Abstract (machine translation)",
+          "text": "The present invention provides a kind of perovskite as shown in following formula 1 and including the electronic component of the perovskite, cation and the anion mixing of two of them or more, compared with including the cation of single kind and traditional perovskite thin film of anion, perovskite of the invention can show that improved structural stability and electrochemical properties.[formula 1] [AaBbCc]Pb[XdYeWf], wherein A, B and C are each independently organic or inorganic cation；X, Y and W is each independently as halide ion F‑、Cl‑、Br‑Or I‑；A, b and c meets the relationship of a+b+c=1,0.05≤a≤0.95,0≤b≤0.95, and 0≤c≤0.95；Also, d, e and f meets d+e+f=3,0.05≤d≤3, the relationship of 0≤e≤2.95 and 0≤f≤2.95, and condition is as b and c while when being 0, and e and f are not 0 simultaneously, and when e and f is simultaneously 0, b and c are not 0 simultaneously."
+        }
+      },
+      "evidence_scope": {
+        "complete_for_target": false,
+        "note": "当前证据范围不足以完成逐要素覆盖判断。"
+      }
+    },
+    "CN114732921B": {
+      "title": "Pyrite-modified titanium dioxide composite photocatalytic antibacterial material and preparation method thereof",
+      "url": "https://patents.google.com/patent/CN114732921B/en",
+      "jurisdiction": "CN",
+      "language": "zh (page shown via machine translation)",
+      "publication_date": "2023-03-28",
+      "publication_date_A": "2022-07-12",
+      "filing_date": "2022-04-28",
+      "priority_date": "2022-04-28",
+      "assignee": "Shaanxi University of Science and Technology (current: Shenzhen Sixplus Life Beauty Technology)",
+      "legal_status": "Active (granted B)",
+      "sections": {
+        "CN114732921B:abstract": {
+          "location": "Abstract (machine translation)",
+          "text": "The invention discloses a pyrite modified titanium dioxide composite photocatalytic antibacterial material, which is prepared from TiO 2 And FeS 2 Two components are TiO 2 With FeS 2 The mass ratio of the composite material is 1. The invention also discloses a preparation method of the pyrite modified titanium dioxide composite photocatalytic antibacterial material. The invention leads FeS to be 2 With TiO 2 The composite material combines the advantages of two materials, develops a novel photocatalytic antibacterial agent with wide photoresponse range, good biocompatibility and low cost, and is expected to resist the propagation of various bacteria in the fields of medical treatment, food, public environment and the like."
+        }
+      },
+      "evidence_scope": {
+        "complete_for_target": false,
+        "note": "现有摘要/权项用于相关性分类；无关文献不据此作完整披露结论。"
+      }
+    },
+    "US10593902B2": {
+      "title": "Quantum dot light emitting devices (QLEDs) and method of manufacture",
+      "url": "https://patents.google.com/patent/US10593902B2/en",
+      "jurisdiction": "US",
+      "language": "en",
+      "publication_date": "2020-03-17",
+      "filing_date": "2018-09-26",
+      "priority_date": "2017-09-29",
+      "assignee": "University of Central Florida Research Foundation (Dong, Chen, Wu, He)",
+      "sections": {
+        "US10593902B2:abstract": {
+          "location": "Abstract",
+          "text": "An ultrabright bright quantum dot light-emitting diode (QLED) device and associated method of manufacture. The QLED device includes quantum dots (QD) as emitters and a mixture of metal oxide nanoparticles and alkali metal compounds for simultaneous electron injection and hole blocking to achieve charging balance at high driving current conditions. The ultrabright QLEDs are useful for many light source applications including, but not limited to display, solid state lighting, optical sensor, phototherapy, photomedicine and photobiomedicine."
+        }
+      },
+      "evidence_scope": {
+        "complete_for_target": false,
+        "note": "现有摘要/权项用于相关性分类；无关文献不据此作完整披露结论。"
+      }
+    },
+    "US9793505B2": {
+      "title": "Light-emitting device including quantum dots",
+      "url": "https://patents.google.com/patent/US9793505B2/en",
+      "jurisdiction": "US",
+      "language": "en",
+      "publication_date": "2017-10-17",
+      "filing_date": "2010-10-02",
+      "priority_date": "2008-04-03",
+      "assignee": "QD Vision Inc (current: Samsung Research America)",
+      "sections": {
+        "US9793505B2:abstract": {
+          "location": "Abstract",
+          "text": "A light emitting device including an emissive material comprising quantum dots is disclosed. In one embodiment, the device includes a cathode, a layer comprising a material capable of transporting and injection electrons comprising an inorganic material, an emissive layer comprising quantum dots, a layer comprising a material capable of transporting holes, a layer comprising a hole injection material, and an anode. In certain embodiments, the hole injection material can be a p-type doped hole transport material. In certain preferred embodiments, quantum dots comprise semiconductor nanocrystals. In another aspect of the invention, there is provided a light emitting device wherein the device has an initial turn-on voltage that is not greater than 1240/λ, wherein λ represents the wavelength (nm) of light emitted by the emissive layer. Other light emitting devices and a method are disclosed."
+        }
+      },
+      "evidence_scope": {
+        "complete_for_target": false,
+        "note": "现有摘要/权项用于相关性分类；无关文献不据此作完整披露结论。"
+      }
+    },
+    "US20230180864A1": {
+      "title": "Antimicrobial Face Mask",
+      "url": "https://patents.google.com/patent/US20230180864A1/en",
+      "jurisdiction": "US",
+      "language": "en",
+      "publication_date": "2023-06-15",
+      "filing_date": "2021-04-19",
+      "priority_date": "2020-04-17",
+      "assignee": "Kraton Polymers LLC",
+      "legal_status": "Pending",
+      "sections": {
+        "US20230180864A1:abstract": {
+          "location": "Abstract",
+          "text": "A face mask is disclosed. The face mask includes a mask pad adapted to cover a nose and a mouth of a wearer and allows a passage of air therethrough to the wearer and restricts a passage of microbes. The mask pad has at least a surface protected by a sulfonated polymeric layer for killing at least 90% microbes within 120 minutes of contact with at least a surface of the face mask. The sulfonated polymeric layer consists essentially of a sulfonated polymer, the sulfonated polymer being selected from the group of perfluorosulfonic acid polymers, polystyrene sulfonates, sulfonated block copolymers, sulfonated polyolefins, sulfonated polyimides, sulfonated polyamides, sulfonated polyesters, sulfonated polysulfones, sulfonated polyketones, sulfonated poly(arylene ether), and mixtures thereof."
+        }
+      },
+      "evidence_scope": {
+        "complete_for_target": false,
+        "note": "现有摘要/权项用于相关性分类；无关文献不据此作完整披露结论。"
+      }
+    },
+    "US20210202869A1": {
+      "title": "Quantum dot device and quantum dots",
+      "url": "https://patents.google.com/patent/US20210202869A1/en",
+      "jurisdiction": "US",
+      "language": "en",
+      "publication_date": "2021-07-01",
+      "filing_date": "2021-03-05",
+      "priority_date": "2018-08-23",
+      "assignee": "Samsung Electronics Co Ltd",
+      "legal_status": "Granted (US11569468B2)",
+      "sections": {
+        "US20210202869A1:abstract": {
+          "location": "Abstract",
+          "text": "Quantum dots and electroluminescent devices including the same, wherein the quantum dots include a core including a first semiconductor nanocrystal including a zinc chalcogenide; and a shell disposed on the core, the shell including zinc, sulfur, and selenium, wherein the quantum dots have an average particle size of greater than 10 nm, wherein the quantum dots do not include cadmium, and wherein a photoluminescent peak of the quantum dots is present in a wavelength range of greater than or equal to about 430 nm and less than or equal to about 470 nm."
+        }
+      },
+      "evidence_scope": {
+        "complete_for_target": false,
+        "note": "现有摘要/权项用于相关性分类；无关文献不据此作完整披露结论。"
+      }
+    },
+    "CN105597728A": {
+      "title": "Titanium dioxide/bismuth titanate ultrasonic enhanced photocatalyst and preparation method thereof",
+      "url": "https://patents.google.com/patent/CN105597728A/en",
+      "jurisdiction": "CN",
+      "language": "zh (page shown via machine translation)",
+      "publication_date": "2016-05-25",
+      "publication_date_B": "2018-02-06",
+      "filing_date": "2016-02-25",
+      "priority_date": "2016-02-25",
+      "assignee": "University of Electronic Science and Technology of China",
+      "legal_status": "Granted (B, Expired - Fee Related)",
+      "sections": {
+        "CN105597728A:abstract": {
+          "location": "Abstract (machine translation)",
+          "text": "The present invention belongs to the technical field of photocatalytic materials and particularly relates to a titanium dioxide/bismuth titanate ultrasonic enhanced photocatalyst and a preparation method thereof. A titanium dioxide and bismuth titanate heterostructure is prepared through a sol-gel method, the bismuth titanate/titanium dioxide ultrasonic enhanced photocatalyst with bismuth titanate nanoparticles and TiO2 nanoparticles loaded on the surface is obtained, the three advantages of good photocatalytic activity, good piezoelectric performance and small forbidden band width of bismuth titanate and good photocatalytic performance of nano titanium dioxide are combined, and the catalytic activity of the composite photocatalyst is greatly improved. Besides, by constructing the heterostructure where bismuth titanate and titanium dioxide are compounded, the photocatalytic performance is enhanced through the interfacial effect, a bismuth titanate built-in electric field is stimulated through ultrasonic collaboration, separation and transmission of photo-generated carriers are accelerated, generated photo-generated carriers promote photocatalytic activity of titanium dioxide and bismuth titanate, and photocatalytic activity is further improved."
+        }
+      },
+      "evidence_scope": {
+        "complete_for_target": false,
+        "note": "现有摘要/权项用于相关性分类；无关文献不据此作完整披露结论。"
+      }
+    },
+    "US9199842B2": {
+      "title": "Quantum dot films, lighting devices, and lighting methods",
+      "url": "https://patents.google.com/patent/US9199842B2/en",
+      "jurisdiction": "US",
+      "language": "en",
+      "publication_date": "2015-12-01",
+      "filing_date": "2011-11-02",
+      "priority_date": "2008-12-30",
+      "assignee": "Nanosys Inc (current: Shoei Chemical Inc)",
+      "sections": {
+        "US9199842B2:abstract": {
+          "location": "Abstract",
+          "text": "Light-emitting quantum dot films, quantum dot lighting devices, and quantum dot-based backlight units are provided. Related compositions, components, and methods are also described. Improved quantum dot encapsulation and matrix materials are provided. Quantum dot films with protective barriers are described. High-efficiency, high brightness, and high-color purity quantum dot-based lighting devices are also included, as well as methods for improving efficiency and optical characteristics in quantum dot-based lighting devices."
+        }
+      },
+      "evidence_scope": {
+        "complete_for_target": false,
+        "note": "现有摘要/权项用于相关性分类；无关文献不据此作完整披露结论。"
+      }
+    },
+    "CN106757342A": {
+      "title": "一种抗溶剂扩散生长abx3钙钛矿单晶的方法",
+      "url": "https://patents.google.com/patent/CN106757342A/zh",
+      "jurisdiction": "CN",
+      "language": "zh",
+      "publication_date": "2017-05-31",
+      "filing_date": "",
+      "priority_date": "",
+      "assignee": "",
+      "evidence_scope": {
+        "complete_for_target": true,
+        "note": "摘要及权利要求/关键说明书足以完成本次目标比对。"
+      },
+      "sections": {
+        "CN106757342A:abstract": {
+          "location": "Abstract (Chinese original)",
+          "text": "本发明公开了一种抗溶剂扩散生长ABX3钙钛矿单晶的方法，包括：将含A卤代物和含B金属化合物溶解于溶剂M中，后加入适量抗溶剂N得到接近饱和的单晶生长液；含A卤代物与含B金属化合物的摩尔比为1：0.1～2；将盛有接近饱和的单晶生长液的开口容器P放入盛有抗溶剂N的密闭容器Q中；在一定温度下，通过籽晶培育与籽晶长大两个生长过程得到所需尺寸的ABX3钙钛矿单晶。制备出高质量钙钛矿单晶的方法，利用抗溶剂向单晶生长液扩散的原理，缓慢降低钙钛矿在单晶生长液中的溶解度，进而使溶液析出钙钛矿单晶，具有所得单晶尺寸大、质量高、原料利用率高、设备要求简单、工艺简单、环境危害小等优点。"
+        },
+        "CN106757342A:claim1": {
+          "location": "Claim 1 (Chinese original)",
+          "text": "1.一种抗溶剂扩散生长ABX3钙钛矿单晶的方法，其特征在于，所述抗溶剂扩散生长ABX3钙钛矿单晶的方法包括：(1)将含A卤代物和含B金属化合物溶解于溶剂M中，后加入适量抗溶剂N得到接近饱和的单晶生长液；含A卤代物与含B金属化合物的摩尔比为1：0.1～2；(2)将盛有接近饱和的单晶生长液的开口容器P放入盛有抗溶剂N的密闭容器Q中；(3)通过籽晶培育与籽晶长大两个生长过程得到所需尺寸的ABX3钙钛矿单晶。"
+        },
+        "CN106757342A:claim2": {
+          "location": "Claim 2 (Chinese original)",
+          "text": "2.如权利要求1所述抗溶剂扩散生长ABX3钙钛矿单晶的方法，其特征在于，所述A为CH3NH3+、H2N-CH＝NH2+、(CH3)4N+、C7H7+、Cs+、C3H11SN32+中的一种或多种，B为Pb、Ge、Sn中的一种或多种；X为Cl、Br、I中的一种或多种。"
+        },
+        "CN106757342A:claim3": {
+          "location": "Claim 3 (Chinese original)",
+          "text": "3.如权利要求1所述抗溶剂扩散生长ABX3钙钛矿单晶的方法，其特征在于，所述含A卤代物为含有有机或无机离子半径为的有机或无机卤代物中的一种或多种混合，包括氯甲胺、氯甲脒、氯化四甲胺、氯卓鎓、氯代2-异硫脲、溴甲胺、溴甲脒、溴化四甲胺、溴卓鎓、溴代2-异硫脲、碘甲胺、碘甲脒、碘化四甲胺、碘卓鎓、碘代2-异硫脲及无机CsI；含B金属化合物为以下化合物中的一种或多种混合：氯化铅、溴化铅、碘化铅或醋酸铅；氯化亚锡、四氯化锡、溴化亚锡、碘化亚锡；氯化锗、溴化锗、碘化锗；所述溶剂M为对ABX3有较大溶解度的单一溶剂或混合溶剂，包括：氢碘酸、γ-丁内酯、N,N-二甲基甲酰胺、二甲基亚枫、N-甲基-2-吡咯烷酮；所述抗溶剂N为对ABX3不溶或微溶、能与溶剂M互溶、具有挥发性的单一溶剂或混合溶剂，包括：乙醇、乙醚或二氯甲烷。"
+        },
+        "CN106757342A:claim4": {
+          "location": "Claim 4 (Chinese original)",
+          "text": "4.如权利要求1所述抗溶剂扩散生长ABX3钙钛矿单晶的方法，其特征在于，ABX3钙钛矿单晶生长液放置室温～60℃的恒温箱中静置12小时以上；ABX3钙钛矿单晶用无水乙醚、甲苯、氯苯、异丙醇、甲胺溶液清洗，在真空干燥箱中60℃干燥24小时，取出真空密封保存，制备完成。"
+        },
+        "CN106757342A:claim5": {
+          "location": "Claim 5 (Chinese original)",
+          "text": "5.如权利要求1所述抗溶剂扩散生长ABX3钙钛矿单晶的方法，其特征在于，加入适量抗溶剂N以使溶液接近饱和可由如下方法达到：a、移液枪逐次加入微量抗溶剂N直至溶液析出沉淀刚好不溶解，此时再加入微量溶剂M，使沉淀恰好溶解，记录加入抗溶剂N与溶剂M的体积，对于后续同浓度的步骤3的溶液，可由体积比计算出需加入抗溶剂N与溶剂M的量；b、移液枪逐次加入微量抗溶剂N直至溶液析出沉淀刚好不溶解，用孔径为0.22μm的聚四氟乙烯滤膜过滤器过滤溶液后再加入微量溶剂M。"
+        },
+        "CN106757342A:claim6": {
+          "location": "Claim 6 (Chinese original)",
+          "text": "6.一种由权利要求1～4任意一项所述抗溶剂扩散生长ABX3钙钛矿单晶的方法制备的ABX3钙钛矿单晶。"
+        },
+        "CN106757342A:claim7": {
+          "location": "Claim 7 (Chinese original)",
+          "text": "7.一种由权利要求5所述ABX3钙钛矿单晶制备的太阳能电池。"
+        },
+        "CN106757342A:claim8": {
+          "location": "Claim 8 (Chinese original)",
+          "text": "8.一种由权利要求5所述ABX3钙钛矿单晶制备的半导体材料。"
+        },
+        "CN106757342A:claim9": {
+          "location": "Claim 9 (Chinese original)",
+          "text": "9.一种由权利要求5所述ABX3钙钛矿单晶制备的激光器。"
+        },
+        "CN106757342A:claim10": {
+          "location": "Claim 10 (Chinese original)",
+          "text": "10.一种由权利要求5所述ABX3钙钛矿单晶制备的LED、光电探测器。"
+        }
+      }
+    },
+    "CN107325812A": {
+      "title": "一种钙钛矿结构发光材料及其基于抗溶剂的生产方法",
+      "url": "https://patents.google.com/patent/CN107325812A/zh",
+      "jurisdiction": "CN",
+      "language": "zh",
+      "publication_date": "2017-11-07",
+      "filing_date": "",
+      "priority_date": "",
+      "assignee": "",
+      "evidence_scope": {
+        "complete_for_target": true,
+        "note": "摘要及权利要求/关键说明书足以完成本次目标比对。"
+      },
+      "sections": {
+        "CN107325812A:abstract": {
+          "location": "Abstract (Chinese original)",
+          "text": "本发明公开了一种钙钛矿结构发光材料及其基于抗溶剂的生产方法，钙钛矿结构发光材料包括：ABX3，其中，A为CH3NH3+、Cs+、H2N‑CH=NH2+、(CH3)4N+、C7H7+、C3H11SN32+中的一种或多种混合，B为Pb、Ge、Sn中的一种或多种混合，X为卤族元素Cl、Br、I中的一种或多种混合，将含A卤代物和含B金属卤代物或氧化物溶解于溶剂M中，得到前驱体溶液，通过向前驱体溶液滴入或缓慢扩散抗溶剂的方法分别制备出钙钛矿结构发光材料ABX3的粉体或单晶。通过上述方式，本发明所述的钙钛矿结构发光材料及其基于抗溶剂的生产方法，降低了对生产设备的要求，生产成本和能耗低，得到的钙钛矿结构发光材料的纯度高，而且发光效率高。"
+        },
+        "CN107325812A:claim1": {
+          "location": "Claim 1 (Chinese original)",
+          "text": "1.一种钙钛矿结构发光材料，其特征在于：包括：ABX3，其中，A为CH3NH3+、Cs+、H2N-CH=NH2+、(CH3)4N+、C7H7+、C3H11SN32+中的一种或多种混合，B为Pb、Ge、Sn中的一种或多种混合，X为卤族元素Cl、Br、I中的一种或多种混合。"
+        },
+        "CN107325812A:claim2": {
+          "location": "Claim 2 (Chinese original)",
+          "text": "2.根据权利要求1所述的钙钛矿结构发光材料，其特征在于，所述ABX3的典型材料化学分子式包括但不限于CH3NH3PbBr3、CH3NH3PbCl3、CH3NH3PbI3、CsPbBr3、CsPbCl3、CsPbBrCl2、CsPbIBr2、(CH3NH3)0.5Cs0.5PbBr3、CsSnBr3、CsGeBr3、CsPb0.5Sn0.5Br3、(CH3NH3)0.5Cs0.5PbIBr2和(CH3NH3)0.5Cs0.5Pb0.5Sn0.5IBr2。"
+        },
+        "CN107325812A:claim3": {
+          "location": "Claim 3 (Chinese original)",
+          "text": "3.一种权利要求1~2任一所述的钙钛矿结构发光材料的基于抗溶剂的生产方法，用于ABX3粉体的生产，其特征在于，包括以下步骤：将含A卤代物和含B金属卤代物或氧化物溶解于溶剂M中，得到前驱体溶液；向前驱体溶液缓慢滴入适量抗溶剂N，前驱体溶液中即可析出钙钛矿结构发光材料ABX3粉体。"
+        },
+        "CN107325812A:claim4": {
+          "location": "Claim 4 (Chinese original)",
+          "text": "4.一种权利要求1~2任一所述的钙钛矿结构发光材料的基于抗溶剂的生产方法，用于ABX3单晶的生产，其特征在于，包括以下步骤：将含A卤代物和含B金属卤代物或氧化物溶解于溶剂M中，得到前驱体溶液；将盛有前驱体溶液的开口容器P放入盛有抗溶剂N的密闭容器Q中，通过抗溶剂扩散即可得到钙钛矿结构发光材料ABX3单晶。"
+        },
+        "CN107325812A:claim5": {
+          "location": "Claim 5 (Chinese original)",
+          "text": "5.根据权利要求3或者4所述的钙钛矿结构发光材料的基于抗溶剂的生产方法，其特征在于，所述含A卤代物为离子半径为1.5Å-2.5Å的有机或无机离子的一种或多种混合得到的有机或无机卤代物，包括溴甲胺、氯甲胺、碘甲胺、氯化铯、溴化铯、碘化铯、氯甲脒、氯化四甲胺、氯卓鎓、氯代2-异硫脲、溴甲胺、溴甲脒、溴化四甲胺、溴卓鎓、溴代2-异硫脲、碘甲胺、碘甲脒、碘化四甲胺、碘卓鎓、碘代2-异硫脲。"
+        },
+        "CN107325812A:claim6": {
+          "location": "Claim 6 (Chinese original)",
+          "text": "6.根据权利要求3或者4所述的钙钛矿结构发光材料的基于抗溶剂的生产方法，其特征在于，所述含B金属卤代物或氧化物为以下化合物中的一种或多种混合：氯化铅、溴化铅、碘化铅、醋酸铅、氯化亚锡、四氯化锡、溴化亚锡、碘化亚锡氧化亚锡、氧化锡、氯化锗、溴化锗和碘化锗。"
+        },
+        "CN107325812A:claim7": {
+          "location": "Claim 7 (Chinese original)",
+          "text": "7.根据权利要求3或者4所述的钙钛矿结构发光材料的基于抗溶剂的生产方法，其特征在于，所述溶剂M为对ABX3有较大溶解度的单一溶剂或混合溶剂，包括但不限于水、氢卤酸、二甲基亚枫、N-甲基-2-吡咯烷酮、γ-丁内酯和N，N-二甲基甲酰胺。"
+        },
+        "CN107325812A:claim8": {
+          "location": "Claim 8 (Chinese original)",
+          "text": "8.根据权利要求3或者4所述的钙钛矿结构发光材料的基于抗溶剂的生产方法，其特征在于，所述抗溶剂N为对ABX3不溶或微溶、能与溶剂M互溶、具有一定挥发性的单一溶剂或混合溶剂，包括但不限于二氯甲烷、异丙醇、甲苯、对二甲苯、乙醇和乙醚。"
+        },
+        "CN107325812A:claim9": {
+          "location": "Claim 9 (Chinese original)",
+          "text": "9.根据权利要求3或者4所述的钙钛矿结构发光材料的基于抗溶剂的生产方法，其特征在于，所述前驱体溶液中含A卤代物和含B金属卤代物或氧化物的摩尔比为1：0.2~2。"
+        },
+        "CN107325812A:claim10": {
+          "location": "Claim 10 (Chinese original)",
+          "text": "10.根据权利要求3或者4所述的钙钛矿结构发光材料的基于抗溶剂的生产方法，其特征在于，所述前驱体溶液的浓度为0.01-5.0mol/L。"
+        }
+      }
+    },
+    "CN107325004A": {
+      "title": "钙钛矿晶体及其制备方法",
+      "url": "https://patents.google.com/patent/CN107325004A/zh",
+      "jurisdiction": "CN",
+      "language": "zh",
+      "publication_date": "2017-11-07",
+      "filing_date": "",
+      "priority_date": "",
+      "assignee": "",
+      "evidence_scope": {
+        "complete_for_target": true,
+        "note": "摘要及权利要求/关键说明书足以完成本次目标比对。"
+      },
+      "sections": {
+        "CN107325004A:abstract": {
+          "location": "Abstract (Chinese original)",
+          "text": "本发明涉及一种钙钛矿晶体的制备方法，其包括如下步骤：将第一反应物颗粒与第二反应物颗粒在固体反应流体媒介中混合并反应，然后固液分离，得到钙钛矿晶体粉末；所述第一反应物颗粒的化学通式为BX2；所述第二反应物颗粒的化学通式为AY；其中，B选自Pb或Sn中的一种或几种；A选自CH3NH3+、NH2CH＝NH2+、Cs、或Rb中的一种或几种；X、Y各自独立选自Cl、Br、I、CN、SCN、OCN、或SeCN中的一种或几种。上述钙钛矿晶体的制备方法，采用在固体反应流体媒介中反应，然后固液分离，得到钙钛矿晶体粉末；其操作简单、不采用溶剂，不会因溶剂对环境造成污染。本发明还提供了一种钙钛矿晶体。"
+        },
+        "CN107325004A:claim1": {
+          "location": "Claim 1 (Chinese original)",
+          "text": "1.一种钙钛矿晶体的制备方法，其特征在于，包括如下步骤：将第一反应物颗粒与第二反应物颗粒在固体反应流体媒介中混合并反应，然后固液分离，得到钙钛矿晶体粉末；所述第一反应物颗粒的化学通式为BX2；所述第二反应物颗粒的化学通式为AY；其中，B选自Pb或Sn中的一种或几种；A选自CH3NH3+、NH2CH＝NH2+、Cs、或Rb中的一种或几种；X、Y各自独立选自Cl、Br、I、CN、SCN、OCN、或SeCN中的一种或几种。"
+        },
+        "CN107325004A:claim2": {
+          "location": "Claim 2 (Chinese original)",
+          "text": "2.根据权利要求1所述的钙钛矿晶体的制备方法，其特征在于，所述固体反应流体媒介选自甲苯、乙酸乙酯、乙醚、正己烷、正丁醇、或正戊醇中的一种或几种。"
+        },
+        "CN107325004A:claim3": {
+          "location": "Claim 3 (Chinese original)",
+          "text": "3.根据权利要求1所述的钙钛矿晶体的制备方法，其特征在于，所述第一反应物颗粒的平均粒径为0.05mm～0.5mm；所述第二反应物颗粒的平均粒径为0.5mm～1.5mm。"
+        },
+        "CN107325004A:claim4": {
+          "location": "Claim 4 (Chinese original)",
+          "text": "4.根据权利要求1所述的钙钛矿晶体的制备方法，其特征在于，所述固体反应流体媒介的体积为所述第一反应物颗粒和所述第二反应物颗粒的总体积的2-4倍。"
+        },
+        "CN107325004A:claim5": {
+          "location": "Claim 5 (Chinese original)",
+          "text": "5.根据权利要求1～3任一项所述的钙钛矿晶体的制备方法，其特征在于，所述反应的温度低于100℃。"
+        },
+        "CN107325004A:claim6": {
+          "location": "Claim 6 (Chinese original)",
+          "text": "6.根据权利要求1～3任一项所述的钙钛矿晶体的制备方法，其特征在于，所述反应的时间为3h～5h。"
+        },
+        "CN107325004A:claim7": {
+          "location": "Claim 7 (Chinese original)",
+          "text": "7.根据权利要求1～3任一项所述的钙钛矿晶体的制备方法，其特征在于，在所述反应时，对所述固体反应流体媒介进行超声。"
+        },
+        "CN107325004A:claim8": {
+          "location": "Claim 8 (Chinese original)",
+          "text": "8.根据权利要求1～3任一项所述的钙钛矿晶体的制备方法，其特征在于，在所述反应时，进行除湿操作。"
+        },
+        "CN107325004A:claim9": {
+          "location": "Claim 9 (Chinese original)",
+          "text": "9.一种钙钛矿晶体，其特征在于，所述钙钛矿晶体通过权利要求1～8任一项的制备方法获得。"
+        },
+        "CN107325004A:claim10": {
+          "location": "Claim 10 (Chinese original)",
+          "text": "10.根据权利要求9所述的钙钛矿晶体，其特征在于，所述钙钛矿晶体粉末的平均粒径为0.1mm～2mm。"
+        }
+      }
+    },
+    "CN108034989A": {
+      "title": "可控反溶剂扩散法生长大尺寸甲胺溴铅晶体的方法及装置",
+      "url": "https://patents.google.com/patent/CN108034989A/zh",
+      "jurisdiction": "CN",
+      "language": "zh",
+      "publication_date": "2018-05-15",
+      "filing_date": "",
+      "priority_date": "",
+      "assignee": "",
+      "evidence_scope": {
+        "complete_for_target": true,
+        "note": "摘要及权利要求/关键说明书足以完成本次目标比对。"
+      },
+      "sections": {
+        "CN108034989A:abstract": {
+          "location": "Abstract (Chinese original)",
+          "text": "本发明涉及可控反溶剂扩散法生长大尺寸甲胺溴铅晶体的方法及装置，采用可控反溶剂扩散方法，包括如下步骤：在CH3NH3PbBr3晶体生长过程中，将反溶剂蒸汽通入CH3NH3PbBr3溶液中，于20～55℃下进行晶体生长，即得大尺寸钙钛矿结构甲胺溴铅晶体。本发明还提供生长该晶体的装置。本发明的方法有效的解决了这类化合物采用采用挥发法得不到大尺寸高质量晶体的问题，以及传统降温法使用酸溶液，对设备腐蚀性大，和生长周期长等问题。本发明能更容易得到高质量、大尺寸晶体，晶体尺寸可达50×50×20mm3。"
+        },
+        "CN108034989A:claim1": {
+          "location": "Claim 1 (Chinese original)",
+          "text": "1.大尺寸钙钛矿结构甲胺溴铅晶体的生长方法，采用可控反溶剂扩散方法，包括如下步骤：在CH3NH3PbBr3晶体生长过程中，将反溶剂蒸汽通入CH3NH3PbBr3溶液中，于20～55℃下进行晶体生长，即得大尺寸钙钛矿结构甲胺溴铅晶体。"
+        },
+        "CN108034989A:claim2": {
+          "location": "Claim 2 (Chinese original)",
+          "text": "2.根据权利要求1所述的大尺寸钙钛矿结构甲胺溴铅晶体的生长方法，其特征在于，CH3NH3PbBr3溶液的浓度为0.5～1.6mol/L，优选0.8～1.2mol/L。"
+        },
+        "CN108034989A:claim3": {
+          "location": "Claim 3 (Chinese original)",
+          "text": "3.根据权利要求1所述的大尺寸钙钛矿结构甲胺溴铅晶体的生长方法，其特征在于，将反溶剂蒸汽通入CH3NH3PbBr3溶液中的方式为：采用载气，将反溶剂蒸汽载入CH3NH3PbBr3溶液中；优选的，载气为干燥的空气、氮气、氩气、氢气或者以上气体任意比例的混合气体。"
+        },
+        "CN108034989A:claim4": {
+          "location": "Claim 4 (Chinese original)",
+          "text": "4.根据权利要求3所述的大尺寸钙钛矿结构甲胺溴铅晶体的生长方法，其特征在于，载气流速为0.01～50cm3/sec。"
+        },
+        "CN108034989A:claim5": {
+          "location": "Claim 5 (Chinese original)",
+          "text": "5.根据权利要求1所述的大尺寸钙钛矿结构甲胺溴铅晶体的生长方法，其特征在于，所述的反溶剂为CH2Cl2、乙腈、甲苯、氯苯或乙醇。"
+        },
+        "CN108034989A:claim6": {
+          "location": "Claim 6 (Chinese original)",
+          "text": "6.根据权利要求1所述的大尺寸钙钛矿结构甲胺溴铅晶体的生长方法，其特征在于，生长的周期为1-30天。"
+        },
+        "CN108034989A:claim7": {
+          "location": "Claim 7 (Chinese original)",
+          "text": "7.一种大尺寸钙钛矿结构甲胺溴铅晶体的生长装置，包括气体发生器、干燥器、气体控制阀、反溶剂容器、加热器、晶体生长器和加热容器；所述的气体发生器通过通气管依次与干燥器、气体控制阀、反溶剂容器和晶体生长器连接，所述的晶体生长器设置在加热容器中，所述的加热容器中设置有加热器。"
+        },
+        "CN108034989A:claim8": {
+          "location": "Claim 8 (Chinese original)",
+          "text": "8.根据权利要求7所述的生长装置，其特征在于，所述的反溶剂容器设置在加热设备中。"
+        },
+        "CN108034989A:claim9": {
+          "location": "Claim 9 (Chinese original)",
+          "text": "9.根据权利要求7所述的生长装置，其特征在于，所述的生长装置还包括控温仪，所述的加热容器中还设置有搅拌电机和热电偶，所述的热电偶与加热器连接，所述的搅拌电机、热电偶分别与控温仪连接。"
+        },
+        "CN108034989A:claim10": {
+          "location": "Claim 10 (Chinese original)",
+          "text": "10.根据权利要求7所述的生长装置，其特征在于，所述的生长装置还包括流量监控器，所述的晶体生长器通过通气管与流量监控器连接。"
+        }
+      }
+    },
+    "CN107093671A": {
+      "title": "单晶钙钛矿有机金属卤化物薄膜的制备方法",
+      "url": "https://patents.google.com/patent/CN107093671A/zh",
+      "jurisdiction": "CN",
+      "language": "zh",
+      "publication_date": "2017-08-25",
+      "filing_date": "",
+      "priority_date": "",
+      "assignee": "",
+      "evidence_scope": {
+        "complete_for_target": true,
+        "note": "摘要及权利要求/关键说明书足以完成本次目标比对。"
+      },
+      "sections": {
+        "CN107093671A:abstract": {
+          "location": "Abstract (Chinese original)",
+          "text": "本发明公开了一种单晶钙钛矿有机金属卤化物薄膜制备方法，包括前驱液制备和单晶钙钛矿有机金属卤化物薄膜两个步骤，通过高温挥发和抗溶剂结晶可控限制生长单晶钙钛矿薄膜的方法。与现有技术相比，本发明的钙钛矿薄膜具有单晶结构，薄膜厚度可控，缺陷密度低等优点，有利于钙钛矿薄膜中自由载流子的传输，减少光生电子、空穴的复合，提高钙钛矿太阳能电池的效率。"
+        },
+        "CN107093671A:claim1": {
+          "location": "Claim 1 (Chinese original)",
+          "text": "1.一种单晶钙钛矿有机金属卤化物薄膜的制备方法，其特征在于，包括如下步骤：(1)前驱液制备：将BX2和AX加入到相对应的溶剂中制成0.001-5mol/L浓度的ABX3钙钛矿前驱液，并将前驱液在30℃-150℃下搅拌0.5-48h至均匀澄清；(2)单晶钙钛矿有机金属卤化物薄膜的制备：在制备好电子传输层/空穴传输层的基片上放置限制单晶钙钛矿生长的模具，用于调控单晶钙钛矿生长的空间，并将基片放入容器中，将ABX3钙钛矿前驱液逐渐加入到模具空间中，将容器放置在80-200℃加热面板上加热，生长过程中间隔在容器中加入抗溶剂，生长1-96h后，取出基片；将基片以500-6000r/s的速度旋转10-60s，旋干薄膜，放置到80-200℃的加热面板上退火5-120min。"
+        },
+        "CN107093671A:claim2": {
+          "location": "Claim 2 (Chinese original)",
+          "text": "2.根据权利要求1所述的单晶钙钛矿有机金属卤化物薄膜的制备方法，其特征在于：所述步骤(1)的ABX3钙钛矿前驱液中A类阳离子为甲胺阳离子(CH3NH3+)、甲脒阳离子(HC(NH2)2+)和铯离子(Cs+)中的一种或多种混合阳离子；B类金属离子为锗离子(Ge2+)、锡离子(Sn2+)和铅离子(Pb2+)中一种或多种混合金属离子；X卤族离子为碘(I-)、溴(Br-)和氯(Cl-)中一种或多种混合卤族元素。"
+        },
+        "CN107093671A:claim3": {
+          "location": "Claim 3 (Chinese original)",
+          "text": "3.根据权利要求1所述的单晶钙钛矿有机金属卤化物薄膜的制备方法，其特征在于：所述步骤(1)采用的溶剂为二甲基甲酰胺(DMF)、γ-丁内酯(GBL)和二甲基亚砜(DMSO)中一种或多种混合物。"
+        },
+        "CN107093671A:claim4": {
+          "location": "Claim 4 (Chinese original)",
+          "text": "4.根据权利要求1所述单晶钙钛矿有机金属卤化物薄膜的制备方法，其特征在于：步骤(2)抗溶剂包括甲苯、氯苯、二氯甲烷、异丙醇和乙醚中的一种或多种混合物。"
+        },
+        "CN107093671A:claim5": {
+          "location": "Claim 5 (Chinese original)",
+          "text": "5.根据权利要求1所述单晶钙钛矿有机金属卤化物薄膜的制备方法，其特征在于：步骤(2)中在电子传输层/空穴传输层上钙钛矿单晶薄膜可控生长厚度为0.001-1000μm。"
+        }
+      }
+    },
+    "CN108560056A": {
+      "title": "一种二维钙钛矿单晶材料及其制备方法",
+      "url": "https://patents.google.com/patent/CN108560056A/zh",
+      "jurisdiction": "CN",
+      "language": "zh",
+      "publication_date": "2018-09-21",
+      "filing_date": "",
+      "priority_date": "",
+      "assignee": "",
+      "evidence_scope": {
+        "complete_for_target": true,
+        "note": "摘要及权利要求/关键说明书足以完成本次目标比对。"
+      },
+      "sections": {
+        "CN108560056A:abstract": {
+          "location": "Abstract (Chinese original)",
+          "text": "本发明涉及一种二维钙钛矿单晶及其制备方法。所述的二维钙钛矿单晶材料的化学组成为A2PbBr4，其中A为丁基胺根离子(C4H9NH3+)或丙基胺根离子(C3H7NH3+)。采用比例为1:2的溴化铅和溴化胺盐为原料，二甲基甲酰胺为溶剂，氯苯或氯苯、乙腈的混合溶剂为反溶剂，通过混合反溶剂蒸发的方法，在室温大气环境下制备了大尺寸的二维钙钛矿单晶晶体。所述的方法对环境条件要求较低，过程简单，适用于大尺寸晶体的制备。所述的二维钙钛矿单晶在光电领域具有良好的应用前景，高效、简单的制备方法对于单晶的商业化应用具有极大的潜力。"
+        },
+        "CN108560056A:claim1": {
+          "location": "Claim 1 (Chinese original)",
+          "text": "1.一种二维钙钛矿单晶材料的制备方法，其特征在于，包括如下步骤：1)将溴化铅(PbBr2)，溴化胺盐(记为ABr)以摩尔比1:2的比例加入到溶剂中，待其在室温下完全溶解后得到组成为A2PbBr4的前驱体溶液；2)将所得前驱体溶液用0.22μm尼龙过滤头过滤，过滤后的溶液放入敞口的5mL样品瓶，在100mL广口瓶中加入反溶剂，将样品瓶放入广口瓶里面，使反溶剂的液面低于小瓶子的瓶口，反溶剂在室温下缓慢挥发扩散，将广口瓶密封静置；3)数小时或数天后得到白色的二维钙钛矿单晶晶体，将得到的单晶晶体烘干，保存在干燥柜中。"
+        },
+        "CN108560056A:claim2": {
+          "location": "Claim 2 (Chinese original)",
+          "text": "2.根据权利要求1所述的二维钙钛矿单晶材料的制备方法，其特征在于，所述ABr中A为三个碳原子及以上烷基胺根离子或带苯环的胺根离子。"
+        },
+        "CN108560056A:claim3": {
+          "location": "Claim 3 (Chinese original)",
+          "text": "3.根据权利要求1或2所述的二维钙钛矿单晶材料的制备方法，其特征在于，所述ABr为C3H7NH3Br或者C4H9NH3Br。"
+        },
+        "CN108560056A:claim4": {
+          "location": "Claim 4 (Chinese original)",
+          "text": "4.根据权利要求1所述的二维钙钛矿单晶材料的制备方法，其特征在于，步骤1)所得前驱体溶液中A2PbBr4的浓度为1.5mol/L～2mol/L。"
+        },
+        "CN108560056A:claim5": {
+          "location": "Claim 5 (Chinese original)",
+          "text": "5.根据权利要求1所述的二维钙钛矿单晶材料的制备方法，其特征在于，所述溶剂为二甲基甲酰胺。"
+        },
+        "CN108560056A:claim6": {
+          "location": "Claim 6 (Chinese original)",
+          "text": "6.根据权利要求1所述的二维钙钛矿单晶材料的制备方法，其特征在于，所述反溶剂为体积比为1：(0～1)的氯苯与乙腈的混合溶液。"
+        },
+        "CN108560056A:claim7": {
+          "location": "Claim 7 (Chinese original)",
+          "text": "7.根据权利要求1所述的二维钙钛矿单晶材料的制备方法，其特征在于，所述反溶剂为体积比为1：0.1的氯苯与乙腈的混合溶液。"
+        },
+        "CN108560056A:claim8": {
+          "location": "Claim 8 (Chinese original)",
+          "text": "8.一种二维钙钛矿单晶材料，其特征在于，其化学组成为A2PbBr4，且由权利要求1～7任一项所述的方法制备得到。"
+        },
+        "CN108560056A:claim9": {
+          "location": "Claim 9 (Chinese original)",
+          "text": "9.根据权利要求8所述的二维钙钛矿单晶材料，其特征在于，所述单晶材料呈层状堆积。"
+        }
+      }
+    }
+  }
+}

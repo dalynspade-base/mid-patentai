@@ -1,0 +1,495 @@
+{
+  "dataset_version": "engineering-contract-1.0",
+  "provenance": "文献元数据与原文取自 patents.json（真实专利）；逐项复核(rows)为本 test 集构造的输入，不代表真实人工复核。expected 为细则答案：决策用例对齐 modules/novelty_rules.assess_novelty 的现行规则，契约用例对齐 modules/novelty_models 的数据契约。对照 rsi-lab：本文件 ≈ policy.py 的细则数据面，score.py 负责把输入喂给规则引擎并与细则对账。",
+  "cases": [
+    {
+      "id": "E01",
+      "usage": "train",
+      "kind": "decision",
+      "patents": ["US3664335A"],
+      "scenario": "基准日前文献经人工逐项复核，同一方案披露全部要素（正向用例）",
+      "cutoff": "2026-10-19",
+      "features": [
+        "矩形柔性多孔垫，含内层与外层无纺布和中央过滤层",
+        "一对弹性绑带在拉伸状态下固定于竖直边缘，松弛后使边缘起皱收拢",
+        "一对平行竖直折裥，分别呈 Z 与反 Z 形，撑出半刚性 C 形腔"
+      ],
+      "documents": [
+        {"id": "US3664335A", "section_refs": ["US3664335A:claim1"], "complete": true}
+      ],
+      "review": {
+        "document_id": "US3664335A",
+        "review_method": "human",
+        "reviewer": "testset-fixture-reviewer",
+        "reviewed_at": "2026-11-04T00:00:00+00:00",
+        "relevance": "related",
+        "relevance_basis": "同一口罩结构方案",
+        "relevance_section_ids": ["US3664335A:claim1"],
+        "same_scheme_confirmed": true,
+        "enabling_disclosure_confirmed": true,
+        "same_scheme_basis": "三项均出自权利要求1的同一口罩方案",
+        "scheme_section_ids": ["US3664335A:claim1"],
+        "rows": [
+          {"feature_id": "F1", "status": "disclosed", "section_id": "US3664335A:claim1", "quote": "said pad having an inner layer and an outer layer of non-woven material and a central layer of filter material", "scheme_id": "scheme1", "origin": "human"},
+          {"feature_id": "F2", "status": "disclosed", "section_id": "US3664335A:claim1", "quote": "said binding elements each being secured to a respective vertical edge of said pad while distended to said distended length thereof", "scheme_id": "scheme1", "origin": "human"},
+          {"feature_id": "F3", "status": "disclosed", "section_id": "US3664335A:claim1", "quote": "a pair of spaced parallel vertical pleats in said pad extending from the top horizontal edge to the bottom horizontal edge of said pad", "scheme_id": "scheme1", "origin": "human"}
+        ]
+      },
+      "expected": {"conclusion": "potential_novelty_risk", "note": "全部要素同一方案完整披露 → 单篇完整披露风险"}
+    },
+    {
+      "id": "E02",
+      "usage": "train",
+      "kind": "decision",
+      "patents": ["CN115863457A"],
+      "scenario": "公开日晚于基准日 → 不作为普通现有技术",
+      "cutoff": "2021-06-01",
+      "features": [
+        "钙钛矿光吸收层为 Cs2AgBiBr6 薄膜",
+        "对电极为碳电极"
+      ],
+      "documents": [
+        {"id": "CN115863457A", "section_refs": ["CN115863457A:claim1"], "complete": true}
+      ],
+      "review": {
+        "document_id": "CN115863457A",
+        "review_method": "human",
+        "reviewer": "testset-fixture-reviewer",
+        "reviewed_at": "2026-11-04T00:00:00+00:00",
+        "relevance": "related",
+        "relevance_basis": "同属钙钛矿太阳能电池",
+        "relevance_section_ids": ["CN115863457A:claim1"],
+        "same_scheme_confirmed": true,
+        "enabling_disclosure_confirmed": true,
+        "same_scheme_basis": "同一电池结构",
+        "scheme_section_ids": ["CN115863457A:claim1"],
+        "rows": [
+          {"feature_id": "F1", "status": "disclosed", "section_id": "CN115863457A:claim1", "quote": "the perovskite light absorption layer is Cs 2 AgBiBr 6", "scheme_id": "scheme1", "origin": "human"},
+          {"feature_id": "F2", "status": "disclosed", "section_id": "CN115863457A:claim1", "quote": "the counter electrode is a carbon electrode", "scheme_id": "scheme1", "origin": "human"}
+        ]
+      },
+      "expected": {"conclusion": "insufficient_evidence", "note": "公开日 2023-03-28 晚于基准日，文献被日期门排除，无可用文献 → 证据不足"}
+    },
+    {
+      "id": "E03",
+      "usage": "train",
+      "kind": "decision",
+      "patents": ["US4968168A"],
+      "scenario": "公开日等于基准日 → 不自动作为现有技术",
+      "cutoff": "1990-11-06",
+      "features": [
+        "两个环形齿架相互扣合",
+        "压缩弹簧把第二啮合件压向第一啮合件"
+      ],
+      "documents": [
+        {"id": "US4968168A", "section_refs": ["US4968168A:desc-toothed", "US4968168A:desc-spring"], "complete": true}
+      ],
+      "review": {
+        "document_id": "US4968168A",
+        "review_method": "human",
+        "reviewer": "testset-fixture-reviewer",
+        "reviewed_at": "2026-11-04T00:00:00+00:00",
+        "relevance": "related",
+        "relevance_basis": "同一卡合发声结构",
+        "relevance_section_ids": ["US4968168A:desc-toothed", "US4968168A:desc-spring"],
+        "same_scheme_confirmed": true,
+        "enabling_disclosure_confirmed": true,
+        "same_scheme_basis": "同一啮合组件",
+        "scheme_section_ids": ["US4968168A:desc-toothed", "US4968168A:desc-spring"],
+        "rows": [
+          {"feature_id": "F1", "status": "disclosed", "section_id": "US4968168A:desc-toothed", "quote": "the interlocking of two annular toothed racks", "scheme_id": "scheme1", "origin": "human"},
+          {"feature_id": "F2", "status": "disclosed", "section_id": "US4968168A:desc-spring", "quote": "thereby biasing the second engaging member 9 to engage with the first engaging member 6", "scheme_id": "scheme1", "origin": "human"}
+        ]
+      },
+      "expected": {"conclusion": "insufficient_evidence", "note": "published >= baseline → 同日不自动作为现有技术 → 证据不足"}
+    },
+    {
+      "id": "E04",
+      "usage": "train",
+      "kind": "decision",
+      "patents": ["CN115863457A"],
+      "scenario": "CN 文献申请日早于基准日但公开日晚于基准日 → 疑似抵触申请转人工",
+      "cutoff": "2022-12-15",
+      "features": [
+        "钙钛矿光吸收层为 Cs2AgBiBr6 薄膜",
+        "对电极为碳电极"
+      ],
+      "documents": [
+        {"id": "CN115863457A", "section_refs": ["CN115863457A:claim1"], "complete": true}
+      ],
+      "review": {
+        "document_id": "CN115863457A",
+        "review_method": "human",
+        "reviewer": "testset-fixture-reviewer",
+        "reviewed_at": "2026-11-04T00:00:00+00:00",
+        "relevance": "related",
+        "relevance_basis": "同属钙钛矿太阳能电池",
+        "relevance_section_ids": ["CN115863457A:claim1"],
+        "same_scheme_confirmed": true,
+        "enabling_disclosure_confirmed": true,
+        "same_scheme_basis": "同一电池结构",
+        "scheme_section_ids": ["CN115863457A:claim1"],
+        "rows": [
+          {"feature_id": "F1", "status": "disclosed", "section_id": "CN115863457A:claim1", "quote": "the perovskite light absorption layer is Cs 2 AgBiBr 6", "scheme_id": "scheme1", "origin": "human"},
+          {"feature_id": "F2", "status": "disclosed", "section_id": "CN115863457A:claim1", "quote": "the counter electrode is a carbon electrode", "scheme_id": "scheme1", "origin": "human"}
+        ]
+      },
+      "expected": {"conclusion": "insufficient_evidence", "note": "CN 且申请日 2022-11-30 早于基准日、公开日晚于基准日 → 不能仅按公开日期丢弃，转人工核验 → 证据不足"}
+    },
+    {
+      "id": "E05",
+      "usage": "train",
+      "kind": "decision",
+      "patents": ["CN115863457A"],
+      "scenario": "快照缺公开日期 → 不能用于日期资格判断",
+      "cutoff": "2026-10-19",
+      "documents_override_note": "publication_date 置空，模拟快照日期缺失",
+      "features": [
+        "钙钛矿光吸收层为 Cs2AgBiBr6 薄膜"
+      ],
+      "documents": [
+        {"id": "CN115863457A", "section_refs": ["CN115863457A:claim1"], "complete": true, "publication_date": ""}
+      ],
+      "review": {
+        "document_id": "CN115863457A",
+        "review_method": "human",
+        "reviewer": "testset-fixture-reviewer",
+        "reviewed_at": "2026-11-04T00:00:00+00:00",
+        "relevance": "related",
+        "relevance_basis": "同属钙钛矿太阳能电池",
+        "relevance_section_ids": ["CN115863457A:claim1"],
+        "same_scheme_confirmed": true,
+        "enabling_disclosure_confirmed": true,
+        "same_scheme_basis": "同一电池结构",
+        "scheme_section_ids": ["CN115863457A:claim1"],
+        "rows": [
+          {"feature_id": "F1", "status": "disclosed", "section_id": "CN115863457A:claim1", "quote": "the perovskite light absorption layer is Cs 2 AgBiBr 6", "scheme_id": "scheme1", "origin": "human"}
+        ]
+      },
+      "expected": {"conclusion": "insufficient_evidence", "note": "缺少有效公开日期 → 证据不足"}
+    },
+    {
+      "id": "E06",
+      "usage": "train",
+      "kind": "decision",
+      "patents": ["US7802572B2"],
+      "scenario": "unknown 要素不等于 absent → 不能据部分对照排除风险",
+      "cutoff": "2026-10-19",
+      "features": [
+        "透明的气密中央部，把佩戴者的呼气向下引导",
+        "透气的外部，环绕并连接到中央透明部",
+        "头带固定在外部或透明部上",
+        "一个或多个抗菌剂涂覆或嵌入于透气外部",
+        "刚性部限定单一锥形截面，以约90°角伸入透明部，形成鸭嘴形口罩"
+      ],
+      "documents": [
+        {"id": "US7802572B2", "section_refs": ["US7802572B2:claim1"], "complete": true}
+      ],
+      "review": {
+        "document_id": "US7802572B2",
+        "review_method": "human",
+        "reviewer": "testset-fixture-reviewer",
+        "reviewed_at": "2026-11-04T00:00:00+00:00",
+        "relevance": "related",
+        "relevance_basis": "同一口罩结构",
+        "relevance_section_ids": ["US7802572B2:claim1"],
+        "same_scheme_confirmed": false,
+        "enabling_disclosure_confirmed": false,
+        "same_scheme_basis": "",
+        "scheme_section_ids": ["US7802572B2:claim1"],
+        "rows": [
+          {"feature_id": "F1", "status": "disclosed", "section_id": "US7802572B2:claim1", "quote": "a transparent air-impermeable central portion that directs a wearer's breath downward", "scheme_id": "scheme1", "origin": "human"},
+          {"feature_id": "F2", "status": "disclosed", "section_id": "US7802572B2:claim1", "quote": "an air-permeable outer portion surrounding and secured to the central transparent portion", "scheme_id": "scheme1", "origin": "human"},
+          {"feature_id": "F3", "status": "disclosed", "section_id": "US7802572B2:claim1", "quote": "a head strap affixed to the outer portion or transparent portion", "scheme_id": "scheme1", "origin": "human"},
+          {"feature_id": "F4", "status": "unknown", "section_id": "", "quote": "", "scheme_id": "", "origin": "human"},
+          {"feature_id": "F5", "status": "disclosed", "section_id": "US7802572B2:claim1", "quote": "a rigid portion that defines a single conic section", "scheme_id": "scheme1", "origin": "human"}
+        ]
+      },
+      "expected": {"conclusion": "insufficient_evidence", "note": "存在 unknown 要素 → 证据不足（unknown 不等于 not_found）"}
+    },
+    {
+      "id": "E07",
+      "usage": "train",
+      "kind": "decision",
+      "patents": ["US4968168A"],
+      "scenario": "完整要素分属同一文献的两个互斥实施例 → 不得合并",
+      "cutoff": "2026-10-19",
+      "features": [
+        "中空杆与中间管通过外螺纹与螺纹孔配合传动",
+        "中空杆设螺旋条沿中间管螺旋槽滑动传动"
+      ],
+      "documents": [
+        {"id": "US4968168A", "section_refs": ["US4968168A:desc-intermediate", "US4968168A:desc-helical"], "complete": true}
+      ],
+      "review": {
+        "document_id": "US4968168A",
+        "review_method": "human",
+        "reviewer": "testset-fixture-reviewer",
+        "reviewed_at": "2026-11-04T00:00:00+00:00",
+        "relevance": "related",
+        "relevance_basis": "同一圆珠笔的两个传动实施例",
+        "relevance_section_ids": ["US4968168A:desc-intermediate", "US4968168A:desc-helical"],
+        "same_scheme_confirmed": false,
+        "enabling_disclosure_confirmed": true,
+        "same_scheme_basis": "",
+        "scheme_section_ids": ["US4968168A:desc-intermediate", "US4968168A:desc-helical"],
+        "rows": [
+          {"feature_id": "F1", "status": "disclosed", "section_id": "US4968168A:desc-intermediate", "quote": "a female thread 321 for accommodating the male thread 522 on the hollow rod 5", "scheme_id": "scheme1", "origin": "human"},
+          {"feature_id": "F2", "status": "disclosed", "section_id": "US4968168A:desc-helical", "quote": "a helical bar 421 protruding at its lower outer end so as to slide along helical slot 321 of the intermediate tube 20", "scheme_id": "scheme2", "origin": "human"}
+        ]
+      },
+      "expected": {"conclusion": "insufficient_evidence", "note": "要素全部披露但分属 scheme1/scheme2 → 完整要素分属不同方案 → 证据不足"}
+    },
+    {
+      "id": "E08",
+      "usage": "train",
+      "kind": "decision",
+      "patents": ["US3664335A"],
+      "scenario": "局部摘录（complete=false）不能用于排除完整披露",
+      "cutoff": "2026-10-19",
+      "features": [
+        "矩形柔性多孔垫，含内层与外层无纺布和中央过滤层",
+        "一对弹性绑带在拉伸状态下固定于竖直边缘",
+        "一对平行竖直折裥"
+      ],
+      "documents": [
+        {"id": "US3664335A", "section_refs": ["US3664335A:claim1"], "complete": false}
+      ],
+      "review": {
+        "document_id": "US3664335A",
+        "review_method": "human",
+        "reviewer": "testset-fixture-reviewer",
+        "reviewed_at": "2026-11-04T00:00:00+00:00",
+        "relevance": "related",
+        "relevance_basis": "同一口罩结构",
+        "relevance_section_ids": ["US3664335A:claim1"],
+        "same_scheme_confirmed": true,
+        "enabling_disclosure_confirmed": true,
+        "same_scheme_basis": "同一权利要求方案",
+        "scheme_section_ids": ["US3664335A:claim1"],
+        "rows": [
+          {"feature_id": "F1", "status": "disclosed", "section_id": "US3664335A:claim1", "quote": "said pad having an inner layer and an outer layer of non-woven material and a central layer of filter material", "scheme_id": "scheme1", "origin": "human"},
+          {"feature_id": "F2", "status": "disclosed", "section_id": "US3664335A:claim1", "quote": "said binding elements each being secured to a respective vertical edge of said pad", "scheme_id": "scheme1", "origin": "human"},
+          {"feature_id": "F3", "status": "disclosed", "section_id": "US3664335A:claim1", "quote": "a pair of spaced parallel vertical pleats in said pad", "scheme_id": "scheme1", "origin": "human"}
+        ]
+      },
+      "expected": {"conclusion": "insufficient_evidence", "note": "资料不完整，不能据局部摘录排除完整披露 → 证据不足"}
+    },
+    {
+      "id": "E09",
+      "usage": "train",
+      "kind": "decision",
+      "patents": ["US7802572B2"],
+      "scenario": "引文无法逐字回查 → 该对照无效",
+      "cutoff": "2026-10-19",
+      "features": [
+        "抗菌剂涂覆于透气外部"
+      ],
+      "documents": [
+        {"id": "US7802572B2", "section_refs": ["US7802572B2:claim1"], "complete": true}
+      ],
+      "review": {
+        "document_id": "US7802572B2",
+        "review_method": "human",
+        "reviewer": "testset-fixture-reviewer",
+        "reviewed_at": "2026-11-04T00:00:00+00:00",
+        "relevance": "related",
+        "relevance_basis": "同一口罩结构",
+        "relevance_section_ids": ["US7802572B2:claim1"],
+        "same_scheme_confirmed": true,
+        "enabling_disclosure_confirmed": true,
+        "same_scheme_basis": "同一权利要求方案",
+        "scheme_section_ids": ["US7802572B2:claim1"],
+        "rows": [
+          {"feature_id": "F1", "status": "disclosed", "section_id": "US7802572B2:claim1", "quote": "antimicrobial agents are painted onto the air-permeable outer portion", "scheme_id": "scheme1", "origin": "human"}
+        ]
+      },
+      "expected": {"conclusion": "insufficient_evidence", "note": "原文为 coated onto or embedded into，引文 painted onto 无法回查 → 证据不足"}
+    },
+    {
+      "id": "E10",
+      "usage": "train",
+      "kind": "decision",
+      "patents": [],
+      "scenario": "检索无结果",
+      "cutoff": "2026-10-19",
+      "features": ["量子点抗菌口罩滤层"],
+      "documents": [],
+      "review": null,
+      "expected": {"conclusion": "insufficient_evidence", "note": "没有取得可复核的文献 → 证据不足；空结果不是安全结论"}
+    },
+    {
+      "id": "E11",
+      "usage": "train",
+      "kind": "decision",
+      "patents": [],
+      "scenario": "检索失败并被记录",
+      "cutoff": "2026-10-19",
+      "features": ["量子点抗菌口罩滤层"],
+      "documents": [],
+      "errors": ["Google Patents 检索超时"],
+      "review": null,
+      "expected": {"conclusion": "insufficient_evidence", "note": "检索失败进入 warnings → 证据不足"}
+    },
+    {
+      "id": "E12",
+      "usage": "train",
+      "kind": "decision",
+      "patents": ["US8053972B2"],
+      "scenario": "要素多一项未披露 → 未发现完整披露（非证据不足）",
+      "cutoff": "2026-10-19",
+      "features": [
+        "蓝色LED一次光源",
+        "第一群量子点发红光",
+        "第二群量子点发绿光",
+        "量子点电子注入层"
+      ],
+      "documents": [
+        {"id": "US8053972B2", "section_refs": ["US8053972B2:claim2"], "complete": true}
+      ],
+      "review": {
+        "document_id": "US8053972B2",
+        "review_method": "human",
+        "reviewer": "testset-fixture-reviewer",
+        "reviewed_at": "2026-11-04T00:00:00+00:00",
+        "relevance": "related",
+        "relevance_basis": "同一白光量子点器件",
+        "relevance_section_ids": ["US8053972B2:claim2"],
+        "same_scheme_confirmed": true,
+        "enabling_disclosure_confirmed": true,
+        "same_scheme_basis": "同一器件方案",
+        "scheme_section_ids": ["US8053972B2:claim2"],
+        "rows": [
+          {"feature_id": "F1", "status": "disclosed", "section_id": "US8053972B2:claim2", "quote": "the primary light source comprises a blue LED light source", "scheme_id": "scheme1", "origin": "human"},
+          {"feature_id": "F2", "status": "disclosed", "section_id": "US8053972B2:claim2", "quote": "a first population of quantum dots of a material and size adapted to emit red secondary light", "scheme_id": "scheme1", "origin": "human"},
+          {"feature_id": "F3", "status": "disclosed", "section_id": "US8053972B2:claim2", "quote": "a second population of quantum dots of a material and size adapted to emit green secondary light", "scheme_id": "scheme1", "origin": "human"},
+          {"feature_id": "F4", "status": "not_found", "section_id": "", "quote": "", "scheme_id": "", "origin": "human"}
+        ]
+      },
+      "expected": {"conclusion": "no_complete_disclosure_found", "note": "逐项完成且无未知，F4 未披露 → 未发现完整披露（附边界说明）"}
+    },
+    {
+      "id": "E13",
+      "usage": "train",
+      "kind": "decision",
+      "patents": ["CN108559503B"],
+      "scenario": "候选建议（review_method=candidate）不能当作已完成复核",
+      "cutoff": "2026-10-19",
+      "features": [
+        "两步抗溶剂结晶制备 Cs2AgBiBr6"
+      ],
+      "documents": [
+        {"id": "CN108559503B", "section_refs": ["CN108559503B:claim1"], "complete": true}
+      ],
+      "review": {
+        "document_id": "CN108559503B",
+        "review_method": "candidate",
+        "reviewer": "testset-fixture-reviewer",
+        "reviewed_at": "2026-11-04T00:00:00+00:00",
+        "relevance": "related",
+        "relevance_basis": "同一制备方法",
+        "relevance_section_ids": ["CN108559503B:claim1"],
+        "same_scheme_confirmed": true,
+        "enabling_disclosure_confirmed": true,
+        "same_scheme_basis": "同一方法",
+        "scheme_section_ids": ["CN108559503B:claim1"],
+        "rows": [
+          {"feature_id": "F1", "status": "disclosed", "section_id": "CN108559503B:claim1", "quote": "X is more than or equal to 1, and Y is more than or equal to 1", "scheme_id": "scheme1", "origin": "model"}
+        ]
+      },
+      "expected": {"conclusion": "insufficient_evidence", "note": "候选建议不是已完成复核 → 证据不足；模型建议不得伪装人工确认"}
+    },
+    {
+      "id": "E14",
+      "usage": "anchor",
+      "kind": "decision",
+      "patents": ["US3664335A"],
+      "scenario": "模型复核走完整绑定链（模型/端点/提示词版本/段落覆盖/输入哈希）后给出风险结论",
+      "cutoff": "2026-10-19",
+      "features": [
+        "矩形柔性多孔垫，含内层与外层无纺布和中央过滤层",
+        "一对弹性绑带在拉伸状态下固定于竖直边缘，松弛后使边缘起皱收拢",
+        "一对平行竖直折裥，分别呈 Z 与反 Z 形，撑出半刚性 C 形腔"
+      ],
+      "documents": [
+        {"id": "US3664335A", "section_refs": ["US3664335A:claim1"], "complete": true}
+      ],
+      "review": {
+        "document_id": "US3664335A",
+        "review_method": "model",
+        "reviewer": "testset-fixture-model",
+        "reviewed_at": "2026-11-04T00:00:00+00:00",
+        "review_model": "fixture-model",
+        "review_endpoint": "fixture://local",
+        "review_prompt_version": "fixture-prompt-v1",
+        "completeness_basis": "fixture 构造的全篇单条权利要求",
+        "relevance": "related",
+        "relevance_basis": "同一口罩结构",
+        "relevance_section_ids": ["US3664335A:claim1"],
+        "same_scheme_confirmed": true,
+        "enabling_disclosure_confirmed": true,
+        "same_scheme_basis": "同一权利要求方案",
+        "scheme_section_ids": ["US3664335A:claim1"],
+        "context_complete": true,
+        "rows": [
+          {"feature_id": "F1", "status": "disclosed", "section_id": "US3664335A:claim1", "quote": "said pad having an inner layer and an outer layer of non-woven material and a central layer of filter material", "scheme_id": "scheme1", "origin": "model"},
+          {"feature_id": "F2", "status": "disclosed", "section_id": "US3664335A:claim1", "quote": "said binding elements each being secured to a respective vertical edge of said pad while distended to said distended length thereof", "scheme_id": "scheme1", "origin": "model"},
+          {"feature_id": "F3", "status": "disclosed", "section_id": "US3664335A:claim1", "quote": "a pair of spaced parallel vertical pleats in said pad extending from the top horizontal edge to the bottom horizontal edge of said pad", "scheme_id": "scheme1", "origin": "model"}
+        ]
+      },
+      "expected": {"conclusion": "potential_novelty_risk", "note": "模型复核绑定链完整时与人工路径同规则：同一方案完整披露 → 风险"}
+    },
+    {
+      "id": "E15",
+      "usage": "train",
+      "kind": "contract",
+      "patents": ["US3664335A"],
+      "scenario": "来源白名单：只接受 patents.google.com 单篇页面",
+      "check": "google_patent_url",
+      "items": [
+        {"input": "https://patents.google.com/patent/US3664335A/en", "expect": "ok"},
+        {"input": "http://patents.google.com/patent/US3664335A/en", "expect": "error"},
+        {"input": "https://example.com/patent/US3664335A", "expect": "error"},
+        {"input": "https://patents.google.com/patent/US3664335 A/en", "expect": "error"}
+      ],
+      "expected": {"note": "http 拒绝、外部域名拒绝、非法路径拒绝"}
+    },
+    {
+      "id": "E16",
+      "usage": "train",
+      "kind": "contract",
+      "patents": ["US3664335A"],
+      "scenario": "快照哈希绑定：from_dict 哈希不匹配必须拒绝，匹配则通过",
+      "check": "snapshot_hash_binding",
+      "expected": {"note": "篡改 snapshot_hash → ValueError；正确 snapshot_hash → 通过"}
+    },
+    {
+      "id": "E17",
+      "usage": "train",
+      "kind": "contract",
+      "patents": [],
+      "scenario": "要素解析：分号分行、逗号保持关系、重复去重",
+      "check": "parse_features",
+      "items": [
+        {"input": "压力传感器连接控制器；蜂鸣器报警", "expect": "count_2"},
+        {"input": "压力传感器连接控制器, 蜂鸣器报警", "expect": "count_1"},
+        {"input": "压力传感器连接控制器；压力传感器连接控制器", "expect": "count_1"}
+      ],
+      "expected": {"note": "分号切分、逗号不切分、dict.fromkeys 去重"}
+    },
+    {
+      "id": "E18",
+      "usage": "train",
+      "kind": "contract",
+      "patents": ["US3664335A"],
+      "scenario": "快照格式版本规则：v1 不允许定位信息，v2 允许，未知版本拒绝",
+      "check": "snapshot_schema_version",
+      "items": [
+        {"input": {"snapshot_schema_version": 1, "sections": [{"id": "s1", "text": "x", "source_location": "claim 1"}]}, "expect": "error"},
+        {"input": {"snapshot_schema_version": 2, "sections": [{"id": "s1", "text": "x", "source_location": "claim 1"}]}, "expect": "ok"},
+        {"input": {"snapshot_schema_version": 3, "sections": [{"id": "s1", "text": "x"}]}, "expect": "error"}
+      ],
+      "expected": {"note": "对应 PatentDocument.__post_init__ 的版本校验"}
+    }
+  ]
+}
