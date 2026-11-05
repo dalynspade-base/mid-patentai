@@ -67,7 +67,7 @@ def main():
         parser.error('Demo cannot be mixed with real data/model execution.')
     if bool(args.anchor_input) != bool(args.anchor_gold):
         parser.error('Both anchor input and gold are required.')
-    if not 0 <= args.retrieval_weight <= 1 or not 1 <= args.max_queries <= 20 or not 1 <= args.max_documents <= 20:
+    if not 0 <= args.retrieval_weight <= 1 or not 1 <= args.max_queries <= 20 or not 1 <= args.max_documents <= 100:
         parser.error('Invalid frozen score weights or retrieval budget.')
     if args.demo:
         inputs, gold = teaching_dataset()
@@ -82,8 +82,10 @@ def main():
     if not args.run_model and not args.demo:
         print(json.dumps({'execution': 'not_executed', 'cases': case_count, 'expected_per_case': [len(c['targets']) for c in gold['cases']],
             'rounds': args.rounds, 'paired_trials_per_case': 1+2*args.rounds,
-            'max_model_requests_without_anchor': ((2+args.max_documents)*(1+2*args.rounds)*case_count)+args.rounds,
+            'max_model_requests_without_anchor': sum((1 + args.max_documents * len(c['assessment_targets'])
+                if c.get('assessment_targets') else 2 + args.max_documents) * (1+2*args.rounds) for c in inputs['cases']) + args.rounds,
             'budget_per_trial': budget, 'weights': weights,
+            'scoring_profiles': ['evidence-v2' if c.get('assessment_targets') else 'legacy-label-v1' for c in inputs['cases']],
             'note': '仅验证与预览；尚未调用检索、模型或生成真实分数。'}, ensure_ascii=False, indent=2))
         return 0
     if not args.output_dir:

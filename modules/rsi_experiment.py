@@ -39,7 +39,8 @@ def validate_inputs(inputs):
         raise ValueError('Supply cases and an explicit abstention label.')
     ids = set()
     for case in inputs['cases']:
-        if set(case) != {'case_id', 'cutoff', 'text'} or not all(isinstance(v, str) and v.strip() for v in case.values()):
+        if (set(case) - {'case_id', 'cutoff', 'text', 'assessment_targets'}
+                or not all(isinstance(case.get(k), str) and case[k].strip() for k in ('case_id', 'cutoff', 'text'))):
             raise ValueError('Public cases contain only opaque case_id, cutoff and modified text.')
         date.fromisoformat(case['cutoff'])
         if case['case_id'] in ids:
@@ -55,7 +56,9 @@ def validate_gold(inputs, gold):
     if not isinstance(gold['cases'], list) or len(gold['cases']) != len(public) or {c['case_id'] for c in gold['cases']} != set(public):
         raise ValueError('Every case needs exactly one private reference.')
     for case in gold['cases']:
-        if set(case) != {'case_id', 'risk_label', 'source_target_id', 'targets'} or case['risk_label'] not in inputs['risk_levels']:
+        if (set(case) - {'case_id', 'risk_label', 'source_target_id', 'targets', 'assessment'}
+                or not {'case_id', 'risk_label', 'source_target_id', 'targets'} <= set(case)
+                or case['risk_label'] not in inputs['risk_levels']):
             raise ValueError('Invalid private reference fields or risk label.')
         targets = case['targets']
         if not isinstance(targets, list) or not targets or len({t['target_id'] for t in targets}) != len(targets):
@@ -78,6 +81,11 @@ def validate_gold(inputs, gold):
             if identities & keys:
                 raise ValueError('Target aliases overlap; merge duplicate/family entries explicitly.')
             identities.update(keys)
+        if public[case['case_id']].get('assessment_targets') or 'assessment' in case:
+            from modules.rsi_scoring import validate_assessment
+            validate_assessment(public[case['case_id']], case)
+            if any(t['publication_date'] and t['publication_date'] >= public[case['case_id']]['cutoff'] for t in targets):
+                raise ValueError('Evidence-v2 retrieval targets must be published strictly before the cutoff.')
     return deepcopy(gold)
 
 
@@ -88,6 +96,8 @@ def match_target(document, target):
 
 
 def score_predictions(inputs, gold, predictions, weights):
+    from modules.rsi_scoring import finite_weights, score_evidence
+    finite_weights(weights)
     references = {c['case_id']: c for c in gold['cases']}
     if len(predictions) != len(inputs['cases']) or {p['case_id'] for p in predictions} != set(references):
         raise ValueError('Missing or duplicate predictions.')
@@ -103,6 +113,9 @@ def score_predictions(inputs, gold, predictions, weights):
                 raise ValueError('Retrieved papers need identity, title, URL and actual publication date.')
             if date.fromisoformat(doc['publication_date']) > date.fromisoformat(case['cutoff']):
                 raise ValueError('Retrieved future evidence cannot earn historical retrieval credit.')
+        if case.get('assessment_targets'):
+            rows.append(score_evidence(case, reference, prediction, weights))
+            continue
         found = [t['target_id'] for t in reference['targets'] if any(match_target(d, t) for d in documents)]
         count = len(reference['targets'])
         retrieval = 100 * len(found) / count
@@ -111,9 +124,11 @@ def score_predictions(inputs, gold, predictions, weights):
                      'matched_target_ids': found, 'retrieval_score': retrieval, 'risk_score': risk,
                      'source_A_found': reference['source_target_id'] in found})
     retrieval = sum(r['retrieval_score'] for r in rows) / len(rows)
-    risk = sum(r['risk_score'] for r in rows) / len(rows)
+    risk = None if any(r['risk_score'] is None for r in rows) else sum(r['risk_score'] for r in rows) / len(rows)
     return {'retrieval_score': retrieval, 'risk_score': risk,
-            'total_score': weights[0] * retrieval + weights[1] * risk, 'cases': rows}
+            'adoption_eligible': all(r.get('adoption_eligible', True) for r in rows),
+            'scoring_profile': 'evidence-v2' if any(c.get('assessment_targets') for c in inputs['cases']) else 'legacy-label-v1',
+            'total_score': None if risk is None else weights[0] * retrieval + weights[1] * risk, 'cases': rows}
 
 
 def _formal_fingerprints(root):
@@ -135,7 +150,9 @@ def _feedback(score):
     # Aggregate feedback only: no target identities, patent A identity or expected risk labels.
     return {key: score[key] for key in ('retrieval_score', 'risk_score', 'total_score')} | {
         'retrieval_gap': any(r['found'] < r['expected'] for r in score['cases']),
-        'risk_mismatch': any(r['risk_score'] == 0 for r in score['cases'])}
+        'risk_mismatch': any(r['risk_score'] is None or r['risk_score'] < 100 for r in score['cases']),
+        'adoption_eligible': score.get('adoption_eligible', True),
+        'unjudged_count': sum(r.get('unjudged', 0) for r in score['cases'])}
 
 
 def _optimizer_predictions(predictions):
@@ -170,12 +187,14 @@ def run_experiment(inputs, gold, output, predictor, proposer, *, formal_root, ro
     gold = validate_gold(inputs, gold)
     if type(rounds) is not int or not 1 <= rounds <= 5:
         raise ValueError('This small experiment permits one to five improvement rounds.')
-    if len(weights) != 2 or any(type(w) not in (int, float) or not 0 <= w <= 1 for w in weights) or abs(sum(weights)-1) > 1e-9:
-        raise ValueError('Fix two nonnegative weights summing to one before running.')
+    from modules.rsi_scoring import finite_weights
+    finite_weights(weights)
     budget = deepcopy(budget or {'max_queries': 4, 'max_documents': 20})
     weights = tuple(weights)
-    if set(budget) != {'max_queries', 'max_documents'} or any(type(v) is not int or not 1 <= v <= 20 for v in budget.values()):
-        raise ValueError('Fixed query/document budgets must be between one and twenty.')
+    if (set(budget) != {'max_queries', 'max_documents'} or type(budget['max_queries']) is not int
+            or not 1 <= budget['max_queries'] <= 20 or type(budget['max_documents']) is not int
+            or not 1 <= budget['max_documents'] <= 100):
+        raise ValueError('Query budget must be 1-20; document budget must be 1-100, fixed before running.')
     formal_root, output = Path(formal_root).resolve(), Path(output).resolve()
     if output.is_relative_to(formal_root) or formal_root.is_relative_to(output):
         raise ValueError('Experiment output cannot overlap the production Skill directory.')
@@ -192,6 +211,10 @@ def run_experiment(inputs, gold, output, predictor, proposer, *, formal_root, ro
                      'input_hash': digest(inputs), 'gold_hash': digest(gold), 'formal_skills': protected,
                      'reference': 'https://share.onorca.dev/a/akZtQQ86ZK-C'}
     configuration['scorer_sha256'] = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+    scorer_paths = [Path(__file__), Path(__file__).with_name('rsi_scoring.py'),
+                    Path(__file__).resolve().parents[1]/'evals/testsets/rsi_scoring.py']
+    scorer_hashes = {str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in scorer_paths}
+    configuration['scoring_implementation'] = {p.name+':'+str(i): scorer_hashes[str(p)] for i, p in enumerate(scorer_paths)}
     runtime = runtime or {}
     if set(runtime)-{'adapter', 'model', 'provider_host', 'temperature'}:
         raise ValueError('Runtime metadata must not contain credentials or arbitrary settings.')
@@ -201,6 +224,8 @@ def run_experiment(inputs, gold, output, predictor, proposer, *, formal_root, ro
 
     def trial(skill, cases, folder):
         guard()
+        if any(hashlib.sha256(Path(p).read_bytes()).hexdigest() != h for p, h in scorer_hashes.items()):
+            raise ValueError('Frozen scoring implementation changed.')
         if hashlib.sha256((output/'config.json').read_bytes()).hexdigest() != manifest_hash:
             raise ValueError('Frozen scorer configuration changed.')
         before = hashlib.sha256(skill.read_bytes()).hexdigest()
@@ -214,6 +239,8 @@ def run_experiment(inputs, gold, output, predictor, proposer, *, formal_root, ro
             raise ValueError('The trial changed its frozen Skill document.')
         if hashlib.sha256((output/'config.json').read_bytes()).hexdigest() != manifest_hash:
             raise ValueError('Frozen scorer configuration changed during a trial.')
+        if any(hashlib.sha256(Path(p).read_bytes()).hexdigest() != h for p, h in scorer_hashes.items()):
+            raise ValueError('Frozen scoring implementation changed during a trial.')
         folder.mkdir(parents=True, exist_ok=False)
         save(folder/'predictions.json', predictions)  # Freeze predictions before scoring.
         return predictions
@@ -242,7 +269,8 @@ def run_experiment(inputs, gold, output, predictor, proposer, *, formal_root, ro
             control_score = score_predictions(inputs, gold, control_predictions, weights)
             candidate_predictions = trial(candidate, inputs, folder/'candidate')
             candidate_score = score_predictions(inputs, gold, candidate_predictions, weights)
-            accepted = (candidate_score['total_score'] > control_score['total_score']
+            accepted = (candidate_score.get('adoption_eligible', True) and control_score.get('adoption_eligible', True)
+                        and candidate_score['total_score'] > control_score['total_score']
                         and candidate_score['retrieval_score'] >= control_score['retrieval_score']
                         and candidate_score['risk_score'] >= control_score['risk_score'])
             record = {'round': number, 'parent_skill': str(incumbent), 'candidate_skill': binding,
@@ -299,20 +327,22 @@ def _guard(root, expected):
 
 
 def report_markdown(result):
+    def number(value):
+        return '未判/不可计算' if value is None else f'{value:.2f}'
     label = '教学模拟：预设响应，不是模型提升结果。' if result['mode'] == 'teaching_demo' else '真实接口运行：分数仅针对当前标注集。'
     initial = result['initial_score']
     lines = ['# 专利临时 Skill RSI 结果', '', label, '',
-        f"基线：检索 {initial['retrieval_score']:.2f} / 风险 {initial['risk_score']:.2f} / 总分 {initial['total_score']:.2f}", '',
+        f"基线：检索 {number(initial['retrieval_score'])} / 风险 {number(initial['risk_score'])} / 总分 {number(initial['total_score'])}", '',
         f"总分权重：检索 {result['score_weights'][0]:g} / 风险 {result['score_weights'][1]:g}；每次试跑预算：{result['trial_budget']['max_queries']} 条查询、{result['trial_budget']['max_documents']} 次正文获取尝试。", '',
         '|轮次|当前版总分（重测）|候选找回/应找回|A找回|候选检索分|候选风险分|候选总分|采纳|', '|---|---:|---|---|---:|---:|---:|---|']
     for row in result['rounds']:
         score = row['candidate_score']
         retrieved = '；'.join(f"{r['found']}/{r['expected']}" for r in score['cases'])
         source_a = '；'.join('是' if r['source_A_found'] else '否' for r in score['cases'])
-        lines.append(f"|{row['round']}|{row['control_score']['total_score']:.2f}|{retrieved}|{source_a}|{score['retrieval_score']:.2f}|{score['risk_score']:.2f}|{score['total_score']:.2f}|{'是' if row['accepted'] else '否'}|")
+        lines.append(f"|{row['round']}|{number(row['control_score']['total_score'])}|{retrieved}|{source_a}|{number(score['retrieval_score'])}|{number(score['risk_score'])}|{number(score['total_score'])}|{'是' if row['accepted'] else '否'}|")
     lines += ['', f"保留版本：第 {result['selected_round']} 轮（0 为基线）。", f"临时 Skill：{result['best_skill']}",
         '', '每轮均重新测试当前版与候选版；分数相同不采纳，任一分项退步不采纳。正式 Skill 未自动替换。',
-        '', '全部列出的专利均为应找回目标；每篇去重计一次。风险分为与预置标签完全一致得 100，否则得 0。总分使用运行前冻结的权重。',
+        '', '检索分按实际取得的参考目标去重计算。legacy-label-v1 使用整案等级一致分；evidence-v2 使用逐文献/逐权项的相关性 F1 与证据判断正确率，详见 score.json。两种协议分开报告，不跨协议比较。',
         '', '同一副本反复优化只反映该集合拟合；约二十篇参考文献不是二十个独立风险样本。']
     if result['anchor'] is None:
         lines.append('未提供独立锚集，不能据此声称对新案件普遍提高。')

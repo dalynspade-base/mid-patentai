@@ -1,6 +1,6 @@
 # Google Patents 专利新颖性预筛
 
-**版本：2.1.0** · [临时 Skill RSI 实验](docs/rsi-experiment.md) · [2.0.0 架构迁移](docs/releases/v2.0.0.md) · [1.1.0历史说明](docs/releases/v1.1.0.md) · [变更记录](CHANGELOG.md)
+**版本：2.2.0** · [临时 Skill RSI 实验](docs/rsi-experiment.md) · [2.0.0 架构迁移](docs/releases/v2.0.0.md) · [1.1.0历史说明](docs/releases/v1.1.0.md) · [变更记录](CHANGELOG.md)
 
 本项目把用户想法或已保存材料整理为技术要素，检索或接收 Google Patents 原文快照，逐篇对照技术关系与全部限定，再给出有证据范围的新颖性预筛报告。八份 Markdown Skill 描述任务与上下文，Python 工具执行具体操作，harness 管理状态和调用。
 
@@ -24,7 +24,7 @@
 
 ## 可选：临时 Skill 的 RSI 实验
 
-新增隔离的五轮“提议—对照试跑—固定评分—采纳”循环，每轮新建临时 SKILL.md，只增补实验文字，正式八份 Skill 不变。按全部应找回名单计算检索比例，与私有风险标注对标；默认只验证/预览，真实调用需显式启用。数据尚未提供，附有不可直接当真值运行的模板和明确标注的教学演示。详见[实验架构、评分及运行方法](docs/rsi-experiment.md)。数字只属于该实验的外部目标，正式六维语义验收保持原协议。
+提供隔离的五轮“提议—对照试跑—固定评分—采纳”循环，每轮新建临时 SKILL.md，只增补实验文字，正式八份 Skill 不变。按全部应找回名单计算检索比例，与私有风险标注对标；默认只验证/预览，真实调用需显式启用。线上 #8 的公开测试材料保存在 `evals/testsets/`，用户提供的材料单独留在被忽略的本地资料库。新增 evidence-v2 逐文献/逐权项证据评分，旧整案等级协议保留为 legacy-label-v1。详见[实验架构、评分及运行方法](docs/rsi-experiment.md)及[2.2.0 整合边界](docs/releases/v2.2.0.md)。数字只属于该实验的外部目标，正式六维语义验收保持原协议。
 
 ## 安装与启动
 

@@ -1,0 +1,647 @@
+{
+  "dataset_version": "semantic-theory-1.0",
+  "provenance": "语料取自 patents.json（2026-11-04 自 Google Patents 逐字核验）；候选输出为冻结的模拟业务输出，有对有错；label 为细则答案，被测流程不得读取。对照 rsi-lab：features/documents ≈ 作业字段，candidate_output ≈ 阅卷 Agent 结论，label ≈ policy.py 算出的细则答案，score.py ≈ audit.py 对账。",
+  "label_convention": "expected_statuses/expected_sections/expected_conclusion 由 policy.py 记载的细则从原文事实推导；expected_verdict 是对该候选输出的语义验收裁决（acceptable/needs_revision/pending_adjudication）；violations 引用六维键名（terms_objects/structure_relations/logic_constraints/context_reference/functions_effects/evaluation_expression）。",
+  "usage": "usage=train 的案例用于日常回归；usage=anchor 的案例不参与任何迭代调优，只用于对账。",
+  "cases": [
+    {
+      "id": "T01",
+      "usage": "train",
+      "patents": ["US4968168A"],
+      "skill_under_test": "patent-evidence-alignment",
+      "trap": "同一文献中互斥实施例被并成同一技术方案",
+      "cutoff": "2026-10-19",
+      "features": [
+        {"id": "F1", "text": "中空杆与中间管通过外螺纹(522)与螺纹孔(321)配合，把旋转运动变换为有限的轴向位移"},
+        {"id": "F2", "text": "中空杆下端设螺旋条(421)，沿中间管的螺旋槽(321)滑动，把旋转运动变换为有限的轴向位移"}
+      ],
+      "documents": [{"id": "US4968168A", "section_ids": ["US4968168A:desc-intermediate", "US4968168A:desc-helical"]}],
+      "candidate_output": {
+        "conclusion": "potential_novelty_risk",
+        "evidence": [
+          {"feature_id": "F1", "status": "disclosed", "section_id": "US4968168A:desc-intermediate", "quote": "one end 32 on which is disposed a female thread 321 for accommodating the male thread 522 on the hollow rod 5", "scheme_id": "scheme1"},
+          {"feature_id": "F2", "status": "disclosed", "section_id": "US4968168A:desc-helical", "quote": "a helical bar 421 protruding at its lower outer end so as to slide along helical slot 321 of the intermediate tube 20", "scheme_id": "scheme1"}
+        ],
+        "same_scheme_basis": "两个实施例都是把旋转变换为轴向位移的传动结构，属于同一发明构思，合并为同一方案判断。",
+        "self_verdict": "acceptable",
+        "notes": "两段原文分别支持两个要素，合并后构成完整披露。"
+      },
+      "label": {
+        "expected_statuses": {"F1": "disclosed", "F2": "disclosed"},
+        "expected_sections": {"F1": "US4968168A:desc-intermediate", "F2": "US4968168A:desc-helical"},
+        "expected_scheme_map": {"F1": "emb-thread", "F2": "emb-helical"},
+        "expected_conclusion": "insufficient_evidence",
+        "expected_verdict": "needs_revision",
+        "violations": [
+          {"dimension": "context_reference", "issue": "螺纹传动与螺旋槽传动分属两个互斥实施例，被并入同一 scheme_id"},
+          {"dimension": "structure_relations", "issue": "同一方案确认缺失：没有任何一个实施例同时包含两个传动结构"}
+        ]
+      }
+    },
+    {
+      "id": "T02",
+      "usage": "train",
+      "patents": ["US5944436A"],
+      "skill_under_test": "patent-evidence-alignment",
+      "trap": "否定词被读成肯定披露",
+      "cutoff": "2026-10-19",
+      "features": [
+        {"id": "F1", "text": "卡位机构允许大齿轮双向旋转，正向与反向转动均可驱动发声机构持续发声"}
+      ],
+      "documents": [{"id": "US5944436A", "section_ids": ["US5944436A:desc-ratchet", "US5944436A:desc-repeat"]}],
+      "candidate_output": {
+        "conclusion": "potential_novelty_risk",
+        "evidence": [
+          {"feature_id": "F1", "status": "disclosed", "section_id": "US5944436A:desc-ratchet", "quote": "the ratchet teeth 613 cannot engage the ratchet teeth 615 so that the large gear rotates only clockwise", "scheme_id": "scheme1"}
+        ],
+        "same_scheme_basis": "棘轮结构直接支持双向旋转的卡位关系。",
+        "self_verdict": "acceptable",
+        "notes": "原文讨论了棘轮齿的啮合与脱离，说明双向旋转均有卡位。"
+      },
+      "label": {
+        "expected_statuses": {"F1": "not_found"},
+        "expected_sections": {"F1": null},
+        "expected_conclusion": "no_complete_disclosure_found",
+        "expected_verdict": "needs_revision",
+        "violations": [
+          {"dimension": "logic_constraints", "issue": "原文明确：逆时针时棘轮齿 cannot engage，大齿轮 rotates only clockwise；否定限定被读成肯定披露"}
+        ]
+      }
+    },
+    {
+      "id": "T03",
+      "usage": "train",
+      "patents": ["US5944436A"],
+      "skill_under_test": "patent-evidence-alignment",
+      "trap": "指称对象混淆（同篇内不同部件）",
+      "cutoff": "2026-10-19",
+      "features": [
+        {"id": "F1", "text": "发声弹性片是装配件(fit member)上的弹性U形部(41)"}
+      ],
+      "documents": [{"id": "US5944436A", "section_ids": ["US5944436A:desc-elastic-strip", "US5944436A:desc-fit-u"]}],
+      "candidate_output": {
+        "conclusion": "potential_novelty_risk",
+        "evidence": [
+          {"feature_id": "F1", "status": "disclosed", "section_id": "US5944436A:desc-fit-u", "quote": "The fit member 4 has an elastic U-shaped portion 41", "scheme_id": "scheme1"}
+        ],
+        "same_scheme_basis": "弹性U形部即发声弹性片，同一部件。",
+        "self_verdict": "acceptable",
+        "notes": "文献中存在弹性片结构，支持该要素。"
+      },
+      "label": {
+        "expected_statuses": {"F1": "not_found"},
+        "expected_sections": {"F1": "US5944436A:desc-elastic-strip"},
+        "expected_conclusion": "no_complete_disclosure_found",
+        "expected_verdict": "needs_revision",
+        "violations": [
+          {"dimension": "terms_objects", "issue": "发声弹性片21属于固定件(securing member 2)；fit member 的弹性U形部41是另一部件，指称对象被替换"},
+          {"dimension": "context_reference", "issue": "引用了描述另一部件的段落来支持本要素"}
+        ]
+      }
+    },
+    {
+      "id": "T04",
+      "usage": "train",
+      "patents": ["US5944436A"],
+      "skill_under_test": "patent-evidence-alignment",
+      "trap": "相同功能不能补足结构缺口（对比文献为不同发声结构）",
+      "cutoff": "2026-10-19",
+      "features": [
+        {"id": "F1", "text": "两个带齿的环形件相互啮合与脱离，产生可听见的咔嗒声"},
+        {"id": "F2", "text": "压缩弹簧把固定环形啮合件压向旋转环形啮合件"}
+      ],
+      "documents": [{"id": "US5944436A", "section_ids": ["US5944436A:abstract"]}],
+      "candidate_output": {
+        "conclusion": "potential_novelty_risk",
+        "evidence": [
+          {"feature_id": "F1", "status": "disclosed", "section_id": "US5944436A:abstract", "quote": "the elastic strip is snapped by an eccentric gear of the gear set, giving out sounds", "scheme_id": "scheme1"},
+          {"feature_id": "F2", "status": "disclosed", "section_id": "US5944436A:abstract", "quote": "An elastic strip is provided in an intermediate portion of the housing", "scheme_id": "scheme1"}
+        ],
+        "same_scheme_basis": "两者都能发出声音，发声功能相同即视为披露。",
+        "self_verdict": "acceptable",
+        "notes": "发声笔同样通过机械作用发声，效果一致。"
+      },
+      "label": {
+        "expected_statuses": {"F1": "not_found", "F2": "not_found"},
+        "expected_sections": {"F1": null, "F2": null},
+        "expected_conclusion": "no_complete_disclosure_found",
+        "expected_verdict": "needs_revision",
+        "violations": [
+          {"dimension": "functions_effects", "issue": "相同发声效果不能补足结构差异：齿冠环形件啮合与偏心轮拨弹性片是不同技术手段"},
+          {"dimension": "logic_constraints", "issue": "压缩弹簧偏置环形啮合件的结构未被该文献披露"}
+        ]
+      }
+    },
+    {
+      "id": "T05",
+      "usage": "anchor",
+      "patents": ["CN108559503B"],
+      "skill_under_test": "patent-evidence-alignment",
+      "trap": "独权界限与从权优选范围混同（数值/界限）",
+      "cutoff": "2026-10-19",
+      "features": [
+        {"id": "F1", "text": "铯/银/铋溴化物按摩尔比 2:1:X 混合，X≥1"},
+        {"id": "F2", "text": "X 的取值范围是 1-5"},
+        {"id": "F3", "text": "溴化铯浓度在 0.1-0.5 mol/L 范围"}
+      ],
+      "documents": [{"id": "CN108559503B", "section_ids": ["CN108559503B:claim1", "CN108559503B:claim2", "CN108559503B:claim5"]}],
+      "candidate_output": {
+        "conclusion": "potential_novelty_risk",
+        "evidence": [
+          {"feature_id": "F1", "status": "disclosed", "section_id": "CN108559503B:claim1", "quote": "X is more than or equal to 1", "scheme_id": "scheme1"},
+          {"feature_id": "F2", "status": "disclosed", "section_id": "CN108559503B:claim1", "quote": "X is more than or equal to 1", "scheme_id": "scheme1"},
+          {"feature_id": "F3", "status": "disclosed", "section_id": "CN108559503B:claim5", "quote": "the cesium bromide concentration is in the range of 0.1 to 0.5 mol/L", "scheme_id": "scheme1"}
+        ],
+        "same_scheme_basis": "三个数值限定同属权利要求1的制备方法。",
+        "self_verdict": "acceptable",
+        "notes": "权利要求1已涵盖 X=1-5 的含义。"
+      },
+      "label": {
+        "expected_statuses": {"F1": "disclosed", "F2": "disclosed", "F3": "disclosed"},
+        "expected_sections": {"F1": "CN108559503B:claim1", "F2": "CN108559503B:claim2", "F3": "CN108559503B:claim5"},
+        "expected_conclusion": "potential_novelty_risk",
+        "expected_verdict": "needs_revision",
+        "violations": [
+          {"dimension": "logic_constraints", "issue": "X 的 1-5 范围来自从属权利要求2（优选），权利要求1只限定 X≥1；用独权引文支持从权界限"}
+        ]
+      }
+    },
+    {
+      "id": "T06",
+      "usage": "train",
+      "patents": ["CN108559503B"],
+      "skill_under_test": "patent-evidence-alignment",
+      "trap": "工艺顺序被丢弃（两步结晶读成一步）",
+      "cutoff": "2026-10-19",
+      "features": [
+        {"id": "F1", "text": "两步结晶：先向前驱液滴加反溶剂除去初期结晶副产物，离心取上清，再经反溶剂挥发扩散缓慢生长纯相晶体"}
+      ],
+      "documents": [{"id": "CN108559503B", "section_ids": ["CN108559503B:desc-steps"]}],
+      "candidate_output": {
+        "conclusion": "potential_novelty_risk",
+        "evidence": [
+          {"feature_id": "F1", "status": "disclosed", "section_id": "CN108559503B:desc-steps", "quote": "dropwise adding an anti-solvent into the precursor solution to enable the volume ratio of the precursor solution to the anti-solvent to be 1: Y, and removing the meta-crystallization to obtain a solid-liquid mixture", "scheme_id": "scheme1"}
+        ],
+        "same_scheme_basis": "反溶剂滴加即实现结晶。",
+        "self_verdict": "acceptable",
+        "notes": "一步反溶剂滴加结晶即可获得产物。"
+      },
+      "label": {
+        "expected_statuses": {"F1": "disclosed"},
+        "expected_sections": {"F1": "CN108559503B:desc-steps"},
+        "expected_conclusion": "potential_novelty_risk",
+        "expected_verdict": "needs_revision",
+        "violations": [
+          {"dimension": "structure_relations", "issue": "原文是滴加除杂→离心→扩散生长的两步顺序；notes 把两步结晶读成一步，工序顺序被丢弃"}
+        ]
+      }
+    },
+    {
+      "id": "T07",
+      "usage": "train",
+      "patents": ["US7802572B2"],
+      "skill_under_test": "patent-evidence-alignment",
+      "trap": "把权利要求必要限定按摘要的 optionally 读成可选",
+      "cutoff": "2026-10-19",
+      "features": [
+        {"id": "F1", "text": "透明的气密中央部，把佩戴者的呼气向下引导"},
+        {"id": "F2", "text": "透气的外部，环绕并连接到中央透明部"},
+        {"id": "F3", "text": "头带固定在外部或透明部上"},
+        {"id": "F4", "text": "一个或多个抗菌剂涂覆或嵌入于透气外部"},
+        {"id": "F5", "text": "刚性部限定单一锥形截面，以约90°角伸入透明部，形成鸭嘴形口罩"}
+      ],
+      "documents": [{"id": "US7802572B2", "section_ids": ["US7802572B2:abstract", "US7802572B2:claim1"]}],
+      "candidate_output": {
+        "conclusion": "no_complete_disclosure_found",
+        "evidence": [
+          {"feature_id": "F1", "status": "disclosed", "section_id": "US7802572B2:claim1", "quote": "a transparent air-impermeable central portion that directs a wearer's breath downward", "scheme_id": "scheme1"},
+          {"feature_id": "F2", "status": "disclosed", "section_id": "US7802572B2:claim1", "quote": "an air-permeable outer portion surrounding and secured to the central transparent portion", "scheme_id": "scheme1"},
+          {"feature_id": "F3", "status": "disclosed", "section_id": "US7802572B2:claim1", "quote": "a head strap affixed to the outer portion or transparent portion", "scheme_id": "scheme1"},
+          {"feature_id": "F4", "status": "unknown", "section_id": "", "quote": "", "scheme_id": "scheme1"},
+          {"feature_id": "F5", "status": "disclosed", "section_id": "US7802572B2:claim1", "quote": "a rigid portion that defines a single conic section that extends into the transparent portion at an approximately 90° angle relative to the top edge of the transparent portion to form a beak-shaped mask", "scheme_id": "scheme1"}
+        ],
+        "same_scheme_basis": "其余四项均出自权利要求1。",
+        "self_verdict": "acceptable",
+        "notes": "摘要写明 antimicrobial agents 是 optionally，可能没有，按未知处理。"
+      },
+      "label": {
+        "expected_statuses": {"F1": "disclosed", "F2": "disclosed", "F3": "disclosed", "F4": "disclosed", "F5": "disclosed"},
+        "expected_sections": {"F4": "US7802572B2:claim1"},
+        "expected_conclusion": "potential_novelty_risk",
+        "expected_verdict": "needs_revision",
+        "violations": [
+          {"dimension": "logic_constraints", "issue": "权利要求1的(d)是必要限定（one or more antimicrobial agents coated onto or embedded into the air-permeable outer portion）；摘要的 optionally 是说明书层面的可选示例，不能推翻权利要求限定"},
+          {"dimension": "context_reference", "issue": "摘要用语与权利要求用语的证据层级被颠倒"}
+        ]
+      }
+    },
+    {
+      "id": "T08",
+      "usage": "train",
+      "patents": ["US7802572B2"],
+      "skill_under_test": "patent-evidence-alignment",
+      "trap": "专利自定义术语的边界被按日常语义收窄",
+      "cutoff": "2026-10-19",
+      "features": [
+        {"id": "F1", "text": "中央部为透明材料，使佩戴者唇部至少部分可见"}
+      ],
+      "documents": [{"id": "US7802572B2", "section_ids": ["US7802572B2:desc-transparent-def", "US7802572B2:desc-transparent-term", "US7802572B2:desc-lips"]}],
+      "candidate_output": {
+        "conclusion": "no_complete_disclosure_found",
+        "evidence": [
+          {"feature_id": "F1", "status": "not_found", "section_id": "", "quote": "", "scheme_id": "scheme1"}
+        ],
+        "same_scheme_basis": "",
+        "self_verdict": "acceptable",
+        "notes": "半透明、磨砂材料不属于透明；原文要求看清物体特征，标准更严。"
+      },
+      "label": {
+        "expected_statuses": {"F1": "disclosed"},
+        "expected_sections": {"F1": "US7802572B2:desc-lips"},
+        "expected_conclusion": "potential_novelty_risk",
+        "expected_verdict": "needs_revision",
+        "violations": [
+          {"dimension": "terms_objects", "issue": "专利自定义 transparent 明确 encompasses materials that are translucent, tinted, frosted or the like；按日常语义把术语边界收窄"},
+          {"dimension": "logic_constraints", "issue": "原文只要求看清唇部（at least a portion of at least one and preferably both lips），不是完全看清任意物体"}
+        ]
+      }
+    },
+    {
+      "id": "T09",
+      "usage": "train",
+      "patents": ["CN115863457A"],
+      "skill_under_test": "patent-evidence-alignment",
+      "trap": "摘要概括词替代权利要求逐层限定（层结构丢失）",
+      "cutoff": "2026-10-19",
+      "features": [
+        {"id": "F1", "text": "透明导电玻璃阴极（氟掺杂氧化铟锡 FTO）"},
+        {"id": "F2", "text": "致密二氧化钛层与介孔二氧化钛层共同作为电子传输层"},
+        {"id": "F3", "text": "钙钛矿光吸收层为 Cs2AgBiBr6 薄膜"},
+        {"id": "F4", "text": "对电极为碳电极"}
+      ],
+      "documents": [{"id": "CN115863457A", "section_ids": ["CN115863457A:abstract", "CN115863457A:claim1"]}],
+      "candidate_output": {
+        "conclusion": "potential_novelty_risk",
+        "evidence": [
+          {"feature_id": "F1", "status": "disclosed", "section_id": "CN115863457A:claim1", "quote": "a transparent conductive glass cathode", "scheme_id": "scheme1"},
+          {"feature_id": "F2", "status": "disclosed", "section_id": "CN115863457A:abstract", "quote": "an electron transmission layer", "scheme_id": "scheme1"},
+          {"feature_id": "F3", "status": "disclosed", "section_id": "CN115863457A:claim1", "quote": "a perovskite light absorption layer", "scheme_id": "scheme1"},
+          {"feature_id": "F4", "status": "disclosed", "section_id": "CN115863457A:claim1", "quote": "the counter electrode is a carbon electrode", "scheme_id": "scheme1"}
+        ],
+        "same_scheme_basis": "各层出自同一器件结构。",
+        "self_verdict": "acceptable",
+        "notes": "电子传输层在摘要中已有记载。"
+      },
+      "label": {
+        "expected_statuses": {"F1": "disclosed", "F2": "disclosed", "F3": "disclosed", "F4": "disclosed"},
+        "expected_sections": {"F2": "CN115863457A:claim1"},
+        "expected_conclusion": "potential_novelty_risk",
+        "expected_verdict": "needs_revision",
+        "violations": [
+          {"dimension": "structure_relations", "issue": "权利要求1的致密层+介孔层双层结构被摘要的概括词 an electron transmission layer 替代，逐层限定丢失"},
+          {"dimension": "context_reference", "issue": "摘要不能替代权利要求逐层限定作为逐项披露依据"}
+        ]
+      }
+    },
+    {
+      "id": "T10",
+      "usage": "anchor",
+      "patents": ["CN115863457A"],
+      "skill_under_test": "patent-evidence-alignment",
+      "trap": "数值界限被无据怀疑、工序与权利要求映射错位",
+      "cutoff": "2026-10-19",
+      "features": [
+        {"id": "F1", "text": "第一步(A)旋涂转速 2000rpm、时间 30s"},
+        {"id": "F2", "text": "第二步(B)溴化铯前驱液浓度 0.1-5.8M"},
+        {"id": "F3", "text": "第二步(B)退火温度 250-290℃、时间 3-30min"}
+      ],
+      "documents": [{"id": "CN115863457A", "section_ids": ["CN115863457A:claim7", "CN115863457A:claim8", "CN115863457A:claim10"]}],
+      "candidate_output": {
+        "conclusion": "insufficient_evidence",
+        "evidence": [
+          {"feature_id": "F1", "status": "disclosed", "section_id": "CN115863457A:claim7", "quote": "the spin coating speed is 2000rpm, and the time is 30s", "scheme_id": "scheme1"},
+          {"feature_id": "F2", "status": "unknown", "section_id": "", "quote": "", "scheme_id": "scheme1"},
+          {"feature_id": "F3", "status": "disclosed", "section_id": "CN115863457A:claim7", "quote": "the annealing temperature is 80-150 ℃ and the annealing time is 10-30min", "scheme_id": "scheme1"}
+        ],
+        "same_scheme_basis": "同属制备方法权利要求。",
+        "self_verdict": "acceptable",
+        "notes": "5.8M 疑为笔误或优选上限，按未知处理；退火条件见权利要求7。"
+      },
+      "label": {
+        "expected_statuses": {"F1": "disclosed", "F2": "disclosed", "F3": "disclosed"},
+        "expected_sections": {"F1": "CN115863457A:claim7", "F2": "CN115863457A:claim8", "F3": "CN115863457A:claim10"},
+        "expected_conclusion": "potential_novelty_risk",
+        "expected_verdict": "needs_revision",
+        "violations": [
+          {"dimension": "logic_constraints", "issue": "0.1-5.8M 是权利要求8明确限定的浓度范围，无依据怀疑为笔误"},
+          {"dimension": "structure_relations", "issue": "250-290℃/3-30min 出自权利要求10（步骤B退火），被错引到权利要求7（步骤A退火 80-150℃）"}
+        ]
+      }
+    },
+    {
+      "id": "T11",
+      "usage": "train",
+      "patents": ["CN110408993A"],
+      "skill_under_test": "patent-evidence-alignment",
+      "trap": "背景技术的用途列举被当作本文献的技术方案披露",
+      "cutoff": "2026-10-19",
+      "features": [
+        {"id": "F1", "text": "Cs2AgBiBr6 单晶"},
+        {"id": "F2", "text": "添加乙酸钠抑制多核成核，获得更大尺寸单晶"},
+        {"id": "F3", "text": "单晶用作太阳能电池的吸光层"}
+      ],
+      "documents": [{"id": "CN110408993A", "section_ids": ["CN110408993A:abstract", "CN110408993A:desc-bg-uses", "CN110408993A:desc-emb1"]}],
+      "candidate_output": {
+        "conclusion": "potential_novelty_risk",
+        "evidence": [
+          {"feature_id": "F1", "status": "disclosed", "section_id": "CN110408993A:abstract", "quote": "obtains the Cs of red, transparent2AgBiBr6Monocrystalline", "scheme_id": "scheme1"},
+          {"feature_id": "F2", "status": "disclosed", "section_id": "CN110408993A:abstract", "quote": "Advantage is that solve multicore crystallization", "scheme_id": "scheme1"},
+          {"feature_id": "F3", "status": "disclosed", "section_id": "CN110408993A:desc-bg-uses", "quote": "by It has been widely used in the fields such as photovoltaic cell, photodetection and X-ray detection.", "scheme_id": "scheme1"}
+        ],
+        "same_scheme_basis": "同一晶体及其应用。",
+        "self_verdict": "acceptable",
+        "notes": "背景技术明确提到该材料广泛用于光伏电池领域。"
+      },
+      "label": {
+        "expected_statuses": {"F1": "disclosed", "F2": "disclosed", "F3": "not_found"},
+        "expected_sections": {"F3": null},
+        "expected_conclusion": "no_complete_disclosure_found",
+        "expected_verdict": "needs_revision",
+        "violations": [
+          {"dimension": "context_reference", "issue": "背景技术中对材料用途的泛化列举不是本文献的技术方案披露；本文献方案面向 X 射线探测"},
+          {"dimension": "functions_effects", "issue": "用途限定（太阳能电池吸光层）未被本文献的器件方案支持"}
+        ]
+      }
+    },
+    {
+      "id": "T12",
+      "usage": "train",
+      "patents": ["US8053972B2"],
+      "skill_under_test": "patent-evidence-alignment",
+      "trap": "光致发光与电致发光机制混同（相同发光结果当相同方案）",
+      "cutoff": "2026-10-19",
+      "features": [
+        {"id": "F1", "text": "量子点作为发光层"},
+        {"id": "F2", "text": "电子传输层与空穴传输层夹持量子点发光层的二极管结构"},
+        {"id": "F3", "text": "量子点在电场注入载流子后直接发光"}
+      ],
+      "documents": [{"id": "US8053972B2", "section_ids": ["US8053972B2:abstract"]}],
+      "candidate_output": {
+        "conclusion": "potential_novelty_risk",
+        "evidence": [
+          {"feature_id": "F1", "status": "disclosed", "section_id": "US8053972B2:abstract", "quote": "a population of quantum dots (QDs) embedded in a host matrix", "scheme_id": "scheme1"},
+          {"feature_id": "F2", "status": "not_found", "section_id": "", "quote": "", "scheme_id": "scheme1"},
+          {"feature_id": "F3", "status": "disclosed", "section_id": "US8053972B2:abstract", "quote": "a primary light source which causes the QDs to emit secondary light", "scheme_id": "scheme1"}
+        ],
+        "same_scheme_basis": "量子点发光层与发光机制均已披露。",
+        "self_verdict": "acceptable",
+        "notes": "电注入与光激发都是让量子点发光，发光结果相同。"
+      },
+      "label": {
+        "expected_statuses": {"F1": "disclosed", "F2": "not_found", "F3": "not_found"},
+        "expected_sections": {"F3": null},
+        "expected_conclusion": "no_complete_disclosure_found",
+        "expected_verdict": "needs_revision",
+        "violations": [
+          {"dimension": "functions_effects", "issue": "原文是 primary light source 激发 QDs 发出 secondary light（光致转换）；与电场注入载流子直接发光是不同机制，相同发光结果不能补足结构与机制缺口"}
+        ]
+      }
+    },
+    {
+      "id": "T13",
+      "usage": "anchor",
+      "patents": ["US8053972B2"],
+      "skill_under_test": "patent-evidence-alignment",
+      "trap": "无陷阱：正确对照的锚定用例",
+      "cutoff": "2026-10-19",
+      "features": [
+        {"id": "F1", "text": "蓝色LED一次光源"},
+        {"id": "F2", "text": "第一群量子点受激发出红光"},
+        {"id": "F3", "text": "第二群量子点受激发出绿光"}
+      ],
+      "documents": [{"id": "US8053972B2", "section_ids": ["US8053972B2:claim2"]}],
+      "candidate_output": {
+        "conclusion": "potential_novelty_risk",
+        "evidence": [
+          {"feature_id": "F1", "status": "disclosed", "section_id": "US8053972B2:claim2", "quote": "the primary light source comprises a blue LED light source", "scheme_id": "scheme1"},
+          {"feature_id": "F2", "status": "disclosed", "section_id": "US8053972B2:claim2", "quote": "a first population of quantum dots of a material and size adapted to emit red secondary light", "scheme_id": "scheme1"},
+          {"feature_id": "F3", "status": "disclosed", "section_id": "US8053972B2:claim2", "quote": "a second population of quantum dots of a material and size adapted to emit green secondary light", "scheme_id": "scheme1"}
+        ],
+        "same_scheme_basis": "三项均出自权利要求2的同一白光器件方案，同一方案与充分公开已在复核中确认。",
+        "self_verdict": "acceptable",
+        "notes": "逐项引文与原文一致。"
+      },
+      "label": {
+        "expected_statuses": {"F1": "disclosed", "F2": "disclosed", "F3": "disclosed"},
+        "expected_sections": {"F1": "US8053972B2:claim2", "F2": "US8053972B2:claim2", "F3": "US8053972B2:claim2"},
+        "expected_conclusion": "potential_novelty_risk",
+        "expected_verdict": "acceptable",
+        "violations": []
+      }
+    },
+    {
+      "id": "T14",
+      "usage": "anchor",
+      "patents": ["US20170194101A1"],
+      "skill_under_test": "patent-evidence-alignment",
+      "trap": "记号差异（Cs2AgBiBr6 vs Cs2BiAgBr6）应诚实存疑而非强行认定",
+      "cutoff": "2026-10-19",
+      "features": [
+        {"id": "F1", "text": "含金属卤化物双钙钛矿吸收层的太阳能电池"},
+        {"id": "F2", "text": "空穴选择性接触层、电子选择性接触层与第一、第二电极层"},
+        {"id": "F3", "text": "吸收层材料为 Cs2AgBiBr6"}
+      ],
+      "documents": [{"id": "US20170194101A1", "section_ids": ["US20170194101A1:claim1", "US20170194101A1:claim2", "US20170194101A1:claim5"]}],
+      "candidate_output": {
+        "conclusion": "insufficient_evidence",
+        "evidence": [
+          {"feature_id": "F1", "status": "disclosed", "section_id": "US20170194101A1:claim1", "quote": "A solar cell comprising a solar-cell absorber layer made of a metal-halide double perovskite material.", "scheme_id": "scheme1"},
+          {"feature_id": "F2", "status": "disclosed", "section_id": "US20170194101A1:claim2", "quote": "further comprising a hole-selective contact layer, an electron-selective contact layer, and first and second electrode layers", "scheme_id": "scheme1"},
+          {"feature_id": "F3", "status": "unknown", "section_id": "", "quote": "", "scheme_id": "scheme1"}
+        ],
+        "same_scheme_basis": "F1、F2 出自同一电池结构。",
+        "self_verdict": "pending_adjudication",
+        "notes": "权利要求5写作 Cs2BiAgBr6，标题为 Cs2AgBiBr6；B 位元素排序标记不同，是否指同一材料需核对原文晶体结构记载后确定。",
+        "next_action": "回查 B 位 Ag/Bi 交替排布的原始记载，再确定 F3。"
+      },
+      "label": {
+        "expected_statuses": {"F1": "disclosed", "F2": "disclosed", "F3": "unknown"},
+        "expected_sections": {"F3": null},
+        "expected_conclusion": "insufficient_evidence",
+        "expected_verdict": "pending_adjudication",
+        "violations": []
+      }
+    },
+    {
+      "id": "T15",
+      "usage": "anchor",
+      "patents": ["CN108559503B"],
+      "skill_under_test": "patent-novelty-assessment",
+      "trap": "同族更早公开版本（A）未核，日期链不完整就下结论",
+      "cutoff": "2019-01-01",
+      "features": [
+        {"id": "F1", "text": "以 2:1:X 配比在有机溶剂中溶解溴化物前驱体，并经两步抗溶剂结晶制备 Cs2AgBiBr6"}
+      ],
+      "documents": [{"id": "CN108559503B", "section_ids": ["CN108559503B:claim1"]}],
+      "candidate_output": {
+        "conclusion": "no_complete_disclosure_found",
+        "evidence": [
+          {"feature_id": "F1", "status": "disclosed", "section_id": "CN108559503B:claim1", "quote": "X is more than or equal to 1, and Y is more than or equal to 1", "scheme_id": "scheme1"}
+        ],
+        "same_scheme_basis": "同一制备方法。",
+        "self_verdict": "acceptable",
+        "notes": "本件公开日 2020-07-07 晚于基准日 2019-01-01，不构成现有技术；未发现其他文献，无完整披露。"
+      },
+      "label": {
+        "expected_statuses": {"F1": "unknown"},
+        "expected_sections": {"F1": null},
+        "expected_conclusion": "insufficient_evidence",
+        "expected_verdict": "needs_revision",
+        "required_mentions": ["2018-09-21"],
+        "violations": [
+          {"dimension": "context_reference", "issue": "同族 A 版本（CN108559503A）已于 2018-09-21 公开，早于基准日；只看 B 公开日 2020-07-07 就下未发现结论，日期链不完整"}
+        ]
+      }
+    },
+    {
+      "id": "T16",
+      "usage": "train",
+      "patents": ["US20240423306A1"],
+      "skill_under_test": "patent-evidence-alignment",
+      "trap": "例示性摘要（in some examples）被当作权利要求限定",
+      "cutoff": "2026-10-19",
+      "features": [
+        {"id": "F1", "text": "内抗菌层与外抗菌层"},
+        {"id": "F2", "text": "两层之间的摩擦纳米发电机膜，含两种不同摩擦电极性的柔性层"},
+        {"id": "F3", "text": "外抗菌层含银"}
+      ],
+      "documents": [{"id": "US20240423306A1", "section_ids": ["US20240423306A1:abstract", "US20240423306A1:claim1", "US20240423306A1:claim3"]}],
+      "candidate_output": {
+        "conclusion": "potential_novelty_risk",
+        "evidence": [
+          {"feature_id": "F1", "status": "disclosed", "section_id": "US20240423306A1:claim1", "quote": "an interior antimicrobial layer and an exterior antimicrobial layer", "scheme_id": "scheme1"},
+          {"feature_id": "F2", "status": "disclosed", "section_id": "US20240423306A1:claim1", "quote": "the TENG membrane comprises two different flexible layers having distinct triboelectric polarities", "scheme_id": "scheme1"},
+          {"feature_id": "F3", "status": "disclosed", "section_id": "US20240423306A1:abstract", "quote": "the face mask includes both copper and silver", "scheme_id": "scheme1"}
+        ],
+        "same_scheme_basis": "同一口罩结构。",
+        "self_verdict": "acceptable",
+        "notes": "摘要已明确写出铜和银。"
+      },
+      "label": {
+        "expected_statuses": {"F1": "disclosed", "F2": "disclosed", "F3": "unknown"},
+        "expected_sections": {"F3": null},
+        "expected_conclusion": "insufficient_evidence",
+        "expected_verdict": "needs_revision",
+        "violations": [
+          {"dimension": "evaluation_expression", "issue": "摘要用的是例示性措辞 In some examples；已核权利要求3只限定 exterior antimicrobial layer comprises copper，银的位置与形式未在权利要求中确立"},
+          {"dimension": "context_reference", "issue": "摘要与权利要求的证据层级被混同，例示不能当必要披露"}
+        ]
+      }
+    },
+    {
+      "id": "T17",
+      "usage": "anchor",
+      "patents": ["US3664335A"],
+      "skill_under_test": "patent-evidence-alignment",
+      "trap": "无陷阱：单条权利要求逐项正确对照的锚定用例",
+      "cutoff": "2026-10-19",
+      "features": [
+        {"id": "F1", "text": "矩形柔性多孔垫，含内层与外层无纺布和中央过滤层"},
+        {"id": "F2", "text": "一对弹性绑带在拉伸状态下固定于竖直边缘，松弛后使边缘起皱收拢"},
+        {"id": "F3", "text": "一对平行竖直折裥，分别呈 Z 与反 Z 形，撑出半刚性 C 形腔"}
+      ],
+      "documents": [{"id": "US3664335A", "section_ids": ["US3664335A:claim1"]}],
+      "candidate_output": {
+        "conclusion": "potential_novelty_risk",
+        "evidence": [
+          {"feature_id": "F1", "status": "disclosed", "section_id": "US3664335A:claim1", "quote": "said pad having an inner layer and an outer layer of non-woven material and a central layer of filter material", "scheme_id": "scheme1"},
+          {"feature_id": "F2", "status": "disclosed", "section_id": "US3664335A:claim1", "quote": "said binding elements each being secured to a respective vertical edge of said pad while distended to said distended length thereof", "scheme_id": "scheme1"},
+          {"feature_id": "F3", "status": "disclosed", "section_id": "US3664335A:claim1", "quote": "a pair of spaced parallel vertical pleats in said pad extending from the top horizontal edge to the bottom horizontal edge of said pad", "scheme_id": "scheme1"}
+        ],
+        "same_scheme_basis": "三项均出自同一权利要求1的口罩方案，同一方案与充分公开已确认。",
+        "self_verdict": "acceptable",
+        "notes": "引文与原文逐字一致。"
+      },
+      "label": {
+        "expected_statuses": {"F1": "disclosed", "F2": "disclosed", "F3": "disclosed"},
+        "expected_sections": {"F1": "US3664335A:claim1", "F2": "US3664335A:claim1", "F3": "US3664335A:claim1"},
+        "expected_conclusion": "potential_novelty_risk",
+        "expected_verdict": "acceptable",
+        "violations": []
+      }
+    },
+    {
+      "id": "T18",
+      "usage": "train",
+      "patents": ["CN108559503B", "CN110408993A"],
+      "skill_under_test": "patent-evidence-alignment",
+      "trap": "跨文献拼接互斥溶剂体系",
+      "cutoff": "2026-10-19",
+      "features": [
+        {"id": "F1", "text": "有机溶剂 DMF 或 DMSO 溶解溴化物前驱体"},
+        {"id": "F2", "text": "氢溴酸水溶液体系中降温结晶生长 Cs2AgBiBr6"},
+        {"id": "F3", "text": "两步抗溶剂结晶：先滴加反溶剂除杂，再扩散生长"}
+      ],
+      "documents": [
+        {"id": "CN108559503B", "section_ids": ["CN108559503B:claim1", "CN108559503B:desc-steps"]},
+        {"id": "CN110408993A", "section_ids": ["CN110408993A:claim1"]}
+      ],
+      "candidate_output": {
+        "conclusion": "potential_novelty_risk",
+        "evidence": [
+          {"feature_id": "F1", "status": "disclosed", "section_id": "CN108559503B:claim1", "quote": "the organic solvent is DMF, DMSO or a mixed solution of the DMF and the DMSO in any proportion", "scheme_id": "scheme1"},
+          {"feature_id": "F2", "status": "disclosed", "section_id": "CN110408993A:claim1", "quote": "Then the hydrobromic acid solution that concentration is 0.007mol/mL is added into mixture", "scheme_id": "scheme1"},
+          {"feature_id": "F3", "status": "disclosed", "section_id": "CN108559503B:desc-steps", "quote": "dropwise adding an anti-solvent into the precursor solution to enable the volume ratio of the precursor solution to the anti-solvent to be 1: Y, and removing the meta-crystallization to obtain a solid-liquid mixture", "scheme_id": "scheme1"}
+        ],
+        "same_scheme_basis": "两篇文献组合后覆盖全部要素。",
+        "self_verdict": "acceptable",
+        "notes": "要素分散在两篇文献中，组合覆盖。"
+      },
+      "label": {
+        "expected_statuses": {"F1": "disclosed", "F2": "disclosed", "F3": "disclosed"},
+        "expected_sections": {"F1": "CN108559503B:claim1", "F2": "CN110408993A:claim1", "F3": "CN108559503B:desc-steps"},
+        "expected_per_document": {
+          "CN108559503B": {"F1": "disclosed", "F2": "not_found", "F3": "disclosed"},
+          "CN110408993A": {"F1": "not_found", "F2": "disclosed", "F3": "not_found"}
+        },
+        "expected_conclusion": "no_complete_disclosure_found",
+        "expected_verdict": "needs_revision",
+        "violations": [
+          {"dimension": "context_reference", "issue": "没有任何一篇文献单独完整披露；跨文献拼接两个互斥的溶剂体系（酸体系 vs 有机溶剂体系）"},
+          {"dimension": "logic_constraints", "issue": "两体系的溶解与结晶路径互斥，组合结果不是任何文献的技术方案"}
+        ]
+      }
+    },
+    {
+      "id": "T19",
+      "usage": "train",
+      "patents": ["US4968168A"],
+      "skill_under_test": "patent-evidence-alignment",
+      "trap": "伪造引文（原文写金属，候选引文写 POM）",
+      "cutoff": "2026-10-19",
+      "features": [
+        {"id": "F1", "text": "固定与旋转环形啮合件的环形齿冠由聚甲醛(POM)制成"}
+      ],
+      "documents": [{"id": "US4968168A", "section_ids": ["US4968168A:desc-toothed", "US4968168A:desc-metal"]}],
+      "candidate_output": {
+        "conclusion": "potential_novelty_risk",
+        "evidence": [
+          {"feature_id": "F1", "status": "disclosed", "section_id": "US4968168A:desc-toothed", "quote": "The annular tooth crowns of the fixed and rotatable engaging members are made of polyoxymethylene (POM) polymer", "scheme_id": "scheme1"}
+        ],
+        "same_scheme_basis": "齿冠材料记载于啮合件描述。",
+        "self_verdict": "acceptable",
+        "notes": "环形齿冠为 POM 聚合物材料。"
+      },
+      "label": {
+        "expected_statuses": {"F1": "not_found"},
+        "expected_sections": {"F1": "US4968168A:desc-metal"},
+        "expected_conclusion": "no_complete_disclosure_found",
+        "expected_verdict": "needs_revision",
+        "violations": [
+          {"dimension": "evaluation_expression", "issue": "引文在原文中不存在（伪造证据）；原文是 preferably made of metal material"},
+          {"dimension": "terms_objects", "issue": "材料限定与原文相反"}
+        ]
+      }
+    }
+  ]
+}

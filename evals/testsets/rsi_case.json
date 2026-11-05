@@ -1,0 +1,600 @@
+{
+  "dataset_version": "rsi-case-2.0",
+  "spec": "固定证据包逐篇判断与可选独立检索评分。被测模型只接收 public_case 与候选证据，不接收本文件其他字段。",
+  "split_note": "usage=train 的反馈可供临时文档迭代；usage=anchor 只对账，绝不参与提词、采纳或案例挪动。新增近邻已在首次真实运行前固定分池。",
+  "public_case": {
+    "case_id": "COPY-2018-CABB",
+    "title": "一种 Cs2AgBiBr6 双钙钛矿晶体的制备方法",
+    "description": "一种Cs2AgBiBr6双钙钛矿晶体的制备方法：按摩尔比2:1:2称取溴化铯、溴化银和三溴化铋，溶于DMSO中，60℃加热搅拌约2小时得到前驱液；在前驱液中滴加氯苯，至前驱液与反溶剂体积比1:2、出现橙色沉淀时立即停止滴加；离心取上清液装入玻璃瓶，用封口膜密封并扎孔，置于等体积氯苯中，30℃下经反溶剂挥发扩散，生长纯相Cs2AgBiBr6晶体。",
+    "cutoff": "2018-10-08",
+    "targets": [
+      {
+        "id": "T1",
+        "title": "完整制备方法",
+        "features": [
+          {
+            "id": "F1",
+            "text": "以溴化铯、溴化银和三溴化铋为起始原料，目标产物为 Cs2AgBiBr6 双钙钛矿"
+          },
+          {
+            "id": "F2",
+            "text": "三种原料按摩尔比 2:1:2 溶于纯 DMSO，60℃加热搅拌约 2 小时得到前驱液"
+          },
+          {
+            "id": "F3",
+            "text": "向前驱液滴加氯苯至前驱液与氯苯体积比 1:2，出现橙色沉淀时停止，以去除早期析晶副产物"
+          },
+          {
+            "id": "F4",
+            "text": "对第一步所得固液混合物离心并取上层清液"
+          },
+          {
+            "id": "F5",
+            "text": "将液相置于第一容器，再放入盛有反溶剂的第二容器并密封，通过反溶剂挥发扩散长晶"
+          },
+          {
+            "id": "F6",
+            "text": "第一容器用封口膜密封并扎孔，在 30℃ 下生长纯相 Cs2AgBiBr6 晶体"
+          }
+        ]
+      }
+    ]
+  },
+  "answer_key": {
+    "derived_from": "CN108559503B（现有技术资格依据同族 CN108559503A）",
+    "adjustment_note": "对专利A权利要求范围内的参数做调整：X=2（摩尔比2:1:2）、纯DMSO、溶解60℃、反溶剂氯苯体积比1:2、挥发扩散30℃——全部落在A的权利要求界限内（X≥1、Y≥1、50-70℃、20-40℃、DMF/DMSO、二氯甲烷/氯苯/松节油-乙醇）",
+    "cutoff_note": "基准日取专利A同族A版本（CN108559503A）公开日 2018-09-21 之后一周；副本视为在该日左右完成",
+    "derivation_review": "副本参数落在 A 的权利要求组合范围内；A 文本权利要求1—9及实施方式提供完整披露依据。"
+  },
+  "label_convention": {
+    "relevance": "related/unrelated；只回答技术相关性，不等于新颖性结论。",
+    "prior_art_at_cutoff": "公开日或同族有效公开文本是否早于基准日，单独评分。",
+    "coverage": "full_disclosure=同一文献证据覆盖全部必要要素；partial_coverage=至少一个完整要素披露且至少一个缺失；local_association=相关但无完整目标要素披露；insufficient_evidence=证据范围或语义不足；not_applicable=无关文献。",
+    "feature_status": "disclosed/not_found/unknown。披露必须有可逐字回查的原文引文。"
+  },
+  "candidates": [
+    {
+      "id": "CN108559503B",
+      "usage": "train",
+      "difficulty": "baseline",
+      "label": {
+        "relevance": "related",
+        "expected_retrieval_hit": true,
+        "prior_art_at_cutoff": true,
+        "coverage": "full_disclosure",
+        "feature_status": {
+          "F1": "disclosed",
+          "F2": "disclosed",
+          "F3": "disclosed",
+          "F4": "disclosed",
+          "F5": "disclosed",
+          "F6": "disclosed"
+        },
+        "evidence_sections": {
+          "F1": [
+            "CN108559503A:claim1"
+          ],
+          "F2": [
+            "CN108559503A:claim1",
+            "CN108559503A:claim2",
+            "CN108559503A:claim4",
+            "CN108559503A:claim6",
+            "CN108559503A:desc-example3"
+          ],
+          "F3": [
+            "CN108559503A:claim1",
+            "CN108559503A:claim3",
+            "CN108559503A:claim5",
+            "CN108559503A:desc-method"
+          ],
+          "F4": [
+            "CN108559503A:claim1"
+          ],
+          "F5": [
+            "CN108559503A:claim1"
+          ],
+          "F6": [
+            "CN108559503A:claim1",
+            "CN108559503A:claim8",
+            "CN108559503A:claim9",
+            "CN108559503A:desc-method"
+          ]
+        },
+        "overlap": "同族 A 文本的权利要求组合及实施方式覆盖全部六个目标要素。",
+        "key_gap": "无关键缺口；A 公开日 2018-09-21 早于基准日，B 授权公告日晚于基准日。",
+        "basis": "同族 A 文本的权利要求组合及实施方式覆盖全部六个目标要素。无关键缺口；A 公开日 2018-09-21 早于基准日，B 授权公告日晚于基准日。"
+      }
+    },
+    {
+      "id": "US20170194101A1",
+      "usage": "anchor",
+      "difficulty": "baseline",
+      "label": {
+        "relevance": "related",
+        "expected_retrieval_hit": true,
+        "prior_art_at_cutoff": true,
+        "coverage": "local_association",
+        "feature_status": {
+          "F1": "not_found",
+          "F2": "not_found",
+          "F3": "not_found",
+          "F4": "not_found",
+          "F5": "not_found",
+          "F6": "not_found"
+        },
+        "evidence_sections": {},
+        "overlap": "同涉及 Cs2AgBiBr6（Cs2BiAgBr6）双钙钛矿材料。",
+        "key_gap": "主题是太阳能电池吸收层/器件，未公开副本的晶体法制备步骤。",
+        "basis": "同涉及 Cs2AgBiBr6（Cs2BiAgBr6）双钙钛矿材料。主题是太阳能电池吸收层/器件，未公开副本的晶体法制备步骤。"
+      }
+    },
+    {
+      "id": "CN110408993A",
+      "usage": "anchor",
+      "difficulty": "baseline",
+      "label": {
+        "relevance": "related",
+        "expected_retrieval_hit": true,
+        "prior_art_at_cutoff": false,
+        "coverage": "partial_coverage",
+        "feature_status": {
+          "F1": "disclosed",
+          "F2": "not_found",
+          "F3": "not_found",
+          "F4": "not_found",
+          "F5": "not_found",
+          "F6": "not_found"
+        },
+        "evidence_sections": {
+          "F1": [
+            "CN110408993A:claim1"
+          ]
+        },
+        "overlap": "公开了 Cs2AgBiBr6 及相应起始原料，覆盖 F1。",
+        "key_gap": "没有公开副本的完整两步反溶剂、离心和参数组合。",
+        "basis": "公开了 Cs2AgBiBr6 及相应起始原料，覆盖 F1。没有公开副本的完整两步反溶剂、离心和参数组合。"
+      }
+    },
+    {
+      "id": "CN111233035A",
+      "usage": "train",
+      "difficulty": "baseline",
+      "label": {
+        "relevance": "related",
+        "expected_retrieval_hit": true,
+        "prior_art_at_cutoff": false,
+        "coverage": "insufficient_evidence",
+        "feature_status": {},
+        "evidence_sections": {},
+        "overlap": "摘要显示与钙钛矿或 Cs2AgBiBr6 相关。",
+        "key_gap": "当前仅保存摘要，不能据此逐项排除全部方法要素；需要补充权利要求和说明书。",
+        "basis": "摘要显示与钙钛矿或 Cs2AgBiBr6 相关。当前仅保存摘要，不能据此逐项排除全部方法要素；需要补充权利要求和说明书。"
+      }
+    },
+    {
+      "id": "CN113753951A",
+      "usage": "train",
+      "difficulty": "baseline",
+      "label": {
+        "relevance": "related",
+        "expected_retrieval_hit": true,
+        "prior_art_at_cutoff": false,
+        "coverage": "insufficient_evidence",
+        "feature_status": {},
+        "evidence_sections": {},
+        "overlap": "摘要显示与钙钛矿或 Cs2AgBiBr6 相关。",
+        "key_gap": "当前仅保存摘要，不能据此逐项排除全部方法要素；需要补充权利要求和说明书。",
+        "basis": "摘要显示与钙钛矿或 Cs2AgBiBr6 相关。当前仅保存摘要，不能据此逐项排除全部方法要素；需要补充权利要求和说明书。"
+      }
+    },
+    {
+      "id": "CN115863457A",
+      "usage": "train",
+      "difficulty": "baseline",
+      "label": {
+        "relevance": "related",
+        "expected_retrieval_hit": true,
+        "prior_art_at_cutoff": false,
+        "coverage": "partial_coverage",
+        "feature_status": {
+          "F1": "disclosed",
+          "F2": "not_found",
+          "F3": "not_found",
+          "F4": "not_found",
+          "F5": "not_found",
+          "F6": "not_found"
+        },
+        "evidence_sections": {
+          "F1": [
+            "CN115863457A:abstract"
+          ]
+        },
+        "overlap": "公开了 Cs2AgBiBr6 及相应起始原料，覆盖 F1。",
+        "key_gap": "没有公开副本的完整两步反溶剂、离心和参数组合。",
+        "basis": "公开了 Cs2AgBiBr6 及相应起始原料，覆盖 F1。没有公开副本的完整两步反溶剂、离心和参数组合。"
+      }
+    },
+    {
+      "id": "CN109874347A",
+      "usage": "train",
+      "difficulty": "baseline",
+      "label": {
+        "relevance": "related",
+        "expected_retrieval_hit": true,
+        "prior_art_at_cutoff": false,
+        "coverage": "insufficient_evidence",
+        "feature_status": {},
+        "evidence_sections": {},
+        "overlap": "摘要显示与钙钛矿或 Cs2AgBiBr6 相关。",
+        "key_gap": "当前仅保存摘要，不能据此逐项排除全部方法要素；需要补充权利要求和说明书。",
+        "basis": "摘要显示与钙钛矿或 Cs2AgBiBr6 相关。当前仅保存摘要，不能据此逐项排除全部方法要素；需要补充权利要求和说明书。"
+      }
+    },
+    {
+      "id": "CN114732921B",
+      "usage": "anchor",
+      "difficulty": "baseline",
+      "label": {
+        "relevance": "unrelated",
+        "expected_retrieval_hit": false,
+        "prior_art_at_cutoff": false,
+        "coverage": "not_applicable",
+        "feature_status": {},
+        "evidence_sections": {},
+        "overlap": "技术领域或方案不相关。",
+        "key_gap": "2023-03-28 公开；黄铁矿/TiO2 光催化抗菌材料，无关领域",
+        "basis": "技术领域或方案不相关。2023-03-28 公开；黄铁矿/TiO2 光催化抗菌材料，无关领域"
+      }
+    },
+    {
+      "id": "CN105597728A",
+      "usage": "anchor",
+      "difficulty": "baseline",
+      "label": {
+        "relevance": "unrelated",
+        "expected_retrieval_hit": false,
+        "prior_art_at_cutoff": true,
+        "coverage": "not_applicable",
+        "feature_status": {},
+        "evidence_sections": {},
+        "overlap": "技术领域或方案不相关。",
+        "key_gap": "2016-05-25 公开；TiO2/钛酸铋光催化材料，不同材料不同用途，无关（低）",
+        "basis": "技术领域或方案不相关。2016-05-25 公开；TiO2/钛酸铋光催化材料，不同材料不同用途，无关（低）"
+      }
+    },
+    {
+      "id": "US4968168A",
+      "usage": "train",
+      "difficulty": "baseline",
+      "label": {
+        "relevance": "unrelated",
+        "expected_retrieval_hit": false,
+        "prior_art_at_cutoff": true,
+        "coverage": "not_applicable",
+        "feature_status": {},
+        "evidence_sections": {},
+        "overlap": "技术领域或方案不相关。",
+        "key_gap": "1990-11-06 公开；圆珠笔机械结构，无关（低）",
+        "basis": "技术领域或方案不相关。1990-11-06 公开；圆珠笔机械结构，无关（低）"
+      }
+    },
+    {
+      "id": "US5944436A",
+      "usage": "train",
+      "difficulty": "baseline",
+      "label": {
+        "relevance": "unrelated",
+        "expected_retrieval_hit": false,
+        "prior_art_at_cutoff": true,
+        "coverage": "not_applicable",
+        "feature_status": {},
+        "evidence_sections": {},
+        "overlap": "技术领域或方案不相关。",
+        "key_gap": "1999-08-31 公开；发声笔，无关（低）",
+        "basis": "技术领域或方案不相关。1999-08-31 公开；发声笔，无关（低）"
+      }
+    },
+    {
+      "id": "US3664335A",
+      "usage": "train",
+      "difficulty": "baseline",
+      "label": {
+        "relevance": "unrelated",
+        "expected_retrieval_hit": false,
+        "prior_art_at_cutoff": true,
+        "coverage": "not_applicable",
+        "feature_status": {},
+        "evidence_sections": {},
+        "overlap": "技术领域或方案不相关。",
+        "key_gap": "1972-05-23 公开；外科口罩，无关（低）",
+        "basis": "技术领域或方案不相关。1972-05-23 公开；外科口罩，无关（低）"
+      }
+    },
+    {
+      "id": "US7802572B2",
+      "usage": "train",
+      "difficulty": "baseline",
+      "label": {
+        "relevance": "unrelated",
+        "expected_retrieval_hit": false,
+        "prior_art_at_cutoff": true,
+        "coverage": "not_applicable",
+        "feature_status": {},
+        "evidence_sections": {},
+        "overlap": "技术领域或方案不相关。",
+        "key_gap": "2010-09-28 公开；透明医用口罩，无关（低）",
+        "basis": "技术领域或方案不相关。2010-09-28 公开；透明医用口罩，无关（低）"
+      }
+    },
+    {
+      "id": "US20240423306A1",
+      "usage": "train",
+      "difficulty": "baseline",
+      "label": {
+        "relevance": "unrelated",
+        "expected_retrieval_hit": false,
+        "prior_art_at_cutoff": false,
+        "coverage": "not_applicable",
+        "feature_status": {},
+        "evidence_sections": {},
+        "overlap": "技术领域或方案不相关。",
+        "key_gap": "2024-12-26 公开；铜银 TENG 口罩，无关且晚于基准日",
+        "basis": "技术领域或方案不相关。2024-12-26 公开；铜银 TENG 口罩，无关且晚于基准日"
+      }
+    },
+    {
+      "id": "US20230180864A1",
+      "usage": "anchor",
+      "difficulty": "baseline",
+      "label": {
+        "relevance": "unrelated",
+        "expected_retrieval_hit": false,
+        "prior_art_at_cutoff": false,
+        "coverage": "not_applicable",
+        "feature_status": {},
+        "evidence_sections": {},
+        "overlap": "技术领域或方案不相关。",
+        "key_gap": "2023-06-15 公开；磺化聚合物抗菌口罩，无关且晚于基准日",
+        "basis": "技术领域或方案不相关。2023-06-15 公开；磺化聚合物抗菌口罩，无关且晚于基准日"
+      }
+    },
+    {
+      "id": "US8053972B2",
+      "usage": "train",
+      "difficulty": "baseline",
+      "label": {
+        "relevance": "unrelated",
+        "expected_retrieval_hit": false,
+        "prior_art_at_cutoff": true,
+        "coverage": "not_applicable",
+        "feature_status": {},
+        "evidence_sections": {},
+        "overlap": "技术领域或方案不相关。",
+        "key_gap": "2011-11-08 公开；量子点白光 LED（光致转换），无关（低）",
+        "basis": "技术领域或方案不相关。2011-11-08 公开；量子点白光 LED（光致转换），无关（低）"
+      }
+    },
+    {
+      "id": "US9793505B2",
+      "usage": "anchor",
+      "difficulty": "baseline",
+      "label": {
+        "relevance": "unrelated",
+        "expected_retrieval_hit": false,
+        "prior_art_at_cutoff": true,
+        "coverage": "not_applicable",
+        "feature_status": {},
+        "evidence_sections": {},
+        "overlap": "技术领域或方案不相关。",
+        "key_gap": "2017-10-17 公开；QD Vision 量子点发光器件，无关（低）",
+        "basis": "技术领域或方案不相关。2017-10-17 公开；QD Vision 量子点发光器件，无关（低）"
+      }
+    },
+    {
+      "id": "US20210202869A1",
+      "usage": "anchor",
+      "difficulty": "baseline",
+      "label": {
+        "relevance": "unrelated",
+        "expected_retrieval_hit": false,
+        "prior_art_at_cutoff": false,
+        "coverage": "not_applicable",
+        "feature_status": {},
+        "evidence_sections": {},
+        "overlap": "技术领域或方案不相关。",
+        "key_gap": "2021-07-01 公开；三星无镉量子点，无关且晚于基准日",
+        "basis": "技术领域或方案不相关。2021-07-01 公开；三星无镉量子点，无关且晚于基准日"
+      }
+    },
+    {
+      "id": "US9199842B2",
+      "usage": "anchor",
+      "difficulty": "baseline",
+      "label": {
+        "relevance": "unrelated",
+        "expected_retrieval_hit": false,
+        "prior_art_at_cutoff": true,
+        "coverage": "not_applicable",
+        "feature_status": {},
+        "evidence_sections": {},
+        "overlap": "技术领域或方案不相关。",
+        "key_gap": "2015-12-01 公开；Nanosys 量子点背光膜，无关（低）",
+        "basis": "技术领域或方案不相关。2015-12-01 公开；Nanosys 量子点背光膜，无关（低）"
+      }
+    },
+    {
+      "id": "US10593902B2",
+      "usage": "train",
+      "difficulty": "baseline",
+      "label": {
+        "relevance": "unrelated",
+        "expected_retrieval_hit": false,
+        "prior_art_at_cutoff": false,
+        "coverage": "not_applicable",
+        "feature_status": {},
+        "evidence_sections": {},
+        "overlap": "技术领域或方案不相关。",
+        "key_gap": "2020-03-17 公开；UCF 超亮 QLED，无关且晚于基准日",
+        "basis": "技术领域或方案不相关。2020-03-17 公开；UCF 超亮 QLED，无关且晚于基准日"
+      }
+    },
+    {
+      "id": "CN106757342A",
+      "usage": "train",
+      "difficulty": "hard_near_neighbor",
+      "label": {
+        "relevance": "related",
+        "expected_retrieval_hit": true,
+        "prior_art_at_cutoff": true,
+        "coverage": "partial_coverage",
+        "feature_status": {
+          "F1": "not_found",
+          "F2": "not_found",
+          "F3": "not_found",
+          "F4": "not_found",
+          "F5": "disclosed",
+          "F6": "not_found"
+        },
+        "evidence_sections": {
+          "F5": [
+            "CN106757342A:claim1"
+          ]
+        },
+        "overlap": "ABX3 钙钛矿、双容器反溶剂扩散与 F5 重合。",
+        "key_gap": "B 位仅为 Pb/Ge/Sn，不是 Ag/Bi 双金属；缺少指定第一析晶、离心和 Cs2AgBiBr6 产物组合。",
+        "basis": "ABX3 钙钛矿、双容器反溶剂扩散与 F5 重合。B 位仅为 Pb/Ge/Sn，不是 Ag/Bi 双金属；缺少指定第一析晶、离心和 Cs2AgBiBr6 产物组合。"
+      }
+    },
+    {
+      "id": "CN107325812A",
+      "usage": "anchor",
+      "difficulty": "hard_near_neighbor",
+      "label": {
+        "relevance": "related",
+        "expected_retrieval_hit": true,
+        "prior_art_at_cutoff": true,
+        "coverage": "partial_coverage",
+        "feature_status": {
+          "F1": "not_found",
+          "F2": "not_found",
+          "F3": "not_found",
+          "F4": "not_found",
+          "F5": "disclosed",
+          "F6": "not_found"
+        },
+        "evidence_sections": {
+          "F5": [
+            "CN107325812A:claim4"
+          ]
+        },
+        "overlap": "权利要求4公开前驱液、内外容器和反溶剂扩散，覆盖 F5。",
+        "key_gap": "材料为 ABX3 且 B 位为 Pb/Ge/Sn；缺少两步去除偏析晶、离心及指定参数。",
+        "basis": "权利要求4公开前驱液、内外容器和反溶剂扩散，覆盖 F5。材料为 ABX3 且 B 位为 Pb/Ge/Sn；缺少两步去除偏析晶、离心及指定参数。"
+      }
+    },
+    {
+      "id": "CN107325004A",
+      "usage": "train",
+      "difficulty": "hard_near_neighbor",
+      "label": {
+        "relevance": "related",
+        "expected_retrieval_hit": true,
+        "prior_art_at_cutoff": true,
+        "coverage": "local_association",
+        "feature_status": {
+          "F1": "not_found",
+          "F2": "not_found",
+          "F3": "not_found",
+          "F4": "not_found",
+          "F5": "not_found",
+          "F6": "not_found"
+        },
+        "evidence_sections": {},
+        "overlap": "同属钙钛矿晶体制备，并涉及固液分离。",
+        "key_gap": "采用固体反应流体媒介得到粉末，不是 DMSO 前驱液的两步反溶剂扩散结晶。",
+        "basis": "同属钙钛矿晶体制备，并涉及固液分离。采用固体反应流体媒介得到粉末，不是 DMSO 前驱液的两步反溶剂扩散结晶。"
+      }
+    },
+    {
+      "id": "CN108034989A",
+      "usage": "train",
+      "difficulty": "hard_near_neighbor",
+      "label": {
+        "relevance": "related",
+        "expected_retrieval_hit": true,
+        "prior_art_at_cutoff": true,
+        "coverage": "local_association",
+        "feature_status": {
+          "F1": "not_found",
+          "F2": "not_found",
+          "F3": "not_found",
+          "F4": "not_found",
+          "F5": "not_found",
+          "F6": "not_found"
+        },
+        "evidence_sections": {},
+        "overlap": "甲胺溴铅晶体、反溶剂蒸气及 20～55℃ 生长与副本局部相近。",
+        "key_gap": "用载气把反溶剂蒸气载入溶液，材料、双容器路径、第一析晶和离心组合均不同。",
+        "basis": "甲胺溴铅晶体、反溶剂蒸气及 20～55℃ 生长与副本局部相近。用载气把反溶剂蒸气载入溶液，材料、双容器路径、第一析晶和离心组合均不同。"
+      }
+    },
+    {
+      "id": "CN107093671A",
+      "usage": "anchor",
+      "difficulty": "hard_near_neighbor",
+      "label": {
+        "relevance": "related",
+        "expected_retrieval_hit": true,
+        "prior_art_at_cutoff": true,
+        "coverage": "local_association",
+        "feature_status": {
+          "F1": "not_found",
+          "F2": "not_found",
+          "F3": "not_found",
+          "F4": "not_found",
+          "F5": "not_found",
+          "F6": "not_found"
+        },
+        "evidence_sections": {},
+        "overlap": "前驱液、DMSO/氯苯选项和抗溶剂结晶存在局部词汇重合。",
+        "key_gap": "方案是基片/模具内高温生长薄膜并旋干退火，不是副本的两步析晶和双容器扩散。",
+        "basis": "前驱液、DMSO/氯苯选项和抗溶剂结晶存在局部词汇重合。方案是基片/模具内高温生长薄膜并旋干退火，不是副本的两步析晶和双容器扩散。"
+      }
+    },
+    {
+      "id": "CN108560056A",
+      "usage": "train",
+      "difficulty": "hard_near_neighbor",
+      "label": {
+        "relevance": "related",
+        "expected_retrieval_hit": true,
+        "prior_art_at_cutoff": true,
+        "coverage": "partial_coverage",
+        "feature_status": {
+          "F1": "not_found",
+          "F2": "not_found",
+          "F3": "not_found",
+          "F4": "not_found",
+          "F5": "disclosed",
+          "F6": "not_found"
+        },
+        "evidence_sections": {
+          "F5": [
+            "CN108560056A:claim1"
+          ]
+        },
+        "overlap": "权利要求1公开小瓶/广口瓶、反溶剂挥发扩散和密封，覆盖 F5。",
+        "key_gap": "材料为 A2PbBr4，DMF 室温溶解并过滤；没有指定三组分、第一滴加析晶和离心步骤。",
+        "basis": "权利要求1公开小瓶/广口瓶、反溶剂挥发扩散和密封，覆盖 F5。材料为 A2PbBr4，DMF 室温溶解并过滤；没有指定三组分、第一滴加析晶和离心步骤。"
+      }
+    }
+  ],
+  "scoring": {
+    "formula_version": "rsi-f-signal-2.0",
+    "candidate_relevance_f1": "固定候选池上的相关性 F1，不称为全库检索召回。",
+    "judgment_accuracy": "相关候选中相关性、日期、覆盖、逐要素状态及披露证据均正确的比例；未判计错并另列覆盖率。",
+    "training_f_signal": "有效覆盖率100%时，0.5×候选相关性F1+0.5×判断正确率；覆盖不足时仅报告部分指标，不采纳。",
+    "retrieval": "仅对独立返回的公开号列表另算检索P/R/F1；固定证据包模式不计算。",
+    "anchor": "锚池只报告对账指标，不是专业准确率，不参与任何迭代决定。"
+  }
+}
