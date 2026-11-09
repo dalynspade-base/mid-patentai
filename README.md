@@ -1,6 +1,6 @@
 # Google Patents 专利新颖性预筛
 
-**版本：2.2.0** · [临时 Skill RSI 实验](docs/rsi-experiment.md) · [2.0.0 架构迁移](docs/releases/v2.0.0.md) · [1.1.0历史说明](docs/releases/v1.1.0.md) · [变更记录](CHANGELOG.md)
+**版本：2.3.0** · [Google 连接恢复](docs/google-patents-recovery.md) · [临时 Skill RSI 实验](docs/rsi-experiment.md) · [2.0.0 架构迁移](docs/releases/v2.0.0.md) · [1.1.0历史说明](docs/releases/v1.1.0.md) · [变更记录](CHANGELOG.md)
 
 本项目把用户想法或已保存材料整理为技术要素，检索或接收 Google Patents 原文快照，逐篇对照技术关系与全部限定，再给出有证据范围的新颖性预筛报告。八份 Markdown Skill 描述任务与上下文，Python 工具执行具体操作，harness 管理状态和调用。
 

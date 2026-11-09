@@ -15,6 +15,7 @@ from modules.patent_search import MAX_QUERY_LENGTH
 from modules.synonym_expansion import PROFILES, build_expansion_plan, feature_hash
 from modules.candidate_ranking import RANKING_VERSION, rank_candidates
 from modules.candidate_relevance import annotate_origins
+from modules.patent_network_state import PatentAccessPaused
 
 MAX_QUERIES = 8
 MAX_QUERY_BUDGET = 16
@@ -101,8 +102,12 @@ def retrieve_with_journal(features: list[Feature], cutoff: str, query: str, lexi
              "document_budget": max_documents, "synonym_groups": deepcopy(lexicon.groups),
              **query_plan(features, query, lexicon, expansion), "candidates": []}
     candidates: dict[str, dict] = {}
+    paused = False
     for record in audit["queries"]:
         record.update(started_at=now(), status="error", results=[], returned_count=0, error="")
+        if paused:
+            record.update(status="not_executed", error="Google Patents 已暂停，本条未发送。", finished_at=now())
+            continue
         try:
             raw = searcher(record["query"], RESULTS_PER_QUERY)
             if not isinstance(raw, list):
@@ -132,6 +137,10 @@ def retrieve_with_journal(features: list[Feature], cutoff: str, query: str, lexi
                     result["validation_error"] = str(exc)
                 record["results"].append(result)
             record["status"] = "ok"
+        except PatentAccessPaused as exc:
+            paused = True
+            audit["network_paused"] = True
+            record["error"] = str(exc)
         except (RuntimeError, ValueError) as exc:
             record["error"] = str(exc)
         record["finished_at"] = now()
@@ -147,6 +156,9 @@ def retrieve_with_journal(features: list[Feature], cutoff: str, query: str, lexi
         "note": "组件、关系与提及语境的规则线索；未进行正文相关性或新颖性确认"}
     documents = []
     for candidate in ordered[:max_documents]:
+        if paused:
+            candidate.update(fetch_status="not_executed", fetch_error="Google Patents 已暂停，未获取正文。")
+            continue
         candidate["fetch_started_at"] = now()
         try:
             doc = fetcher(candidate["url"])
@@ -156,13 +168,17 @@ def retrieve_with_journal(features: list[Feature], cutoff: str, query: str, lexi
                 raise ValueError(doc.error or "正文没有可核对段落。")
             documents.append(doc)
             candidate.update(fetch_status="fetched", snapshot_hash=doc.snapshot_hash)
+        except PatentAccessPaused as exc:
+            paused = True
+            audit["network_paused"] = True
+            candidate.update(fetch_status="error", fetch_error=str(exc))
         except (RuntimeError, ValueError) as exc:
             candidate.update(fetch_status="error", fetch_error=str(exc))
         candidate["fetch_finished_at"] = now()
     audit["candidates"] = ordered
     audit["finished_at"] = now()
-    audit["retrieval_cost"] = {"search_calls": len(audit["queries"]),
-        "page_attempts": len(ordered[:max_documents]), "successful_pages": len(documents),
+    audit["retrieval_cost"] = {"search_calls": sum(r["status"] != "not_executed" for r in audit["queries"]),
+        "page_attempts": sum("fetch_started_at" in c for c in ordered), "successful_pages": len(documents),
         "returned_hits": sum(r["returned_count"] for r in audit["queries"]), "unique_candidates": len(ordered),
         "elapsed_seconds": round(time.perf_counter() - started, 6),
         "expansion_generation_cost": audit["expansion"]["generation"].get("cost", {})}

@@ -5,12 +5,14 @@ from __future__ import annotations
 import re
 from collections.abc import Callable
 from datetime import datetime, timezone
+from dataclasses import replace
 
 import requests
 from bs4 import BeautifulSoup
 
 from modules.novelty_models import PatentDocument, SourceSection, google_patent_url
 from modules.google_patents_transport import document_response
+from modules.patent_network_state import save_verified_response, original_retrieved_at
 
 
 def parse_google_page(url: str, html: str) -> PatentDocument:
@@ -92,7 +94,13 @@ def fetch_google_document(url: str, get: Callable | None = None) -> PatentDocume
         if 300 <= response.status_code < 400:
             raise RuntimeError("Google Patents 返回重定向，请人工打开并核对单篇来源。")
         response.raise_for_status()
-        return parse_google_page(url, response.text)
+        document = parse_google_page(url, response.text)
+        retrieved_at = original_retrieved_at(response)
+        if retrieved_at:
+            document = replace(document, retrieved_at=retrieved_at)
+        if document.sections and not document.error:
+            save_verified_response(response)
+        return document
     except requests.RequestException as exc:
         raise RuntimeError("Google Patents 正文获取失败；可粘贴同一来源的原文快照。") from exc
 
