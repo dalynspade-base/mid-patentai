@@ -5,7 +5,7 @@ from modules.skill_contracts import plain, document_sources, upsert_record
 from modules.patent_context import context_for, stage_record, handoff_issues
 from modules.skill_library import skill_prompt
 from modules.synonym_expansion import build_expansion_plan
-from modules.novelty_search import retrieve_with_journal, snapshot_journal
+from modules.novelty_search import RESULTS_PER_QUERY, retrieve_with_journal, snapshot_journal
 from modules.evidence_alignment import locate_evidence
 from modules.novelty_review import model_review_documents
 from modules.novelty_rules import assess_novelty
@@ -13,14 +13,14 @@ from modules.novelty_report import build_payload, to_markdown
 
 
 def prepare_materials(feature_text="", *, features=None, original_text="", unknowns=None, warnings=None,
-        cutoff="", context=None, sources=()):
+        cutoff="", context=None, sources=(), source_scope=None):
     values = list(features) if features else parse_features(feature_text)
     # Reuse the parser's duplicate/length contract even for programmatic callers.
     claim_mode = bool((context or {}).get("target", {}).get("claim_id"))
     if (not values or any(not f.text.strip() for f in values) or len({f.id for f in values}) != len(values)
             or (not claim_mode and len(parse_features("\n".join(f.text for f in values))) != len(values))):
         raise ValueError("确认的技术要素重复或无效。")
-    ctx = context_for(values, cutoff, context, invention=original_text)
+    ctx = context_for(values, cutoff, context, invention=original_text, sources=source_scope)
     inputs = {"confirmed_features": plain(values), "original_material": original_text,
               "unknowns": unknowns or [], "warnings": warnings or []}
     record = stage_record("patent-material-preparation", inputs,
@@ -80,12 +80,14 @@ def record_expansion(features, lexicon, plan, *, cutoff="", context=None, upstre
 
 
 def search_candidates(features, cutoff, lexicon, searcher, fetcher, max_documents, *, query="", expansion=None,
-        documents=None, supplied=False, audit=None, errors=None, context=None, upstream=()):
+        documents=None, supplied=False, audit=None, errors=None, context=None, upstream=(), provider="google",
+        results_per_query=RESULTS_PER_QUERY):
     if supplied:
         documents = list(documents or [])
         audit = audit if audit is not None else snapshot_journal(features,cutoff)
     else:
-        documents,audit = retrieve_with_journal(features,cutoff,query,lexicon,searcher,fetcher,max_documents,expansion)
+        documents,audit = retrieve_with_journal(features,cutoff,query,lexicon,searcher,fetcher,max_documents,expansion,
+                                                provider=provider,results_per_query=results_per_query)
     record = stage_record("patent-candidate-search", {"features":features,"cutoff":cutoff,"query":query,
         "mode":"provided_snapshots" if supplied else "online","expansion":expansion},
         {"documents":documents,"search_audit":audit,"errors":errors or []}, sources=document_sources(documents),

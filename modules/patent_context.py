@@ -36,7 +36,7 @@ PREDECESSORS = {
 }
 
 
-def context_for(features, cutoff="", context=None, *, invention=""):
+def context_for(features, cutoff="", context=None, *, invention="", sources=None):
     features = plain(features)
     if context is not None and not isinstance(context,dict):
         raise ValueError("专利上下文须为对象。")
@@ -77,10 +77,17 @@ def context_for(features, cutoff="", context=None, *, invention=""):
     if target.get("claim_id") and (not all(target.get(k) for k in ("id","version_id","path","claims","history_hash"))
                                    or target["path"][-1] != target["claim_id"]):
         raise ValueError("权利要求上下文不完整，须从明确的修改历史解析。")
-    scope = {"jurisdiction": "CN", "task": "novelty", "sources": "Google Patents",
+    from modules.novelty_models import PATSNAP_SOURCE_SCOPE
+    existing_scope = result.get("scope") or {}
+    if not isinstance(existing_scope, dict):
+        raise ValueError("上下文来源范围须为对象。")
+    source_scope = sources or existing_scope.get("sources", "Google Patents")
+    if source_scope not in ("Google Patents", PATSNAP_SOURCE_SCOPE):
+        raise ValueError("未知的专利来源范围。")
+    scope = {"jurisdiction": "CN", "task": "novelty", "sources": source_scope,
              "target_kind": "claim" if result["target"].get("claim_id") else "confirmed_features"}
     if result.get("scope") and result["scope"] != scope:
-        raise ValueError("上下文超出当前CN新颖性及Google Patents范围。")
+        raise ValueError("上下文与当前 CN 新颖性或文献来源范围不一致。")
     result["scope"] = scope
     if result.get("rule_profile") and result["rule_profile"] != RULE_PROFILE:
         raise ValueError("当前接口不支持自行替换CN预筛规则；历史适用规则存疑须保留未知。")

@@ -160,7 +160,10 @@ def model_review_documents(features: list[Feature], documents: list[PatentDocume
         raise ValueError("单篇模型复核输入超过 5 万字符，请缩小完整比对范围；原文未截断，未发出请求。")
     result = []
     for doc, payload in zip(documents, payloads):
-        data = parse_object(client.complete(skill_prompt("patent-evidence-alignment", MODEL_REVIEW_SYSTEM), payload, max_tokens=10000))
+        protocol = MODEL_REVIEW_SYSTEM
+        if doc.source_kind == "patsnap_mcp_snapshot":
+            protocol += "\n本篇已显式选择智慧芽来源；按快照中的实际来源、公开日期和段落核验，不将其称为 Google Patents。"
+        data = parse_object(client.complete(skill_prompt("patent-evidence-alignment", protocol), payload, max_tokens=10000))
         result.append(_validated_model_review(data, features, doc, cutoff, model, endpoint,patent_context=patent_context))
     return result
 

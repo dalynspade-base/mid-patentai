@@ -29,7 +29,8 @@ from modules.semantic_eval_ui import render_semantic_evaluation
 from modules.patent_tools import review_evidence as run_evidence_review
 from modules.claim_ui import render_claim_input
 from modules.patent_context import context_for
-from modules.novelty_models import parse_features
+from modules.novelty_models import PATSNAP_SOURCE_SCOPE, SEARCH_PROVIDERS, parse_features
+from modules.patsnap_mcp import MAX_PATSNAP_RESULTS
 from modules.application_baselines import TOPICS
 
 
@@ -39,12 +40,20 @@ def fingerprint(*items: str) -> str:
 
 def main() -> None:
     load_dotenv(Path(__file__).parents[1] / ".env")
-    st.set_page_config(page_title="Google Patents 新颖性预筛", page_icon="🔎", layout="wide")
-    st.title("🔎 Google Patents 新颖性预筛")
+    st.set_page_config(page_title="专利新颖性预筛", page_icon="🔎", layout="wide")
+    st.title("🔎 专利新颖性预筛")
     st.caption("专利预筛主 skill · 六个业务子 skill · 独立六维语义 eval")
     with st.sidebar:
         st.header("检索与模型设置")
-        max_documents = st.slider("最多获取文献数", 1, 10, 4)
+        provider = st.selectbox("检索平台", list(SEARCH_PROVIDERS), format_func=SEARCH_PROVIDERS.__getitem__)
+        provider_label = SEARCH_PROVIDERS[provider]
+        results_settings = {}
+        paid_consent = True
+        if provider == "patsnap":
+            results_settings["results_per_query"] = st.slider("每条查询最多保留候选数", 1, MAX_PATSNAP_RESULTS, 5)
+            paid_consent = st.checkbox("我确认将检索词发送到智慧芽，并使用检索和正文接口额度")
+            st.caption("仅发送本轮检索词；正文按下方篇数读取。检索计入额度，每篇最多调用三个正文相关工具，部分内容可命中平台缓存。")
+        max_documents = st.slider("最多获取文献数", 1, 10, 2 if provider == "patsnap" else 4)
         api_key = st.text_input("模型 API Key", value=os.getenv("LLM_API_KEY", ""), type="password")
         base_url = st.text_input("模型 API 地址", value=os.getenv("LLM_BASE_URL", "https://api.deepseek.com"))
         model = st.text_input("模型名", value=os.getenv("LLM_MODEL", "deepseek-flash"))
@@ -96,16 +105,19 @@ def main() -> None:
                       "semantic_focus":["functions_effects"] if functional else []}
         if claim_selection:
             context_seed["target"]=claim_selection["target"]
-        patent_context=context_for(ui_features,cutoff,context_seed,invention=invention)
+        patent_context=context_for(ui_features,cutoff,context_seed,invention=invention,
+                                  sources=PATSNAP_SOURCE_SCOPE if provider == "patsnap" else None)
     except ValueError as exc:
         st.error(str(exc))
         return
     expansion = render_synonym_expansion(feature_text, lexicon, api_key, base_url, model,
         features_override=ui_features,patent_context=patent_context)
-    query = st.text_input("Google Patents 检索词（可选）")
+    query = st.text_input(f"{provider_label} 检索词（可选）", key=f"patent-query-{provider}")
     st.caption("留空时原要素优先，再发送审核通过的扩展；理论类最多8条、工程类最多16条，每条400字，不截断。自定义词保持指定范围。")
     st.caption("普通输入按整套确认要素预筛；权利要求模式按选定版本和引用路径分别比对。基准日及优先权适用性需核验。")
-    st.info("检索词发送到 Google Patents。分别确认并点击生成术语或模型复核后，对应的要素/术语表或原文/候选才发送到模型。")
+    st.info(f"检索词发送到 {provider_label}。分别确认并点击生成术语或模型复核后，对应的要素/术语表或原文/候选才发送到模型。")
+    if provider == "patsnap":
+        st.caption("自定义词支持智慧芽检索式，例如 TACD:(压力传感器)；普通文字作为全文字段的短语查询。")
     prepared = st.session_state.get("prepared_material_features")
     material_context = {"material_unknowns": list(prepared.get("unknowns", [])) if prepared else [],
                         "material_warnings": list(prepared.get("warnings", [])) if prepared else []}
@@ -119,15 +131,15 @@ def main() -> None:
         material_skill_context.update(claim_history=claim_selection["history"],claim_target=claim_selection["target"]["id"])
     if not claim_selection and prepared and prepared["feature_text"]==feature_text and prepared.get("skill_record"):
         material_skill_context["material_skill_record"]=prepared["skill_record"]
-    signature = fingerprint(invention, feature_text, cutoff, query, str(max_documents),
+    signature = fingerprint(invention, feature_text, cutoff, query, str(max_documents), provider, str(results_settings),
                             json.dumps(lexicon.groups, ensure_ascii=False),
                             json.dumps(expansion, ensure_ascii=False, sort_keys=True),
                             json.dumps(patent_context, ensure_ascii=False, sort_keys=True),
                             json.dumps(material_identity, ensure_ascii=False, sort_keys=True))
-    harness = NoveltyHarness(lexicon=lexicon, max_documents=max_documents)
+    harness = NoveltyHarness(lexicon=lexicon, max_documents=max_documents, search_provider=provider, **results_settings)
     state = st.session_state.get("novelty_state") if st.session_state.get("novelty_signature") == signature else None
 
-    if st.button("1 · 检索 Google Patents 并定位证据", type="primary", disabled=not feature_text.strip()):
+    if st.button(f"1 · 检索 {provider_label} 并定位证据", type="primary", disabled=not (feature_text.strip() and paid_consent)):
         st.session_state.pop("novelty_state", None)
         try:
             with st.spinner("扩展同义词、检索文献并读取原文…"):
@@ -166,16 +178,17 @@ def main() -> None:
         return
 
     st.divider()
-    state = render_candidate_tools(state, harness, cutoff, material_context, api_key, base_url, model)
+    state = render_candidate_tools(state, harness, cutoff, material_context, api_key, base_url, model, allow_fetch=paid_consent)
     st.subheader("2 · 查看原文与候选对照")
     audit = state["search_audit"]
     with st.expander("本轮检索范围与记录"):
         if audit["mode"] == "provided_snapshots":
             st.write("仅比对提供的快照；本轮未执行在线检索，不能推断检索覆盖。")
         else:
-            st.write("在线检索记录：所有计划内查询先执行，再按独立文献预算读取正文。先用部件/关系与提及语境规则排序；可补充模型元数据判断，正文相关性另行复核。")
+            st.write(f"检索平台：{SEARCH_PROVIDERS.get(audit.get('provider'), 'Google Patents')}。先执行查询，再按独立文献预算读取正文。")
             st.dataframe([{"查询": r["id"], "要素": ", ".join(r["feature_ids"]) or "自定义范围",
-                           "实际检索词": r["query"], "状态": r["status"], "返回数": r["returned_count"],
+                           "实际检索词": r.get("sent_query", r["query"]) if r["status"] != "not_executed" else "未发送",
+                           "状态": r["status"], "返回数": r["returned_count"], "平台命中总数": r.get("total_matches"),
                            "开始": r["started_at"], "结束": r["finished_at"], "错误": r["error"]}
                           for r in audit["queries"]], hide_index=True, width="stretch")
             for skipped in audit.get("skipped", []):
@@ -191,7 +204,8 @@ def main() -> None:
         st.warning(error)
     for doc in state["documents"]:
         with st.expander(f"{doc.id} · {doc.title}"):
-            st.link_button("打开 Google Patents 来源", doc.url)
+            source_label = "智慧芽" if doc.source_kind == "patsnap_mcp_snapshot" else "Google Patents"
+            st.link_button(f"打开 {source_label} 来源", doc.url)
             st.write(f"公开日：{doc.publication_date or '未取得'}；来源类型：{doc.source_kind}")
             for section in doc.sections:
                 location = section.source_location or "旧版快照内部编号（非原文权利要求号）"
@@ -314,4 +328,4 @@ def main() -> None:
             st.success(f"本轮结果已单独保存：{saved_path.name}。原始材料和以前的结果保持不变。")
         except (OSError, ValueError) as exc:
             st.error(str(exc))
-    st.caption("本次未发现完整披露不等于具备新颖性或可以授权。资料范围仅为本次取得的 Google Patents 文献。")
+    st.caption("本次未发现完整披露不等于具备新颖性或可以授权。资料范围限于本轮实际取得的文献。")

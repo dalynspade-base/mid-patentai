@@ -1,4 +1,4 @@
-"""CNIPA 新颖性预筛规则。结论受限于已检索、已复核的 Google Patents 快照。
+"""CNIPA 新颖性预筛规则。结论受限于已取得、已复核的专利原文快照。
 
 禁止跨文献/互斥实施例拼接。权利要求引用在入口按明确分支展开；此处逐个完整目标判断。
 当前不处理创造性、FTO或宽限期。
@@ -10,7 +10,7 @@ from __future__ import annotations
 from datetime import date, datetime
 
 from modules.novelty_models import (
-    DocumentReview, Feature, NoveltyDecision, PatentDocument, check_cutoff, google_patent_url,
+    DocumentReview, Feature, NoveltyDecision, PatentDocument, check_cutoff, document_source_url,
     review_input_hash,
 )
 from modules.novelty_search import search_warnings
@@ -47,14 +47,14 @@ def assess_novelty(features: list[Feature], documents: list[PatentDocument],
     risk_ids: list[str] = []
     for doc in documents:
         try:
-            google_patent_url(doc.url)
+            document_source_url(doc)
         except ValueError:
-            warnings.append(f"{doc.id}：不是允许的 Google Patents 来源。")
+            warnings.append(f"{doc.id}：不是此来源类型允许的单篇专利链接。")
             continue
         if doc.source_kind == "synthetic_eval" and not allow_synthetic:
             warnings.append(f"{doc.id}：教学合成资料不能进入真实预筛。")
             continue
-        if doc.source_kind not in {"google_patents_page", "manual_google_patents_snapshot", "synthetic_eval"}:
+        if doc.source_kind not in {"google_patents_page", "manual_google_patents_snapshot", "synthetic_eval", "patsnap_mcp_snapshot"}:
             warnings.append(f"{doc.id}：来源类型无效，不能用于预筛。")
             continue
         if doc.error or not doc.sections:

@@ -15,7 +15,7 @@ from pydantic import PrivateAttr
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 from modules.novelty_matching import SynonymLexicon
-from modules.novelty_models import PatentDocument, google_patent_url
+from modules.novelty_models import PatentDocument, document_source_url
 
 
 class LocalSynonymEmbedding(BaseEmbedding):
@@ -61,7 +61,7 @@ class PatentRetriever:
         self.sections: dict[str, tuple[PatentDocument, str, str]] = {}
         nodes = []
         for doc in documents:
-            google_patent_url(doc.url)
+            document_source_url(doc)
             if doc.source_kind == "synthetic_eval" and not allow_synthetic:
                 raise ValueError("教学合成来源不能进入真实检索。")
             for section in doc.sections:

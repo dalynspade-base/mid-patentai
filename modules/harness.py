@@ -13,8 +13,10 @@ from modules.json_output import parse_object
 from modules.novelty_matching import SynonymLexicon
 from modules.novelty_models import (
     DocumentReview, Feature, NoveltyDecision, PatentDocument,
-    check_cutoff,
+    check_cutoff, SEARCH_PROVIDERS, PATSNAP_SOURCE_SCOPE,
 )
+from modules.novelty_search import RESULTS_PER_QUERY
+from modules.patsnap_mcp import MAX_PATSNAP_RESULTS, PatsnapMCP
 from modules.candidate_relevance import incremental_summary
 from modules.patent_search import search_patents
 from modules.skill_contracts import upsert_record
@@ -100,12 +102,30 @@ def model_suggest_rows(features: list[Feature], documents: list[PatentDocument],
 class NoveltyHarness:
     def __init__(self, *, searcher: Callable | None = None, fetcher: Callable | None = None,
                  lexicon: SynonymLexicon | None = None, max_documents: int = 6,
-                 allow_synthetic: bool = False) -> None:
-        self.searcher = searcher or search_patents
-        self.fetcher = fetcher or fetch_google_document
+                 allow_synthetic: bool = False, search_provider: str = "google",
+                 results_per_query: int = RESULTS_PER_QUERY, patsnap_config=None) -> None:
+        if search_provider not in SEARCH_PROVIDERS:
+            raise ValueError("未知检索平台。")
+        if search_provider == "patsnap":
+            if type(results_per_query) is not int or not 1 <= results_per_query <= MAX_PATSNAP_RESULTS:
+                raise ValueError(f"智慧芽每条查询可保留 1–{MAX_PATSNAP_RESULTS} 篇候选。")
+            client = PatsnapMCP(patsnap_config)
+            self.searcher = searcher or client.search
+            self.fetcher = fetcher or client.fetch
+        else:
+            self.searcher = searcher or search_patents
+            self.fetcher = fetcher or fetch_google_document
+        self.search_provider = search_provider
+        self.results_per_query = results_per_query if search_provider == "patsnap" else RESULTS_PER_QUERY
         self.lexicon = lexicon or SynonymLexicon()
         self.max_documents = max(1, min(max_documents, 20))
         self.allow_synthetic = allow_synthetic
+
+    def _source_scope(self, state):
+        if (self.search_provider == "patsnap" or (state.get("search_audit") or {}).get("provider") == "patsnap"
+                or any(doc.source_kind == "patsnap_mcp_snapshot" for doc in state.get("documents") or [])):
+            return PATSNAP_SOURCE_SCOPE
+        return None if "documents" in state else "Google Patents"
 
     def _prepare(self, state: NoveltyState) -> dict:
         task = state.get("task", "novelty")
@@ -114,7 +134,8 @@ class NoveltyHarness:
         check_cutoff(state["cutoff"])
         features,record = operations.prepare_materials(state.get("feature_text", ""),features=state.get("features"),
             original_text=state.get("material_original",""),unknowns=state.get("material_unknowns"),warnings=state.get("material_warnings"),
-            cutoff=state["cutoff"],context=state.get("patent_context"),sources=state.get("claim_sources", []))
+            cutoff=state["cutoff"],context=state.get("patent_context"),sources=state.get("claim_sources", []),
+            source_scope=self._source_scope(state))
         ctx = record["inputs"]["patent_context"]
         if state.get("material_skill_record"):
             from modules.skill_contracts import validate_record
@@ -144,7 +165,8 @@ class NoveltyHarness:
         documents,audit,record=operations.search_candidates(state["features"],state["cutoff"],self.lexicon,
             self.searcher,self.fetcher,self.max_documents,query=state.get("query",""),expansion=state.get("expansion"),
             documents=state.get("documents"),supplied="documents" in state,audit=state.get("search_audit"),errors=errors,
-            context=state["patent_context"],upstream=state["skill_records"])
+            context=state["patent_context"],upstream=state["skill_records"],
+            provider=self.search_provider,results_per_query=self.results_per_query)
         return {"documents": documents, "search_audit": audit,
                 "errors": errors, "trace": state["trace"] + ["retrieve"],
                 "skill_records":upsert_record(state.get("skill_records",[]),record)}
@@ -191,7 +213,8 @@ class NoveltyHarness:
                 raise ValueError("已有上下文不属于当前权利要求目标。")
             ctx["target"]=target
             state.update(claim_history=history,features=features,claim_target=target["id"],claim_sources=sources,
-                         patent_context=context_for(features,state["cutoff"],ctx,invention=state.get("material_original", "")))
+                         patent_context=context_for(features,state["cutoff"],ctx,invention=state.get("material_original", ""),
+                                                    sources=self._source_scope(state)))
         current = dict(state)
         stages = (self._prepare, self._expand, self._retrieve, self._locate, self._decide, self._deliver)
         if current.get("task", "novelty") != "novelty":

@@ -7,7 +7,7 @@ import json
 import re
 from dataclasses import asdict, dataclass, field, replace
 from datetime import date, datetime, timezone
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 
 LABELS = {
@@ -26,6 +26,56 @@ def google_patent_url(url: str) -> str:
             or not re.fullmatch(r"/patent/[A-Za-z0-9]+(?:/[a-zA-Z-]+)?/?", parsed.path)):
         raise ValueError("来源必须是 https://patents.google.com/patent/公开号 的单篇页面。")
     return f"https://patents.google.com{parsed.path.rstrip('/')}"
+
+
+SEARCH_PROVIDERS = {"google": "Google Patents", "patsnap": "智慧芽"}
+PATSNAP_SOURCE_SCOPE = "智慧芽（可另行补充 Google Patents 原文快照）"
+
+
+def patsnap_view_url(patent_id: str) -> str:
+    if not isinstance(patent_id, str) or not re.fullmatch(r"[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}", patent_id):
+        raise ValueError("智慧芽结果缺少有效的专利记录 ID。")
+    return ("https://analytics.zhihuiya.com/patent-view/abst?_type=query&source_type=search_result&rows=20"
+            f"&patentId={patent_id.lower()}")
+
+
+def patsnap_patent_url(url: str) -> str:
+    parsed = urlparse(url.strip())
+    values = parse_qs(parsed.query).get("patentId", [])
+    if (parsed.scheme != "https" or parsed.hostname != "analytics.zhihuiya.com" or parsed.port not in {None, 443}
+            or parsed.username or parsed.password or parsed.path != "/patent-view/abst" or len(values) != 1):
+        raise ValueError("来源必须是智慧芽单篇专利详情页。")
+    return patsnap_view_url(values[0])
+
+
+def document_source_url(doc: PatentDocument) -> str:
+    return patsnap_patent_url(doc.url) if doc.source_kind == "patsnap_mcp_snapshot" else google_patent_url(doc.url)
+
+
+def candidate_source(item: dict, provider: str) -> tuple[str, str]:
+    if provider == "patsnap":
+        pn = item.get("publication_number") or item.get("publication_id") or ""
+        if not re.fullmatch(r"[A-Z]{2}\d[A-Z0-9]{3,22}", pn):
+            raise ValueError("智慧芽候选的公开号无效。")
+        return patsnap_patent_url(item["url"]), pn
+    if provider != "google":
+        raise ValueError("未知检索平台。")
+    url = google_patent_url(item["url"])
+    return url, url.split("/patent/", 1)[1].split("/")[0]
+
+
+def fetch_candidate_document(item: dict, provider: str, fetcher):
+    url, publication_id = candidate_source(item, provider)
+    if item["publication_id"] != publication_id:
+        raise ValueError("候选公开号与检索来源不一致。")
+    doc = fetcher(dict(item, url=url) if provider == "patsnap" else url)
+    if doc.id != publication_id:
+        raise ValueError("正文公开号与检索来源不一致。")
+    if provider == "patsnap" and (doc.source_kind != "patsnap_mcp_snapshot" or document_source_url(doc) != url):
+        raise ValueError("智慧芽正文来源与检索记录不一致。")
+    if doc.error or not doc.sections:
+        raise ValueError(doc.error or "正文没有可核对段落。")
+    return doc
 
 
 @dataclass(frozen=True)

@@ -12,7 +12,8 @@ from urllib.parse import urlsplit, urlunsplit
 
 from modules.candidate_ranking import metadata_contexts
 from modules.json_output import parse_object
-from modules.novelty_models import Feature, google_patent_url, review_input_hash
+from modules.novelty_models import Feature, SEARCH_PROVIDERS, candidate_source, fetch_candidate_document, review_input_hash
+from modules.patent_network_state import PatentAccessPaused
 
 METADATA_PROMPT_VERSION = "candidate-relevance-v1"
 MAX_CANDIDATES = 20
@@ -252,31 +253,44 @@ def fetch_additional_documents(features, documents, audit, selected_ids, fetcher
             or len(documents) + len(selected_ids) > 20):
         raise ValueError("每批补充1–5篇且文献总数最多20篇，所选编号不能重复。")
     by_id = {c["publication_id"]: c for c in audit.get("candidates", [])}
+    provider = audit.get("provider", "google")
     existing = {d.id for d in documents}
     for key in selected_ids:
         if key not in by_id or key in existing:
             raise ValueError("补充文献必须是本轮已检索且尚未取得正文的候选。")
-        google_patent_url(by_id[key]["url"])
+        _, publication = candidate_source(by_id[key], provider)
+        if publication != key:
+            raise ValueError("补充文献的公开号与候选来源不一致。")
     updated = deepcopy(audit)
     candidates = {c["publication_id"]: c for c in updated["candidates"]}
     result = list(documents)
     attempts = []
+    paused = False
     for key in selected_ids:
         candidate = candidates[key]
         record = {"publication_id": key, "started_at": now(), "selection": "explicit_user_selection"}
+        if paused:
+            reason = f"{SEARCH_PROVIDERS[provider]} 已暂停，未获取正文。"
+            candidate.update(fetch_status="not_executed", fetch_error=reason)
+            attempts.append(dict(record, finished_at=now(), status="not_executed", error=reason))
+            continue
         try:
-            doc = fetcher(candidate["url"])
-            if doc.id != key or doc.error or not doc.sections:
-                raise ValueError("补充文献的公开号不符或正文缺失。")
+            doc = fetch_candidate_document(candidate, provider, fetcher)
             result.append(doc)
             candidate.update(fetch_status="fetched", fetch_error="", snapshot_hash=doc.snapshot_hash)
             record["status"] = "fetched"
+        except PatentAccessPaused as exc:
+            paused = True
+            updated["network_paused"] = True
+            candidate.update(fetch_status="error", fetch_error=str(exc))
+            record.update(status="error", error=str(exc))
         except (RuntimeError, ValueError) as exc:
             candidate.update(fetch_status="error", fetch_error=str(exc))
             record.update(status="error", error=str(exc))
         record["finished_at"] = now()
         attempts.append(record)
     updated.setdefault("additional_fetches", []).extend(attempts)
-    updated.setdefault("retrieval_cost", {})["additional_page_attempts"] = len(updated["additional_fetches"])
+    updated.setdefault("retrieval_cost", {})["additional_page_attempts"] = sum(
+        r["status"] != "not_executed" for r in updated["additional_fetches"])
     updated["retrieval_cost"]["additional_successful_pages"] = sum(r["status"] == "fetched" for r in updated["additional_fetches"])
     return result, updated
