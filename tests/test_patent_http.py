@@ -24,7 +24,7 @@ class PatentHTTPTests(unittest.TestCase):
         rows = search_patents('rubidium 齿', get=get)
         self.assertEqual(rows[0]['publication_number'], 'CN123A')
         self.assertEqual(get.call_args_list[0], get.call_args_list[1])
-        self.sleep.assert_called_once_with(2)
+        self.sleep.assert_called_once_with(5)
 
     def test_503_body_recovers_with_all_text_and_same_url(self):
         long_body = BODY.replace('fixture description', '完整正文。' * 30000)
@@ -33,7 +33,7 @@ class PatentHTTPTests(unittest.TestCase):
         self.assertEqual(sum(len(s.text) for s in doc.sections), 150016)
         self.assertEqual(doc.url, URL)
         self.assertEqual(get.call_args_list[0], get.call_args_list[2])
-        self.assertEqual([c.args[0] for c in self.sleep.call_args_list], [2, 5])
+        self.assertEqual([c.args[0] for c in self.sleep.call_args_list], [5, 15])
 
     def test_exhausted_503_never_becomes_empty_success(self):
         get = Mock(side_effect=[response(503), response(503), response(503)])

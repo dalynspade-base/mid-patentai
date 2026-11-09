@@ -6,7 +6,9 @@
 
 ## 共享部分
 
-`patent_context` 保存基准日 `cutoff`、CN/新颖性/Google Patents来源范围 `scope`、当前限定绑定 `features_hash`、目标 `target`、发明描述、已知领域、规则说明、相关争议主题及显式语义重点。缺失的领域标为未指定，未提供的日期保留空值；不得捏造信息。完整主流程总是传递实际基准日。
+`patent_context` 保存基准日 `cutoff`、CN 新颖性与本轮来源范围 `scope`、当前限定绑定 `features_hash`、目标 `target`、发明描述、已知领域、规则说明、相关争议主题及显式语义重点。缺失的领域标为未指定，未提供的日期保留空值；不得捏造信息。完整主流程总是传递实际基准日。
+
+正式 Skill 文档中的 Google Patents 是默认来源。网页或 Harness 明确选择[智慧芽](patsnap-search.md)时，以本轮 `scope.sources`、检索记录及每篇原文快照的实际出处为准。正式 Skill 指纹和旧报告保持原样。
 
 | Skill | 必要语境与职责 | 不负责的判断 |
 |---|---|---|

@@ -10,11 +10,12 @@ from dataclasses import asdict
 from datetime import datetime, timezone
 
 from modules.novelty_matching import SynonymLexicon
-from modules.novelty_models import Feature, google_patent_url
+from modules.novelty_models import Feature, SEARCH_PROVIDERS, candidate_source, fetch_candidate_document
 from modules.patent_search import MAX_QUERY_LENGTH
 from modules.synonym_expansion import PROFILES, build_expansion_plan, feature_hash
 from modules.candidate_ranking import RANKING_VERSION, rank_candidates
 from modules.candidate_relevance import annotate_origins
+from modules.patent_network_state import PatentAccessPaused
 
 MAX_QUERIES = 8
 MAX_QUERY_BUDGET = 16
@@ -94,28 +95,40 @@ def lexical_hint(features: list[Feature], text: str, lexicon: SynonymLexicon) ->
 
 
 def retrieve_with_journal(features: list[Feature], cutoff: str, query: str, lexicon: SynonymLexicon,
-                          searcher, fetcher, max_documents: int, expansion: dict | None = None) -> tuple[list, dict]:
+                          searcher, fetcher, max_documents: int, expansion: dict | None = None, *,
+                          provider: str = "google", results_per_query: int = RESULTS_PER_QUERY) -> tuple[list, dict]:
     started = time.perf_counter()
     audit = {"schema_version": 1, "mode": "online", "input_hash": search_input_hash(features, cutoff),
-             "started_at": now(), "query_budget": MAX_QUERIES, "results_per_query": RESULTS_PER_QUERY,
+             "provider": provider, "started_at": now(), "query_budget": MAX_QUERIES, "results_per_query": results_per_query,
              "document_budget": max_documents, "synonym_groups": deepcopy(lexicon.groups),
              **query_plan(features, query, lexicon, expansion), "candidates": []}
     candidates: dict[str, dict] = {}
+    paused = False
     for record in audit["queries"]:
         record.update(started_at=now(), status="error", results=[], returned_count=0, error="")
+        if paused:
+            record.update(status="not_executed", error=f"{SEARCH_PROVIDERS[provider]} 已暂停，本条未发送。", finished_at=now())
+            continue
         try:
-            raw = searcher(record["query"], RESULTS_PER_QUERY)
+            sent_query = record["query"]
+            if provider == "patsnap":
+                from modules.patsnap_mcp import patsnap_query
+                sent_query = patsnap_query(sent_query, custom=audit["query_mode"] == "user_query")
+                record["sent_query"] = sent_query
+            raw = searcher(sent_query, results_per_query)
+            if provider == "patsnap" and isinstance(raw, dict):
+                record["total_matches"] = raw.get("total_matches")
+                raw = raw.get("results")
             if not isinstance(raw, list):
                 raise ValueError("检索器未返回文献列表。")
             record["returned_count"] = len(raw)
-            for result_rank, item in enumerate(raw[:RESULTS_PER_QUERY], 1):
+            for result_rank, item in enumerate(raw[:results_per_query], 1):
                 if not isinstance(item, dict):
                     record["results"].append({"validation_error": "检索结果不是文献对象"})
                     continue
                 result = {key: str(item.get(key) or "") for key in ("title", "url", "content", "publication_number")}
                 try:
-                    result["url"] = google_patent_url(result["url"])
-                    pub_id = result["url"].split("/patent/", 1)[1].split("/")[0]
+                    result["url"], pub_id = candidate_source(result, provider)
                     result["publication_id"] = pub_id
                     candidate = candidates.setdefault(pub_id, {**result, "query_ids": [],
                         "lexical_hint": lexical_hint(features, result["title"] + " " + result["content"], lexicon),
@@ -132,6 +145,10 @@ def retrieve_with_journal(features: list[Feature], cutoff: str, query: str, lexi
                     result["validation_error"] = str(exc)
                 record["results"].append(result)
             record["status"] = "ok"
+        except PatentAccessPaused as exc:
+            paused = True
+            audit["network_paused"] = True
+            record["error"] = str(exc)
         except (RuntimeError, ValueError) as exc:
             record["error"] = str(exc)
         record["finished_at"] = now()
@@ -147,22 +164,25 @@ def retrieve_with_journal(features: list[Feature], cutoff: str, query: str, lexi
         "note": "组件、关系与提及语境的规则线索；未进行正文相关性或新颖性确认"}
     documents = []
     for candidate in ordered[:max_documents]:
+        if paused:
+            candidate.update(fetch_status="not_executed", fetch_error=f"{SEARCH_PROVIDERS[provider]} 已暂停，未获取正文。")
+            continue
         candidate["fetch_started_at"] = now()
         try:
-            doc = fetcher(candidate["url"])
-            if doc.id != candidate["publication_id"]:
-                raise ValueError("正文公开号与检索来源不一致。")
-            if doc.error or not doc.sections:
-                raise ValueError(doc.error or "正文没有可核对段落。")
+            doc = fetch_candidate_document(candidate, provider, fetcher)
             documents.append(doc)
             candidate.update(fetch_status="fetched", snapshot_hash=doc.snapshot_hash)
+        except PatentAccessPaused as exc:
+            paused = True
+            audit["network_paused"] = True
+            candidate.update(fetch_status="error", fetch_error=str(exc))
         except (RuntimeError, ValueError) as exc:
             candidate.update(fetch_status="error", fetch_error=str(exc))
         candidate["fetch_finished_at"] = now()
     audit["candidates"] = ordered
     audit["finished_at"] = now()
-    audit["retrieval_cost"] = {"search_calls": len(audit["queries"]),
-        "page_attempts": len(ordered[:max_documents]), "successful_pages": len(documents),
+    audit["retrieval_cost"] = {"search_calls": sum(r["status"] != "not_executed" for r in audit["queries"]),
+        "page_attempts": sum("fetch_started_at" in c for c in ordered), "successful_pages": len(documents),
         "returned_hits": sum(r["returned_count"] for r in audit["queries"]), "unique_candidates": len(ordered),
         "elapsed_seconds": round(time.perf_counter() - started, 6),
         "expansion_generation_cost": audit["expansion"]["generation"].get("cost", {})}
@@ -220,7 +240,9 @@ def search_warnings(audit: dict | None, features: list[Feature], cutoff: str) ->
         if candidate["fetch_status"] == "error":
             warnings.append(f"{candidate['publication_id']}正文获取失败：{candidate['fetch_error']}")
         elif candidate["fetch_status"] != "fetched":
-            warnings.append(f"{candidate['publication_id']}未读取正文（文献预算限制），不能作为已核查。")
+            reason = candidate.get("fetch_error") or "文献预算限制"
+            warnings.append(f"{candidate['publication_id']}未读取正文（{reason}），不能作为已核查。")
     if not audit.get("candidates"):
-        warnings.append("Google Patents 没有返回可核对正文；不代表不存在相关现有技术。")
+        label = SEARCH_PROVIDERS.get(audit.get("provider"), "Google Patents")
+        warnings.append(f"{label} 没有返回可核对正文；不代表不存在相关现有技术。")
     return list(dict.fromkeys(warnings))

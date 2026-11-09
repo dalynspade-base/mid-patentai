@@ -1,8 +1,8 @@
-# Google Patents 专利新颖性预筛
+# 专利新颖性预筛
 
-**版本：2.2.0** · [临时 Skill RSI 实验](docs/rsi-experiment.md) · [2.0.0 架构迁移](docs/releases/v2.0.0.md) · [1.1.0历史说明](docs/releases/v1.1.0.md) · [变更记录](CHANGELOG.md)
+**版本：2.3.0** · [Google 连接恢复](docs/google-patents-recovery.md) · [临时 Skill RSI 实验](docs/rsi-experiment.md) · [2.0.0 架构迁移](docs/releases/v2.0.0.md) · [1.1.0历史说明](docs/releases/v1.1.0.md) · [变更记录](CHANGELOG.md)
 
-本项目把用户想法或已保存材料整理为技术要素，检索或接收 Google Patents 原文快照，逐篇对照技术关系与全部限定，再给出有证据范围的新颖性预筛报告。八份 Markdown Skill 描述任务与上下文，Python 工具执行具体操作，harness 管理状态和调用。
+本项目把用户想法或已保存材料整理为技术要素，通过 Google Patents 或智慧芽检索并取得原文，逐篇对照技术关系与全部限定，再给出有证据范围的新颖性预筛报告。八份 Markdown Skill 描述任务与上下文，Python 工具执行具体操作，harness 管理状态和调用。
 
 当前适用于 CN 新颖性预筛，支持整套确认要素，或按明确版本和引用路径展开独立、从属权利要求，分别对照。报告用于定位风险和补充取证，不等于可授权性、创造性、侵权或 FTO 结论。
 
@@ -65,8 +65,9 @@ if (-not (Test-Path -LiteralPath .env)) { Copy-Item .env.example .env }
 | `LLM_API_KEY` | 用户自己的模型密钥 |
 | `LLM_BASE_URL` | 兼容 Chat Completions 的服务基址；默认 `https://api.deepseek.com`，不要重复添加 `/chat/completions` |
 | `LLM_MODEL` | 服务支持的模型名称；模板值可按实际服务调整 |
+| `PATENT_PLATFORM_MCP_CONFIG` | 可选，现有 `patent-platform` MCP 配置文件路径；默认读取当前用户的 `Downloads/mcp.json` |
 
-保存材料不调用模型。在线 Google Patents 检索需要网络；模型术语生成、逐篇对照和独立语义裁判会单独请求模型，需先确认外发范围。独立评估沿用当前模型配置，指职责和调用阶段分离，不声称使用另一模型或独立专家。
+网页左侧「检索平台」默认选 Google Patents。也可选「智慧芽」，确认使用检索和正文接口额度后运行。配置方法、次数预算和使用示例见[智慧芽接入说明](docs/patsnap-search.md)。模型术语生成、逐篇对照和独立语义裁判会单独请求模型，需先确认外发范围。独立评估沿用当前模型配置，指职责和调用阶段分离，不声称使用另一模型或独立专家。
 
 网页支持保存附件，但保存成功不等于已经提取或理解附件。对话材料整理应读取实际原文；无法读取的附件保留未知，不能补造技术结构或效果。真实案件、原始附件、密钥及本地运行结果不提交到 Git。
 
@@ -76,7 +77,7 @@ if (-not (Test-Path -LiteralPath .env)) { Copy-Item .env.example .env }
 
 ### 0. 接手任务：[patent-precheck](.agents/skills/patent-precheck/SKILL.md)
 
-输入发明描述、附件或已保存案件；在本项目对话中可使用 `$patent-precheck`。先确认当前案件、已完成阶段、完整限定、判断基准日及 CN 新颖性 / Google Patents 范围。采用权利要求模式时，还需明确文本版本、引用路径和修改依据。
+输入发明描述、附件或已保存案件；在本项目对话中可使用 `$patent-precheck`。先确认当前案件、已完成阶段、完整限定、判断基准日和本轮检索来源。采用权利要求模式时，还需明确文本版本、引用路径和修改依据。
 
 主入口按实际进度读取后续 Skill，沿用已提供的信息和已批准的外发范围。交接的是本轮目标、材料位置、执行范围与待补项；文件保存成功不代表附件已读取。默认对话取证边界见[主入口指令](.agents/skills/patent-precheck/SKILL.md)，网页预算见[检索协议](docs/search-evidence.md)。
 
@@ -94,7 +95,7 @@ if (-not (Test-Path -LiteralPath .env)) { Copy-Item .env.example .env }
 
 ### 3. 检索与取得原文：[patent-candidate-search](.agents/skills/patent-candidate-search/SKILL.md)
 
-按查询计划执行 Google Patents 检索，或录入来源明确的原文快照；记录实际查询、来源 URL、公开号、日期、取得范围及失败。候选排序和标题/摘要相关性用于安排阅读，不能代替正文对照。显式提供空快照集时不自动联网。
+按查询计划在本轮指定的平台检索，或录入来源明确的原文快照；记录实际平台、查询、来源 URL、公开号、日期、取得范围及失败。候选排序和标题/摘要相关性用于安排阅读，不能代替正文对照。显式提供空快照集时不自动联网。
 
 **交付：**候选文献、已取得快照、来源/日期和检索缺口。未取到正文或日期不明的文献保持未知，失败不能记成“没有相关专利”。需要补证时继续检索；达到预算则保留缺口收束。操作字段见[检索协议](docs/search-evidence.md)与[候选排序](docs/candidate-ranking.md)。
 

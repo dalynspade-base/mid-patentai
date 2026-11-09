@@ -11,6 +11,7 @@ from urllib.parse import urlencode, urljoin, urlparse
 import requests
 
 from modules.google_patents_transport import search_response
+from modules.patent_network_state import save_verified_response
 
 
 GOOGLE_PATENTS_XHR = "https://patents.google.com/xhr/query"
@@ -123,4 +124,6 @@ def search_patents(
             results.append(record)
             if len(results) >= count:
                 break
+    if results:
+        save_verified_response(response)
     return results

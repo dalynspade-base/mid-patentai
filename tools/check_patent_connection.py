@@ -13,7 +13,7 @@ import requests
 from dotenv import load_dotenv
 from modules.google_patent_documents import fetch_google_document
 from modules.google_patents_transport import configured_entry
-from modules.patent_http import retry_policy
+from modules.patent_http import retry_policy, default_state
 from modules.patent_search import search_patents
 
 
@@ -44,6 +44,7 @@ def main():
             record['seconds'] = round(time.monotonic()-started, 3)
             calls.append(record)
 
+    get.patent_network_state = default_state()
     for query in args.query or ['squeezed light rubidium']:
         record = {'query': query}
         try:

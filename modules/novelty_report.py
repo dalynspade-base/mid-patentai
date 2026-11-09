@@ -6,14 +6,17 @@ from dataclasses import asdict
 from datetime import datetime, timezone
 from urllib.parse import quote as url_quote
 
+from modules.novelty_models import SEARCH_PROVIDERS
+
 
 def build_payload(state: dict, invention: str, cutoff: str, lexicon_groups: list) -> dict:
     from modules.patent_context import context_for
     from modules.application_baselines import select_baselines
     ctx=context_for(state["features"],cutoff,state.get("patent_context"),invention=invention)
     target=ctx["target"]
-    scope=(f"Google Patents；版本{target['version_id']}；权利要求{target['claim_id']}；引用路径{' → '.join(target['path'])}"
-           if target.get("claim_id") else "Google Patents；整套用户确认要素")
+    sources = ctx["scope"]["sources"]
+    scope=(f"{sources}；版本{target['version_id']}；权利要求{target['claim_id']}；引用路径{' → '.join(target['path'])}"
+           if target.get("claim_id") else f"{sources}；整套用户确认要素")
     payload = {
         "report_schema_version": 3,
         "created_at": datetime.now(timezone.utc).isoformat(), "task": "CN_novelty_precheck",
@@ -34,7 +37,7 @@ def build_payload(state: dict, invention: str, cutoff: str, lexicon_groups: list
             "scope_note": "历史记录未保存实际查询，不能推定执行过在线检索。"}),
         "retrieval_increment": state.get("retrieval_increment"),
         "limits": ["未发现完整披露不等于可以授权。", "同义词匹配不证明技术披露或法律等同。",
-                   "Google Patents 不包含全部非专利现有技术；日期、抵触申请、充分公开等仍可能需要专业核验。",
+                   "所用检索平台不包含全部非专利现有技术；日期、抵触申请、充分公开等仍可能需要专业核验。",
                    "模型逐项复核不等于人工确认，不能作为真实专业准确率的金标准。"],
     }
     if state.get("claim_history"):
@@ -71,14 +74,17 @@ def to_markdown(payload: dict, *, include_skill_audit=True) -> str:
     if audit["mode"] != "online":
         lines += [audit.get("scope_note", "仅比对提供的快照；历史实际查询未记录。")]
     else:
-        lines += [f"模式：{audit.get('query_mode')}；查询预算：{audit['query_budget']}；每条最多保留{audit['results_per_query']}条返回记录；"
+        lines += [f"检索平台：{SEARCH_PROVIDERS.get(audit.get('provider'), 'Google Patents')}；"
+                  f"模式：{audit.get('query_mode')}；查询预算：{audit['query_budget']}；每条最多保留{audit['results_per_query']}条返回记录；"
                   f"正文获取预算：{audit['document_budget']}",
                   f"开始：{audit['started_at']}；结束：{audit['finished_at']}",
                   "要素编号表示该要素的查询已发送，不证明该查询足以覆盖所有技术表达。词汇重合分数仅用于排序，不代表相关性。"]
         for record in audit["queries"]:
             lines += [f"- {record['id']} · 要素={', '.join(record['feature_ids']) or '自定义范围未确认'}；{record['kind']}；"
                       f"{record['status']}；{record['started_at']} → {record['finished_at']}；返回{record['returned_count']}条",
-                      f"  实际查询：{record['query']}"]
+                     f"  实际查询：{record.get('sent_query', record['query']) if record['status'] != 'not_executed' else '未发送'}"]
+            if record.get("total_matches") is not None:
+                lines += [f"  平台命中总数：{record['total_matches']}（未逐篇读取）"]
             if record["error"]:
                 lines += [f"  错误：{record['error']}"]
             for result in record["results"]:
