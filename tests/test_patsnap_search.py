@@ -46,12 +46,9 @@ def mock_client(responses=None):
 class PatsnapTests(unittest.TestCase):
     def test_provider_runs_full_path_with_separate_sources_and_budgets(self):
         client = mock_client()
-        with patch("modules.harness.search_patents") as google_search, patch("modules.harness.fetch_google_document") as google_fetch:
-            state = NoveltyHarness(search_provider="patsnap", searcher=client.search, fetcher=client.fetch,
-                                   max_documents=1, results_per_query=25).run(
+        with patch("modules.harness.PatsnapMCP", return_value=client):
+            state = NoveltyHarness(max_documents=1, results_per_query=25).run(
                 feature_text="压力传感器", query="TACD:(压力传感器)", cutoff="2026-11-09")
-        google_search.assert_not_called()
-        google_fetch.assert_not_called()
         self.assertEqual([call.args[0] for call in client.call.call_args_list],
                          ["search_patents", "get_bibliography", "get_claims", "get_description"])
         self.assertEqual(client.call.call_args_list[0].args[1], {"query": "TACD:(压力传感器)", "limit": 25, "offset": 0})
@@ -154,12 +151,12 @@ class PatsnapTests(unittest.TestCase):
 
 
 class PatsnapUITest(unittest.TestCase):
-    def test_opt_in_is_required_and_switching_provider_hides_old_report(self):
+    def test_patsnap_is_the_only_online_provider_and_requires_opt_in(self):
         labeled = app_helpers.labeled
         client = mock_client()
-        with patch("modules.harness.PatsnapMCP", return_value=client), patch("modules.harness.search_patents") as google:
+        with patch("modules.harness.PatsnapMCP", return_value=client):
             app = app_helpers.AppFlowTests.app(self)
-            labeled(app.sidebar.selectbox, "检索平台").set_value("patsnap")
+            self.assertFalse(any(widget.label == "检索平台" for widget in app.sidebar.selectbox))
             labeled(app.text_area, "确认待判断的技术要素（每行一个）").set_value("压力传感器")
             app.run(timeout=60)
             submit = "1 · 检索 智慧芽 并定位证据"
@@ -175,9 +172,6 @@ class PatsnapUITest(unittest.TestCase):
             self.assertEqual(app.session_state["novelty_state"]["search_audit"]["provider"], "patsnap")
             labeled(app.sidebar.checkbox, consent).set_value(False).run(timeout=60)
             self.assertTrue(labeled(app.button, "补充所选文献正文").disabled)
-            labeled(app.sidebar.selectbox, "检索平台").set_value("google").run(timeout=60)
-            self.assertFalse(any(s.value == "预筛结果" for s in app.subheader))
-            google.assert_not_called()
 
 
 if __name__ == "__main__":

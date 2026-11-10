@@ -57,8 +57,8 @@ def main():
     parser.add_argument('--anchor-gold', type=Path)
     parser.add_argument('--output-dir', type=Path, help='新的 .local/rsi/运行目录，不覆盖旧结果')
     parser.add_argument('--rounds', type=int, default=5, choices=range(1, 6))
-    parser.add_argument('--max-queries', type=int, default=4)
-    parser.add_argument('--max-documents', type=int, default=20)
+    parser.add_argument('--max-queries', type=int, default=8)
+    parser.add_argument('--max-documents', type=int, default=25)
     parser.add_argument('--retrieval-weight', type=float, default=None)
     parser.add_argument('--run-model', action='store_true')
     parser.add_argument('--confirm-external', action='store_true')
@@ -68,7 +68,7 @@ def main():
         parser.error('Demo cannot be mixed with real data/model execution.')
     if bool(args.anchor_input) != bool(args.anchor_gold):
         parser.error('Both anchor input and gold are required.')
-    if (args.retrieval_weight is not None and not 0 <= args.retrieval_weight <= 1) or not 1 <= args.max_queries <= 20 or not 1 <= args.max_documents <= 100:
+    if (args.retrieval_weight is not None and not 0 <= args.retrieval_weight <= 1) or not 1 <= args.max_queries <= 16 or not 1 <= args.max_documents <= 100:
         parser.error('Invalid frozen score weights or retrieval budget.')
     if args.demo:
         inputs, gold = teaching_dataset()
@@ -79,7 +79,9 @@ def main():
         parser.error('Provide completed --input and --gold, or use --demo.')
     budget = {'max_queries': args.max_queries, 'max_documents': args.max_documents}
     profiles = [c.get('assessment', {}).get('profile', 'legacy-label-v1') for c in gold['cases']]
-    handbook = profiles == ['manual-v1.2'] or set(profiles) == {'manual-v1.2'}
+    if len(set(profiles)) != 1:
+        parser.error('同一运行只能使用一种评分协议。')
+    handbook = profiles[0] == 'manual-v1.2'
     if handbook and args.retrieval_weight is not None:
         parser.error('manual-v1.2 fixes weights at 35/45/20; --retrieval-weight does not apply.')
     retrieval_weight = 0.5 if args.retrieval_weight is None else args.retrieval_weight
@@ -89,13 +91,14 @@ def main():
     if not args.run_model and not args.demo:
         print(json.dumps({'execution': 'not_executed', 'cases': case_count, 'expected_per_case': [len(c['targets']) for c in gold['cases']],
             'rounds': args.rounds, 'paired_trials_per_case': 1+2*args.rounds,
-            'max_model_requests_without_anchor': sum((1+args.max_documents+2 + args.max_documents+2
-                if c.get('scoring_profile')=='manual-v1.2' else 1 + args.max_documents * len(c['assessment_targets'])
-                if c.get('assessment_targets') else 2 + args.max_documents) * (1+2*args.rounds) for c in inputs['cases']) + args.rounds,
+            'max_model_requests_without_anchor': sum((2+2*(args.max_documents+2) + args.max_documents+2
+                if c.get('scoring_profile')=='manual-v1.2' else 2 + args.max_documents * len(c['assessment_targets'])
+                if c.get('assessment_targets') else 3 + args.max_documents) * (1+2*args.rounds) for c in inputs['cases']) + args.rounds,
             'budget_per_trial': budget, 'component_weights': component_weights,
             'max_input_characters': MAX_INPUT_CHARACTERS,
             'scoring_profiles': profiles,
-            'private_review_external': handbook,
+            'search_provider': 'patsnap', 'results_per_query': 25, 'target_skill': 'patent-synonym-expansion',
+            'private_review_external': False, 'requires_local_rubric_model': handbook,
             'note': '仅验证与预览；尚未调用检索、模型或生成真实分数。'}, ensure_ascii=False, indent=2))
         return 0
     if not args.output_dir:
@@ -110,17 +113,33 @@ def main():
         from dotenv import load_dotenv
         from modules.llm_client import LLMClient
         from modules.rsi_trial import ModelPatentTrial, ModelSkillProposer
-        from modules.google_patents_transport import configured_entry
-        from modules.patent_http import retry_policy
         load_dotenv(ROOT/'.env', override=False)
         client = LLMClient(os.getenv('LLM_API_KEY', ''), os.getenv('LLM_BASE_URL', 'https://api.deepseek.com'), os.getenv('LLM_MODEL', ''))
         predictor, proposer = ModelPatentTrial(client), ModelSkillProposer(client)
-        if handbook:
-            from modules.rsi_rubric_review import ModelRubricAssessor
-            assessor = ModelRubricAssessor(client)
         runtime = {'adapter': 'ModelPatentTrial', 'model': client.model,
                    'provider_host': urlsplit(client.url).hostname, 'temperature': 0.2,
-                   'search_entry': configured_entry(), 'http_retry_policy': retry_policy()}
+                   'search_provider': 'patsnap'}
+        if handbook:
+            from requests import Session
+            from modules.rsi_rubric_review import ModelRubricAssessor
+            rubric_url = os.getenv('RSI_RUBRIC_BASE_URL', '').strip()
+            rubric_model = os.getenv('RSI_RUBRIC_MODEL', '').strip()
+            endpoint = urlsplit(rubric_url)
+            if (endpoint.hostname not in {'127.0.0.1', 'localhost'} or endpoint.username or endpoint.password
+                    or endpoint.query or endpoint.fragment or not rubric_model):
+                parser.error('manual-v1.2 需要配置独立的本地 RSI_RUBRIC_BASE_URL 和 RSI_RUBRIC_MODEL。')
+            if (urlsplit(client.url).hostname in {'127.0.0.1', 'localhost'}
+                    and urlsplit(client.url).port == endpoint.port):
+                parser.error('私有评分服务须与执行模型使用不同端口。')
+            session = Session()
+            session.trust_env = False
+
+            def local_post(url, **kwargs):
+                return session.post(url, allow_redirects=False, **kwargs)
+
+            assessor = ModelRubricAssessor(LLMClient(os.getenv('RSI_RUBRIC_API_KEY') or 'local',
+                                                     rubric_url, rubric_model, post=local_post))
+            runtime['rubric_model'] = rubric_model
     anchor = (lambda: (load(args.anchor_input), load(args.anchor_gold))) if args.anchor_input else None
     result = run_experiment(inputs, gold, args.output_dir, predictor, proposer,
         formal_root=ROOT/'.agents/skills', rounds=args.rounds, budget=budget, weights=weights,

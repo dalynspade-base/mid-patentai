@@ -233,7 +233,7 @@ class MaterialAppTests(unittest.TestCase):
         return app.session_state["active_material_case"]
 
     def test_saving_does_not_call_model_or_search_and_can_reopen(self):
-        with patch("modules.harness.search_patents") as search, patch("modules.llm_client.LLMClient.complete") as model:
+        with patch("modules.patsnap_mcp.PatsnapMCP.search") as search, patch("modules.llm_client.LLMClient.complete") as model:
             app = self.app()
             saved = self.save_in_app(app)
             self.assertEqual(self.labeled(app.text_area, "确认待判断的技术要素（每行一个）").value, "")

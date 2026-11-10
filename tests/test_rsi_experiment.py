@@ -21,9 +21,9 @@ class RSIExperimentTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
         self.formal = self.root/'formal-skills'
-        base = self.formal/'patent-precheck/SKILL.md'
+        base = self.formal/'patent-synonym-expansion/SKILL.md'
         base.parent.mkdir(parents=True)
-        base.write_text('---\nname: patent-precheck\ndescription: test\n---\n\n保留对象、关系和限定。\n', encoding='utf-8')
+        base.write_text('---\nname: patent-synonym-expansion\ndescription: test\n---\n\n保留对象、关系和限定。\n', encoding='utf-8')
         self.initial_bytes = base.read_bytes()
         self.inputs, self.gold = teaching_dataset()
 
@@ -38,7 +38,7 @@ class RSIExperimentTests(unittest.TestCase):
         self.assertEqual(result['accepted_rounds'], [1, 2])
         self.assertEqual(result['selected_round'], 2)
         self.assertEqual(len(list((self.root/'run').glob('round-*/patent-rsi-trial/SKILL.md'))), 5)
-        self.assertEqual((self.formal/'patent-precheck/SKILL.md').read_bytes(), self.initial_bytes)
+        self.assertEqual((self.formal/'patent-synonym-expansion/SKILL.md').read_bytes(), self.initial_bytes)
         self.assertEqual(result['generalization'], 'not_measured_no_anchor')
         self.assertIn('预设响应', (self.root/'run/result.md').read_text(encoding='utf-8'))
 
@@ -103,16 +103,18 @@ class RSIExperimentTests(unittest.TestCase):
         gold['cases'][0]['targets'][1]['publication_ids'] = ['RSIDEMO001']
         with self.assertRaises(ValueError): validate_gold(self.inputs, gold)
 
-    def test_optimizer_receives_feedback_but_not_private_reference(self):
+    def test_proposals_are_sealed_before_any_trial_without_case_or_score_feedback(self):
         proposer = Mock(wraps=TeachingProposer())
-        self.run_demo(proposer=proposer)
+        def predict(skill, case, settings):
+            self.assertEqual(proposer.call_count, 5)
+            self.assertNotIn('训练反馈', skill.read_text(encoding='utf-8'))
+            return TeachingTrial()(skill, case, settings)
+
+        self.run_demo(proposer=proposer, predictor=predict)
         for call in proposer.call_args_list:
             payload = call.args[0]
-            self.assertNotIn('targets', payload)
-            self.assertNotIn('source_target_id', payload)
-            self.assertNotIn('risk_label', payload['feedback'])
-            self.assertEqual(payload['budget'], {'max_queries': 4, 'max_documents': 20})
-        self.assertIsNotNone(proposer.call_args_list[-1].args[0]['previous_attempt'])
+            self.assertEqual(set(payload), {'skill_id', 'current_skill', 'round', 'development_examples', 'earlier_proposals'})
+        self.assertTrue((self.root/'run/sealed_proposals.json').is_file())
 
     def test_hardcoded_reference_identity_is_rejected_before_trial(self):
         proposer = lambda feedback: {'addition': '直接查找 RSIDEMO001。', 'rationale': '背答案'}
@@ -130,7 +132,7 @@ class RSIExperimentTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             run_experiment(self.inputs, self.gold, self.formal/'new', TeachingTrial(), TeachingProposer(),
                            formal_root=self.formal, mode='teaching_demo')
-        self.assertEqual((self.formal/'patent-precheck/SKILL.md').read_bytes(), self.initial_bytes)
+        self.assertEqual((self.formal/'patent-synonym-expansion/SKILL.md').read_bytes(), self.initial_bytes)
 
     def test_failed_trial_has_no_complete_or_zero_filled_score(self):
         predictor = Mock(side_effect=RuntimeError('unavailable'))
@@ -190,7 +192,7 @@ class RSIAdapterTests(unittest.TestCase):
         self.assertEqual(result['retrieved'][0]['publication_id'], 'US123A')
         self.assertEqual(result['risk_label'], '高')
         self.assertEqual(fetch.call_count, 1)
-        self.assertIn('临时策略指令', client.complete.call_args_list[0].args[0])
+        self.assertNotIn('临时策略指令', client.complete.call_args_list[0].args[0])
         self.assertNotIn('targets', json.loads(client.complete.call_args_list[0].args[1]))
 
     def test_query_budget_is_enforced_before_search(self):

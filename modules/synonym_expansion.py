@@ -198,7 +198,8 @@ def build_expansion_plan(features: list[Feature], lexicon: SynonymLexicon, profi
 
 
 def generate_llm_candidates(features: list[Feature], lexicon: SynonymLexicon, profile: str,
-                            protected_terms: list[str], client, confirmed: bool, *, patent_context=None) -> dict:
+                            protected_terms: list[str], client, confirmed: bool, *, patent_context=None,
+                            trial_instructions=None) -> dict:
     if not confirmed:
         raise PermissionError("请先确认将技术要素与术语表发送给模型生成候选。")
     if profile not in PROFILES:
@@ -216,9 +217,12 @@ def generate_llm_candidates(features: list[Feature], lexicon: SynonymLexicon, pr
         "patent_context": context_for(features, context=patent_context),
         "policy": PROFILES[profile], "protected_terms": protected_terms, "dictionary_groups": lexicon.groups,
         "prompt_version": PROMPT_VERSION}, ensure_ascii=False)
-    if len(payload) > 20000:
+    if trial_instructions is None and len(payload) > 20000:
         raise ValueError("术语生成输入超过2万字符，未发送且未截断。")
-    system = skill_prompt("patent-synonym-expansion", system)
+    if trial_instructions is None:
+        system = skill_prompt("patent-synonym-expansion", system)
+    else:
+        system = trial_instructions + "\n\n## 工具返回协议\n\n" + system
     started = time.perf_counter()
     result = {"status": "error", "candidates": [], "model": client.model,
               "provider_host": urlsplit(client.url).hostname, "prompt_version": PROMPT_VERSION,

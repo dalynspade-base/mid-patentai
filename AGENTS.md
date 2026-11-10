@@ -5,7 +5,7 @@
 - 用户说“开始初筛”、提供想法或要求接手已保存材料时，读取 `.agents/skills/patent-precheck/SKILL.md`。
 - 案件位于本仓库 `.local/cases/`，与其他工作区的案件分开。用户指定案件优先。
 - 原始附件和 `case.json` 不修改；整理结果和每轮报告另存。不提交真实案件、附件、凭据或个人工作区记录。
-- AI 整理、候选对照、模型逐项复核和历史人工复核分别记录，不把 AI 输出改名为人工确认。原有 CN 新颖性规则与 Google Patents 范围保持有效。
+- AI 整理、候选对照、模型逐项复核和历史人工复核分别记录，不把 AI 输出改名为人工确认。在线检索和新增正文使用智慧芽；按实际来源标识历史快照。
 - 业务按主入口和六个子skill组织；独立patent-semantic-eval逐技能按六维语义验收，见docs/semantic-skills.md。Skill 仅指 `.agents/skills/*/SKILL.md`；Python 执行函数是 tool，`modules/harness.py` 管理状态和调用。上下文以 MD 为准，见 README。
 - 运行当前工程/语义裁判契约与tests/legacy中的历史工程测试，使用tools/run_verification.py分组记录；模拟响应和契约通过不代表真实模型专业准确率。真实语义验收仅输出文字裁决与证据，不使用数值质量指标。
 - 合作时一个执行者修改同一文件，修改前读取最新版本。未经用户授权，不推送、创建 PR 或发送消息。

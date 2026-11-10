@@ -63,16 +63,18 @@ class SearchEvidenceTests(unittest.TestCase):
         self.assertEqual([q["query"] for q in plan["queries"]], [f.text for f in features])
         self.assertEqual([q["feature_ids"] for q in plan["queries"]], [["F1"], ["F2"]])
 
-    def test_budget_and_overlong_feature_remain_explicitly_unsearched(self):
+    def test_long_feature_is_compacted_for_patsnap_and_budget_omissions_are_recorded(self):
         features = [Feature("F1", "x" * 401)] + [Feature(f"F{i}", f"part {i}") for i in range(2, 12)]
         searcher = Mock(return_value=[])
         state = NoveltyHarness(searcher=searcher).run(features=features, cutoff="2024-01-01")
         self.assertEqual(searcher.call_count, 8)
         self.assertTrue(all(len(call.args[0]) <= 400 for call in searcher.call_args_list))
         skipped_ids = {f for s in state["search_audit"]["skipped"] for f in s["feature_ids"]}
-        self.assertTrue({"F1", "F10", "F11"} <= skipped_ids)
+        self.assertEqual(skipped_ids, {"F9", "F10", "F11"})
+        first_query = state["search_audit"]["queries"][0]
+        self.assertEqual(first_query["query"], features[0].text)
+        self.assertLess(len(first_query["sent_query"]), len(first_query["query"]))
         warnings = " ".join(state["decision"].warnings)
-        self.assertIn("F1", warnings)
         self.assertIn("F11", warnings)
         self.assertEqual(state["decision"].label, "insufficient_evidence")
 
