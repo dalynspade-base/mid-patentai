@@ -9,7 +9,6 @@ from modules.candidate_ranking import RANKING_VERSION, rank_candidates, metadata
 from modules.candidate_relevance import (MAX_CANDIDATES, MAX_FEATURE_PAIRS, fetch_additional_documents,
     metadata_input_hash, model_judge_candidates)
 from modules.candidate_relevance import annotate_origins
-from modules.google_patent_documents import fetch_google_document
 from modules.llm_client import LLMClient
 
 
@@ -93,11 +92,12 @@ def render_candidate_tools(state, harness, cutoff, material_context, api_key, ba
         selected_more = st.multiselect("选择要补充正文的候选", list(available), default=default, max_selections=5,
             format_func=lambda key: f"{key} · {available[key]['title']}")
         st.caption("补充正文不重新检索、不丢弃已有快照和有效复核；每批最多5篇，总计最多20篇。未知候选仍可选择。")
-        if st.button("补充所选文献正文", disabled=not allow_fetch or not selected_more or len(existing) + len(selected_more) > 20):
+        if st.button("补充所选文献正文", disabled=(not allow_fetch or audit.get("provider") != "patsnap"
+                     or not selected_more or len(existing) + len(selected_more) > 20)):
             try:
                 with st.spinner("读取所选正文并保留来源…"):
                     docs, updated_audit = fetch_additional_documents(state["features"], state["documents"], audit,
-                        selected_more, harness.fetcher if audit.get("provider") == "patsnap" else fetch_google_document)
+                        selected_more, harness.fetcher)
                     state = rerun_with_evidence(state, harness, cutoff, material_context, audit=updated_audit, documents=docs)
                 st.session_state["novelty_state"] = state
             except (RuntimeError, ValueError) as exc:

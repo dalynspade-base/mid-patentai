@@ -99,15 +99,16 @@ class ModelReviewUITests(unittest.TestCase):
             self.assertTrue(app.error)
 
     def test_online_journal_survives_manual_addition_and_model_review(self):
-        doc = manual_google_document("https://patents.google.com/patent/US123/en", "fixture", "2023-01-01", "压力传感器")
-        with patch("modules.harness.search_patents", return_value=[{"url": doc.url}]) as search, \
-             patch("modules.harness.fetch_google_document", return_value=doc), \
+        doc = app_helpers.patsnap_document("US1234", "压力传感器")
+        with patch("modules.patsnap_mcp.PatsnapMCP.search", return_value=[{"url": doc.url, "publication_number": doc.id}]) as search, \
+             patch("modules.patsnap_mcp.PatsnapMCP.fetch", return_value=doc), \
              patch("modules.llm_client.LLMClient.complete", return_value=json.dumps(review_response())):
             app = self.app()
+            app_helpers.allow_patsnap(app)
             app.date_input[0].set_value(date(2024, 1, 1))
             app_helpers.labeled(app.text_area, "发明描述").set_value("测试装置包含压力传感器。")
             app_helpers.labeled(app.text_area, "确认待判断的技术要素（每行一个）").set_value("压力传感器").run(timeout=60)
-            app_helpers.labeled(app.button, "1 · 检索 Google Patents 并定位证据").click().run(timeout=60)
+            app_helpers.labeled(app.button, "1 · 检索 智慧芽 并定位证据").click().run(timeout=60)
             journal = app.session_state["novelty_state"]["search_audit"]
             calls = search.call_count
             self.submit(self.ready(app))

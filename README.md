@@ -1,8 +1,8 @@
 # 专利新颖性预筛
 
-**版本：2.3.0** · [Google 连接恢复](docs/google-patents-recovery.md) · [临时 Skill RSI 实验](docs/rsi-experiment.md) · [2.0.0 架构迁移](docs/releases/v2.0.0.md) · [1.1.0历史说明](docs/releases/v1.1.0.md) · [变更记录](CHANGELOG.md)
+**版本：2.5.0** · [智慧芽检索](docs/patsnap-search.md) · [术语扩展 RSI](docs/rsi-experiment.md) · [2.0.0 架构迁移](docs/releases/v2.0.0.md) · [变更记录](CHANGELOG.md)
 
-本项目把用户想法或已保存材料整理为技术要素，通过 Google Patents 或智慧芽检索并取得原文，逐篇对照技术关系与全部限定，再给出有证据范围的新颖性预筛报告。八份 Markdown Skill 描述任务与上下文，Python 工具执行具体操作，harness 管理状态和调用。
+本项目把用户想法或已保存材料整理为技术要素，通过智慧芽检索并取得原文，逐篇对照技术关系与全部限定，再给出有证据范围的新颖性预筛报告。八份 Markdown Skill 描述任务与上下文，Python 工具执行具体操作，harness 管理状态和调用。
 
 当前适用于 CN 新颖性预筛，支持整套确认要素，或按明确版本和引用路径展开独立、从属权利要求，分别对照。报告用于定位风险和补充取证，不等于可授权性、创造性、侵权或 FTO 结论。
 
@@ -67,7 +67,7 @@ if (-not (Test-Path -LiteralPath .env)) { Copy-Item .env.example .env }
 | `LLM_MODEL` | 服务支持的模型名称；模板值可按实际服务调整 |
 | `PATENT_PLATFORM_MCP_CONFIG` | 可选，现有 `patent-platform` MCP 配置文件路径；默认读取当前用户的 `Downloads/mcp.json` |
 
-网页左侧「检索平台」默认选 Google Patents。也可选「智慧芽」，确认使用检索和正文接口额度后运行。配置方法、次数预算和使用示例见[智慧芽接入说明](docs/patsnap-search.md)。模型术语生成、逐篇对照和独立语义裁判会单独请求模型，需先确认外发范围。独立评估沿用当前模型配置，指职责和调用阶段分离，不声称使用另一模型或独立专家。
+网页左侧确认使用智慧芽检索和正文接口额度后运行。配置方法、次数预算和使用示例见[智慧芽接入说明](docs/patsnap-search.md)。模型术语生成、逐篇对照和独立语义裁判会单独请求模型，需先确认外发范围。独立评估沿用当前模型配置，指职责和调用阶段分离。
 
 网页支持保存附件，但保存成功不等于已经提取或理解附件。对话材料整理应读取实际原文；无法读取的附件保留未知，不能补造技术结构或效果。真实案件、原始附件、密钥及本地运行结果不提交到 Git。
 
@@ -220,7 +220,7 @@ CLI 读取进程环境变量，**不会自动加载 `.env`**。实际模型评�
 
 命令执行成功不等于验收可接受：实际运行在 `execution=completed` 时可正常退出，即使 `verdict=needs_revision`；执行不完整返回非零状态。自动化调用方应读取 JSON 中的执行状态和裁决。
 
-公开页面连通性可用 `tools/smoke_google.py` 显式检查。它只检索公开通用词、不发送用户发明，默认写入新的 `.local/verification/google-smoke-*` 目录。
+智慧芽连通性可用网页中的公开通用检索词检查。历史 Google 诊断入口仅用于既有工程回归。
 
 ## 目录、升级与数据保留
 

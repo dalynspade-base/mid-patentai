@@ -32,7 +32,8 @@ def search_input_hash(features: list[Feature], cutoff: str) -> str:
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
 
-def query_plan(features: list[Feature], query: str, lexicon: SynonymLexicon, expansion: dict | None = None) -> dict:
+def query_plan(features: list[Feature], query: str, lexicon: SynonymLexicon, expansion: dict | None = None,
+               *, max_queries=None, compact=False) -> dict:
     """Each original feature gets priority over variants. Never shorten a feature."""
     query = query.strip()
     if len(query) > MAX_QUERY_LENGTH:
@@ -44,12 +45,14 @@ def query_plan(features: list[Feature], query: str, lexicon: SynonymLexicon, exp
         (expansion or {}).get("protected_terms"), (expansion or {}).get("generation"),
         (expansion or {}).get("approved_candidate_ids"))
     budget = expansion["policy"]["query_budget"]
+    if max_queries is not None:
+        budget = min(budget, max_queries)
     plan = {"query_mode": "user_query" if query else "per_feature", "queries": [], "skipped": [],
             "query_budget": budget, "expansion": expansion}
     sources = [([], query)] if query else [([f.id], f.text) for f in features]
     seen: set[str] = set()
 
-    def add(ids: list[str], text: str, kind: str) -> None:
+    def add(ids: list[str], text: str, kind: str, candidate_ids=()) -> None:
         if text in seen:
             # Same query can cover multiple explicitly identical feature inputs.
             for item in plan["queries"]:
@@ -57,13 +60,13 @@ def query_plan(features: list[Feature], query: str, lexicon: SynonymLexicon, exp
                     item["feature_ids"] = list(dict.fromkeys(item["feature_ids"] + ids))
             return
         seen.add(text)
-        reason = "超过400字，未发送且未截断" if len(text) > MAX_QUERY_LENGTH else (
+        reason = "超过400字，未发送且未截断" if len(text) > MAX_QUERY_LENGTH and not compact else (
             f"已达到{budget}条查询预算，未发送" if len(plan["queries"]) >= budget else "")
         if reason:
             plan["skipped"].append({"feature_ids": ids, "query": text, "kind": kind, "reason": reason})
         else:
             plan["queries"].append({"id": f"Q{len(plan['queries']) + 1}", "feature_ids": ids,
-                                    "query": text, "kind": kind})
+                                    "query": text, "kind": kind, "candidate_ids": list(candidate_ids)})
 
     for ids, text in sources:
         add(ids, text, "original")
@@ -74,7 +77,7 @@ def query_plan(features: list[Feature], query: str, lexicon: SynonymLexicon, exp
             for texts in variants:
                 if index < len(texts):
                     value = texts[index]
-                    add([value["feature_id"]], value["query"], value["kind"])
+                    add([value["feature_id"]], value["query"], value["kind"], value["candidate_ids"])
     return plan
 
 
@@ -96,13 +99,17 @@ def lexical_hint(features: list[Feature], text: str, lexicon: SynonymLexicon) ->
 
 def retrieve_with_journal(features: list[Feature], cutoff: str, query: str, lexicon: SynonymLexicon,
                           searcher, fetcher, max_documents: int, expansion: dict | None = None, *,
-                          provider: str = "google", results_per_query: int = RESULTS_PER_QUERY) -> tuple[list, dict]:
+                          provider: str = "google", results_per_query: int = RESULTS_PER_QUERY,
+                          max_queries=None, before=None) -> tuple[list, dict]:
     started = time.perf_counter()
     audit = {"schema_version": 1, "mode": "online", "input_hash": search_input_hash(features, cutoff),
              "provider": provider, "started_at": now(), "query_budget": MAX_QUERIES, "results_per_query": results_per_query,
              "document_budget": max_documents, "synonym_groups": deepcopy(lexicon.groups),
-             **query_plan(features, query, lexicon, expansion), "candidates": []}
+             **query_plan(features, query, lexicon, expansion, max_queries=max_queries, compact=provider == "patsnap"),
+             "candidates": []}
     candidates: dict[str, dict] = {}
+    terms = {row["id"]: row["term"] for row in audit["expansion"]["candidates"]}
+    sent = {}
     paused = False
     for record in audit["queries"]:
         record.update(started_at=now(), status="error", results=[], returned_count=0, error="")
@@ -113,8 +120,15 @@ def retrieve_with_journal(features: list[Feature], cutoff: str, query: str, lexi
             sent_query = record["query"]
             if provider == "patsnap":
                 from modules.patsnap_mcp import patsnap_query
-                sent_query = patsnap_query(sent_query, custom=audit["query_mode"] == "user_query")
+                sent_query = patsnap_query(sent_query, custom=audit["query_mode"] == "user_query",
+                                          focus=[terms[i] for i in record.get("candidate_ids", [])], before=before)
                 record["sent_query"] = sent_query
+                if sent_query in sent:
+                    first = sent[sent_query]
+                    record.update(status=first["status"], reused_query_id=first["id"], results=first["results"],
+                                  returned_count=0, error=first["error"], finished_at=now())
+                    continue
+                sent[sent_query] = record
             raw = searcher(sent_query, results_per_query)
             if provider == "patsnap" and isinstance(raw, dict):
                 record["total_matches"] = raw.get("total_matches")
@@ -181,7 +195,8 @@ def retrieve_with_journal(features: list[Feature], cutoff: str, query: str, lexi
         candidate["fetch_finished_at"] = now()
     audit["candidates"] = ordered
     audit["finished_at"] = now()
-    audit["retrieval_cost"] = {"search_calls": sum(r["status"] != "not_executed" for r in audit["queries"]),
+    audit["retrieval_cost"] = {"search_calls": sum(r["status"] != "not_executed" and "reused_query_id" not in r
+                                                 for r in audit["queries"]),
         "page_attempts": sum("fetch_started_at" in c for c in ordered), "successful_pages": len(documents),
         "returned_hits": sum(r["returned_count"] for r in audit["queries"]), "unique_candidates": len(ordered),
         "elapsed_seconds": round(time.perf_counter() - started, 6),

@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 import os
 import re
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from urllib.parse import urlsplit, parse_qs
 
@@ -25,12 +25,32 @@ _PAUSE_CODES = {
 _FIELD = re.compile(r"\b(?:TTL|ABST|CLMS|DESC|TACD|AN|ANS|ANCS|IN|IPC|CPC|PRNO|PN|APD|PBD)\s*:", re.I)
 
 
-def patsnap_query(query: str, *, custom: bool = False) -> str:
+def patsnap_query(query: str, *, custom: bool = False, focus=(), before=None) -> str:
     if custom and _FIELD.search(query):
         return query
-    # Keep generated queries literal, including terms that look like operators.
-    escaped = query.replace("\\", "\\\\").replace('"', '\\"')
-    return f'TACD:("{escaped}")'
+    phrases = [part.strip() for part in re.split(r"[，。；、：！？（）,;:!?()\r\n]+", query) if part.strip()]
+    if not phrases:
+        raise ValueError("智慧芽查询没有可用的技术词。")
+    anchors = []
+    for phrase in phrases:
+        if len(phrase) <= 24:
+            anchors.append(phrase)
+            continue
+        parts = re.split(r"其特征在于|所述|用于|包括|通过|基于|其中|(?i:\b(?:comprising|configured to|wherein|using)\b)", phrase)
+        for part in parts:
+            words = part.split()
+            if len(words) > 1:
+                anchors.extend(" ".join(words[i:i+3]) for i in range(0, len(words), 3))
+            else:
+                anchors.extend(part[i:i+12].strip() for i in range(0, len(part), 12))
+    ranked = sorted(dict.fromkeys(p for p in anchors if len(p) >= 2), key=lambda p: -min(len(p), 12))
+    selected = list(dict.fromkeys([*focus, *ranked]))[:2] or [phrases[0]]
+    literals = ['"' + term.replace("\\", "\\\\").replace('"', '\\"') + '"' for term in selected]
+    compiled = "TACD:(" + " AND ".join(literals) + ")"
+    if before:
+        upper = date.fromisoformat(before) - timedelta(days=1)
+        compiled += f" AND PBD:[17900101 TO {upper:%Y%m%d}]"
+    return compiled
 
 
 def _check_error(payload, tool):
@@ -85,7 +105,7 @@ class PatsnapMCP:
         self._url = url
         self._headers = {"Authorization": auth, "Accept": "application/json, text/event-stream"}
         initialized = self._post("initialize", {"protocolVersion": "2025-03-26", "capabilities": {},
-            "clientInfo": {"name": "patent-workflow", "version": "2.4.0"}})
+            "clientInfo": {"name": "patent-workflow", "version": "2.5.0"}})
         version = initialized.get("protocolVersion")
         if version not in {"2025-03-26", "2025-06-18", "2025-11-25"}:
             raise PatentAccessPaused("智慧芽连接返回不支持的 MCP 协议版本。")

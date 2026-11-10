@@ -12,6 +12,7 @@ from modules.rsi_experiment import run_experiment, score_predictions, validate_g
 from modules.rsi_manual_scoring import CRITERIA, digest, score_manual
 from modules.rsi_rubric_review import ModelRubricAssessor
 from modules.rsi_trial import ModelPatentTrial
+from modules.llm_client import LLMOutputTruncated
 
 
 def fixture():
@@ -59,6 +60,55 @@ def review_for(inputs,gold,prediction,method='human_rubric_review'):
         'documents':[{'publication_id':pid,'criteria':{k:flag() for k in CRITERIA},
                       'claim_evidence':{c:flag() for c in ('1','2')}} for pid in dict.fromkeys(d['publication_id'] for d in prediction['retrieved']) if pid in expected],
         'claims':[{'target_id':c,**flag()} for c in ('1','2')]}
+
+
+class PatsnapHandbookTrialTests(unittest.TestCase):
+    def test_temporary_skill_changes_query_only_and_length_retry_keeps_full_body(self):
+        from dataclasses import replace
+        from modules.novelty_models import patsnap_view_url
+
+        inputs, _, frozen = fixture()
+        case = inputs['cases'][0]
+        case['assessment_targets'][0]['text'] = '压力传感器连接控制器，用于监测管路压力变化；超过阈值时通过反馈电路启动泵。'
+        original = PatentDocument.from_dict(frozen['source_snapshots'][0])
+        document = replace(original, url=patsnap_view_url('12345678-1234-1234-1234-123456789abc'),
+                           source_kind='patsnap_mcp_snapshot')
+        platform = Mock()
+        platform.search.side_effect = lambda query, _: {'results': [
+            {'publication_number': document.id, 'title': document.title, 'url': document.url}
+        ] if '压力探测器' in query else [], 'total_matches': 1 if '压力探测器' in query else 0}
+        platform.fetch.return_value = document
+        client = Mock(model='fixture', url='https://model.invalid')
+        candidate = {'feature_id': '1', 'source': '压力传感器', 'term': '压力探测器',
+                     'language': 'zh', 'category': 'component', 'relation': 'equivalent', 'rationale': '合成等义词'}
+        documents = []
+
+        def complete(prompt, payload, max_tokens):
+            packet = json.loads(payload)
+            if '工具返回协议' in prompt and '试验检索术语' in prompt:
+                return json.dumps({'candidates': [candidate]})
+            self.assertNotIn('试验检索术语', prompt)
+            if 'candidates' in packet:
+                return json.dumps({'approved_ids': [r['id'] for r in packet['candidates']]})
+            if 'document' in packet:
+                documents.append((packet['document'], max_tokens))
+                if max_tokens == 6000:
+                    raise LLMOutputTruncated('模拟截断')
+                return json.dumps(frozen['handbook_documents'][0])
+            return json.dumps(frozen['claim_conclusions'][int(packet['target']['id']) - 1])
+
+        client.complete.side_effect = complete
+        with tempfile.TemporaryDirectory() as tmp:
+            skill = Path(tmp) / 'SKILL.md'
+            skill.write_text('试验检索术语', encoding='utf-8')
+            out = ModelPatentTrial(client, platform=platform)(skill, case, {
+                'abstain_label': 'insufficient_evidence', 'budget': {'max_queries': 8, 'max_documents': 25}})
+        self.assertTrue(any('压力探测器' in query and ' AND ' in query for query in out['queries']))
+        self.assertTrue(all('PBD:[17900101 TO 20231231]' in query for query in out['queries']))
+        self.assertEqual([doc['publication_id'] for doc in out['retrieved']], [document.id])
+        expected = json.loads(json.dumps(document.to_dict()))
+        self.assertEqual(documents, [(expected, 6000), (expected, 12000)])
+        self.assertEqual(len(out['claim_conclusions']), 2)
 
 
 class HandbookScoringTests(unittest.TestCase):
@@ -195,7 +245,7 @@ class DatasetAdapterTests(unittest.TestCase):
 
 
 class HandbookExecutionTests(unittest.TestCase):
-    def test_executor_uses_live_search_and_current_skill_without_standard_answers(self):
+    def test_injected_search_and_handbook_prompts_exclude_temporary_instructions_and_gold(self):
         inputs,gold,prediction=fixture()
         docs=[PatentDocument.from_dict(d) for d in prediction['source_snapshots']]
         with tempfile.TemporaryDirectory() as tmp:
@@ -208,7 +258,7 @@ class HandbookExecutionTests(unittest.TestCase):
                         'budget':{'max_queries':4,'max_documents':25}})
             self.assertEqual(len(result['handbook_documents']),2)
             for call in client.complete.call_args_list:
-                self.assertIn('本轮实际临时指令',call.args[0])
+                self.assertNotIn('本轮实际临时指令',call.args[0])
                 for key in ['gold_claims','grading_observation','evidence_location','weight_sum']:
                     self.assertNotIn(key,call.args[1])
 
@@ -227,7 +277,7 @@ class HandbookExecutionTests(unittest.TestCase):
     def test_semantic_component_regression_cannot_be_hidden_by_higher_total(self):
         inputs,gold,prediction=fixture()
         with tempfile.TemporaryDirectory() as tmp:
-            root=Path(tmp);formal=root/'formal/patent-precheck/SKILL.md';formal.parent.mkdir(parents=True)
+            root=Path(tmp);formal=root/'formal/patent-synonym-expansion/SKILL.md';formal.parent.mkdir(parents=True)
             formal.write_text('---\nname: test\n---\n固定指令',encoding='utf-8')
             calls=[]
             def predict(skill,case,settings):

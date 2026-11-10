@@ -7,7 +7,6 @@ from dataclasses import asdict
 from typing import Callable, TypedDict
 
 
-from modules.google_patent_documents import fetch_google_document
 from modules.evidence_alignment import locate_evidence
 from modules.json_output import parse_object
 from modules.novelty_matching import SynonymLexicon
@@ -18,7 +17,6 @@ from modules.novelty_models import (
 from modules.novelty_search import RESULTS_PER_QUERY
 from modules.patsnap_mcp import MAX_PATSNAP_RESULTS, PatsnapMCP
 from modules.candidate_relevance import incremental_summary
-from modules.patent_search import search_patents
 from modules.skill_contracts import upsert_record
 from modules.patent_context import context_for, bind_material, handoff_issues
 from modules import patent_tools as operations
@@ -102,8 +100,10 @@ def model_suggest_rows(features: list[Feature], documents: list[PatentDocument],
 class NoveltyHarness:
     def __init__(self, *, searcher: Callable | None = None, fetcher: Callable | None = None,
                  lexicon: SynonymLexicon | None = None, max_documents: int = 6,
-                 allow_synthetic: bool = False, search_provider: str = "google",
+                 allow_synthetic: bool = False, search_provider: str | None = None,
                  results_per_query: int = RESULTS_PER_QUERY, patsnap_config=None) -> None:
+        if search_provider is None:
+            search_provider = "google" if searcher is not None and fetcher is not None else "patsnap"
         if search_provider not in SEARCH_PROVIDERS:
             raise ValueError("未知检索平台。")
         if search_provider == "patsnap":
@@ -113,8 +113,9 @@ class NoveltyHarness:
             self.searcher = searcher or client.search
             self.fetcher = fetcher or client.fetch
         else:
-            self.searcher = searcher or search_patents
-            self.fetcher = fetcher or fetch_google_document
+            if searcher is None or fetcher is None:
+                raise ValueError("在线检索仅支持智慧芽。")
+            self.searcher, self.fetcher = searcher, fetcher
         self.search_provider = search_provider
         self.results_per_query = results_per_query if search_provider == "patsnap" else RESULTS_PER_QUERY
         self.lexicon = lexicon or SynonymLexicon()
@@ -122,8 +123,9 @@ class NoveltyHarness:
         self.allow_synthetic = allow_synthetic
 
     def _source_scope(self, state):
-        if (self.search_provider == "patsnap" or (state.get("search_audit") or {}).get("provider") == "patsnap"
-                or any(doc.source_kind == "patsnap_mcp_snapshot" for doc in state.get("documents") or [])):
+        if ((state.get("search_audit") or {}).get("provider") == "patsnap"
+                or any(doc.source_kind == "patsnap_mcp_snapshot" for doc in state.get("documents") or [])
+                or ("documents" not in state and self.search_provider == "patsnap")):
             return PATSNAP_SOURCE_SCOPE
         return None if "documents" in state else "Google Patents"
 

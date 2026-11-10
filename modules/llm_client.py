@@ -9,6 +9,10 @@ from urllib.parse import urlparse
 import requests
 
 
+class LLMOutputTruncated(RuntimeError):
+    """The model stopped at its output limit."""
+
+
 class LLMClient:
     def __init__(
         self,
@@ -62,7 +66,7 @@ class LLMClient:
                                        and type(value) is int and value >= 0} or None
                 choice = data["choices"][0]
                 if choice.get("finish_reason") == "length":
-                    raise RuntimeError("模型输出被截断；请缩短输入后重试。")
+                    raise LLMOutputTruncated("模型输出被截断；已达到本次输出上限。")
                 content = choice["message"]["content"]
                 if not isinstance(content, str) or not content.strip():
                     raise RuntimeError("模型返回了空内容。")

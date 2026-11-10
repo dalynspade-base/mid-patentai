@@ -157,7 +157,7 @@ class EvidenceScoringTests(unittest.TestCase):
 
 
 class EvidenceTrialTests(unittest.TestCase):
-    def test_actual_search_and_each_claim_receive_current_skill_but_no_gold(self):
+    def test_injected_search_and_evidence_prompts_exclude_temporary_instructions_and_gold(self):
         inputs, gold, prediction, doc = fixture()
         with tempfile.TemporaryDirectory() as tmp:
             skill = Path(tmp)/'SKILL.md'; skill.write_text('本轮特定改进指令', encoding='utf-8')
@@ -171,7 +171,7 @@ class EvidenceTrialTests(unittest.TestCase):
             self.assertEqual(len(result['evidence_judgments']), 2)
             self.assertEqual(search.call_count, 1)
             for call in client.complete.call_args_list:
-                self.assertIn('本轮特定改进指令', call.args[0])
+                self.assertNotIn('本轮特定改进指令', call.args[0])
                 self.assertNotIn('feature_status', call.args[1])
                 self.assertNotIn('evidence_sections', call.args[1])
             self.assertEqual(score_predictions(inputs, gold, [result], (.5, .5))['risk_score'], 100)
@@ -179,7 +179,7 @@ class EvidenceTrialTests(unittest.TestCase):
     def test_five_fresh_pairs_and_final_only_anchor_preserved(self):
         inputs, gold, prediction, _ = fixture()
         with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp); formal = root/'formal/patent-precheck/SKILL.md'; formal.parent.mkdir(parents=True)
+            root = Path(tmp); formal = root/'formal/patent-synonym-expansion/SKILL.md'; formal.parent.mkdir(parents=True)
             formal.write_text('---\nname: test\n---\n固定基线。', encoding='utf-8')
             calls = []; proposals = []
             def predict(skill, case, settings):
@@ -205,7 +205,7 @@ class EvidenceTrialTests(unittest.TestCase):
     def test_invalid_evidence_cannot_be_adopted_even_with_higher_total(self):
         inputs, gold, prediction, _ = fixture()
         with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp); formal = root/'formal/patent-precheck/SKILL.md'; formal.parent.mkdir(parents=True)
+            root = Path(tmp); formal = root/'formal/patent-synonym-expansion/SKILL.md'; formal.parent.mkdir(parents=True)
             formal.write_text('---\nname: test\n---\n固定基线。', encoding='utf-8')
             def predict(skill, case, settings):
                 out = deepcopy(prediction)

@@ -45,15 +45,12 @@ def main() -> None:
     st.caption("专利预筛主 skill · 六个业务子 skill · 独立六维语义 eval")
     with st.sidebar:
         st.header("检索与模型设置")
-        provider = st.selectbox("检索平台", list(SEARCH_PROVIDERS), format_func=SEARCH_PROVIDERS.__getitem__)
+        provider = "patsnap"
         provider_label = SEARCH_PROVIDERS[provider]
-        results_settings = {}
-        paid_consent = True
-        if provider == "patsnap":
-            results_settings["results_per_query"] = st.slider("每条查询最多保留候选数", 1, MAX_PATSNAP_RESULTS, 5)
-            paid_consent = st.checkbox("我确认将检索词发送到智慧芽，并使用检索和正文接口额度")
-            st.caption("仅发送本轮检索词；正文按下方篇数读取。检索计入额度，每篇最多调用三个正文相关工具，部分内容可命中平台缓存。")
-        max_documents = st.slider("最多获取文献数", 1, 10, 2 if provider == "patsnap" else 4)
+        results_settings = {"results_per_query": st.slider("每条查询最多保留候选数", 1, MAX_PATSNAP_RESULTS, 5)}
+        paid_consent = st.checkbox("我确认将检索词发送到智慧芽，并使用检索和正文接口额度")
+        st.caption("仅发送本轮检索词；正文按下方篇数读取。每篇最多调用三个正文相关工具。")
+        max_documents = st.slider("最多获取文献数", 1, 10, 2)
         api_key = st.text_input("模型 API Key", value=os.getenv("LLM_API_KEY", ""), type="password")
         base_url = st.text_input("模型 API 地址", value=os.getenv("LLM_BASE_URL", "https://api.deepseek.com"))
         model = st.text_input("模型名", value=os.getenv("LLM_MODEL", "deepseek-flash"))
@@ -106,18 +103,17 @@ def main() -> None:
         if claim_selection:
             context_seed["target"]=claim_selection["target"]
         patent_context=context_for(ui_features,cutoff,context_seed,invention=invention,
-                                  sources=PATSNAP_SOURCE_SCOPE if provider == "patsnap" else None)
+                                  sources=PATSNAP_SOURCE_SCOPE)
     except ValueError as exc:
         st.error(str(exc))
         return
     expansion = render_synonym_expansion(feature_text, lexicon, api_key, base_url, model,
         features_override=ui_features,patent_context=patent_context)
     query = st.text_input(f"{provider_label} 检索词（可选）", key=f"patent-query-{provider}")
-    st.caption("留空时原要素优先，再发送审核通过的扩展；理论类最多8条、工程类最多16条，每条400字，不截断。自定义词保持指定范围。")
+    st.caption("留空时先从原要素组合短技术词，再使用审核通过的扩展。理论类最多8条，工程类最多16条。")
     st.caption("普通输入按整套确认要素预筛；权利要求模式按选定版本和引用路径分别比对。基准日及优先权适用性需核验。")
     st.info(f"检索词发送到 {provider_label}。分别确认并点击生成术语或模型复核后，对应的要素/术语表或原文/候选才发送到模型。")
-    if provider == "patsnap":
-        st.caption("自定义词支持智慧芽检索式，例如 TACD:(压力传感器)；普通文字作为全文字段的短语查询。")
+    st.caption("支持智慧芽检索式，例如 TACD:(压力传感器)。普通长句提取短词组合，完整限定用于证据核查。")
     prepared = st.session_state.get("prepared_material_features")
     material_context = {"material_unknowns": list(prepared.get("unknowns", [])) if prepared else [],
                         "material_warnings": list(prepared.get("warnings", [])) if prepared else []}

@@ -159,11 +159,10 @@ def _formal_fingerprints(root):
             for p in root.rglob('*') if p.is_file() and '__pycache__' not in p.parts}
 
 
-def _make_skill(path, base, additions, feedback):
-    body = ('---\nname: patent-rsi-trial\ndescription: 在固定检索预算内分析修改副本的新颖性风险，仅用于本轮隔离实验。\n---\n\n'
+def _make_skill(path, base, additions):
+    body = ('---\nname: patent-rsi-trial\ndescription: 在固定检索预算内生成专利检索术语，仅用于隔离实验。\n---\n\n'
             '# 临时 RSI Skill\n\n## 不变的基线指令\n\n'+base+'\n\n## 已保留的补充指令\n\n'
-            +'\n\n'.join(additions or ['尚无补充。'])+'\n\n## 先前训练反馈\n\n'
-            +json.dumps(feedback, ensure_ascii=False, sort_keys=True)+'\n')
+            +'\n\n'.join(additions or ['尚无补充。'])+'\n')
     path.parent.mkdir(parents=True, exist_ok=False)
     path.write_text(body, encoding='utf-8')
     return {'path': str(path), 'sha256': hashlib.sha256(path.read_bytes()).hexdigest()}
@@ -178,11 +177,6 @@ def _feedback(score):
         'unjudged_count': sum(r.get('unjudged', 0) for r in score['cases'])}
 
 
-def _optimizer_predictions(predictions):
-    # Full source snapshots stay in the trial files; the optimizer sees actual summaries/quotes.
-    return [{k: deepcopy(v) for k, v in p.items() if k not in {'source_snapshots', 'document_reviews'}} for p in predictions]
-
-
 def _validate_proposal(proposal, gold, prior):
     if not isinstance(proposal, dict) or set(proposal) != {'addition', 'rationale'}:
         raise ValueError('Optimizer may return only addition and rationale; no paths, edits or tools.')
@@ -191,7 +185,9 @@ def _validate_proposal(proposal, gold, prior):
     addition = proposal['addition'].strip()
     if len(addition) > 4000 or sum(map(len, prior)) + len(addition) > 12000 or '```' in addition:
         raise ValueError('Only bounded prose additions are allowed, without executable blocks.')
-    text = title_key(addition)
+    if re.search(r'https?://|\b(?:CN|US|WO|EP|JP|KR)\s*[- ]?\d{5,}', addition + ' ' + proposal['rationale'], re.I):
+        raise ValueError('Use a general term expansion rule without links or publication numbers.')
+    text = title_key(addition + ' ' + proposal['rationale'])
     for case in gold['cases']:
         for target in case['targets']:
             identities = [target['title'], *target['title_aliases'], *target['publication_ids']]
@@ -223,13 +219,14 @@ def run_experiment(inputs, gold, output, predictor, proposer, *, formal_root, ro
         raise ValueError('Experiment output cannot overlap the production Skill directory.')
     if mode not in {'live', 'teaching_demo'} or (mode == 'live' and inputs['provenance'] != 'provided_dataset'):
         raise ValueError('Teaching data cannot be presented as live benchmark evidence.')
-    base_path = formal_root/'patent-precheck/SKILL.md'
+    base_path = formal_root/'patent-synonym-expansion/SKILL.md'
     text = base_path.read_text(encoding='utf-8-sig')
     base = text.split('---', 2)[2].strip()
     protected = _formal_fingerprints(formal_root)
     guard = lambda: _guard(formal_root, protected)
     output.mkdir(parents=True, exist_ok=False)
     configuration = {'schema': SCHEMA, 'rounds': rounds, 'budget': budget, 'weights': list(weights),
+                     'target_skill': 'patent-synonym-expansion', 'proposal_policy': 'seal_before_trials',
                      'max_input_characters': MAX_INPUT_CHARACTERS,
                      'selection': 'strict_total_gain_and_no_component_regression', 'mode': mode,
                      'input_hash': digest(inputs), 'gold_hash': digest(gold), 'formal_skills': protected,
@@ -244,16 +241,10 @@ def run_experiment(inputs, gold, output, predictor, proposer, *, formal_root, ro
     scorer_hashes = {str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in scorer_paths}
     configuration['scoring_implementation'] = {p.name+':'+str(i): scorer_hashes[str(p)] for i, p in enumerate(scorer_paths)}
     runtime = runtime or {}
-    if set(runtime)-{'adapter', 'model', 'provider_host', 'temperature', 'search_entry', 'http_retry_policy'}:
+    if set(runtime)-{'adapter', 'model', 'provider_host', 'temperature', 'search_provider', 'rubric_model'}:
         raise ValueError('Runtime metadata must not contain credentials or arbitrary settings.')
-    if 'search_entry' in runtime:
-        from modules.google_patents_transport import CANONICAL_ENTRY, LEGACY_ENTRY
-        if runtime['search_entry'] not in {CANONICAL_ENTRY, LEGACY_ENTRY}:
-            raise ValueError('Search entry must be an official Google Patents entry.')
-    if 'http_retry_policy' in runtime:
-        from modules.patent_http import retry_policy
-        if runtime['http_retry_policy'] != retry_policy():
-            raise ValueError('HTTP retry policy differs from the fixed transport policy.')
+    if runtime.get('search_provider', 'patsnap') != 'patsnap':
+        raise ValueError('RSI live search requires Patsnap.')
     configuration['runtime'] = deepcopy(runtime)
     save(output/'config.json', configuration)
     manifest_hash = hashlib.sha256((output/'config.json').read_bytes()).hexdigest()
@@ -303,23 +294,33 @@ def run_experiment(inputs, gold, output, predictor, proposer, *, formal_root, ro
 
     history, additions = [], []
     initial = output/'baseline/patent-rsi-trial/SKILL.md'
-    initial_binding = _make_skill(initial, base, additions, {})
+    initial_binding = _make_skill(initial, base, additions)
     try:
+        proposals, proposed_additions = [], []
+        for number in range(1, rounds+1):
+            proposal = proposer({
+                'skill_id': 'patent-synonym-expansion', 'current_skill': base, 'round': number,
+                'development_examples': [
+                    '合成例：压力传感器的规范译名可供查询，但“测量装置”是上位概念。',
+                    '合成例：扩展连接器术语时，保持原要素里的连接方向、否定和参数。'],
+                'earlier_proposals': list(proposed_additions),
+            })
+            guard()
+            proposals.append(deepcopy(proposal))
+            proposed_additions.append(_validate_proposal(proposal, {'cases': []}, []))
+        for proposal in proposals:
+            _validate_proposal(proposal, gold, [])
+        save(output/'sealed_proposals.json', proposals)
         predictions = trial(initial, inputs, output/'baseline/trial')
         initial_score = evaluate(inputs, gold, predictions, output/'baseline/trial')
         save(output/'baseline/score.json', initial_score)
         incumbent, last_feedback = initial, _feedback(initial_score)
-        selected, previous_attempt = 0, None
-        for number in range(1, rounds+1):
+        selected = 0
+        for number, (proposal, addition) in enumerate(zip(proposals, proposed_additions), 1):
             folder = output/f'round-{number:02d}'
-            proposal = proposer({'current_skill': incumbent.read_text(encoding='utf-8'),
-                'feedback': deepcopy(last_feedback), 'public_cases': deepcopy(inputs['cases']),
-                'previous_predictions': _optimizer_predictions(predictions), 'previous_attempt': deepcopy(previous_attempt),
-                'budget': deepcopy(budget)})
-            guard()
-            addition = _validate_proposal(proposal, gold, additions)
+            _validate_proposal(proposal, gold, additions)
             candidate = folder/'patent-rsi-trial/SKILL.md'
-            binding = _make_skill(candidate, base, additions+[addition], last_feedback)
+            binding = _make_skill(candidate, base, additions+[addition])
             save(folder/'proposal.json', proposal)
             control_predictions = trial(incumbent, inputs, folder/'control')
             control_score = evaluate(inputs, gold, control_predictions, folder/'control')
@@ -331,29 +332,33 @@ def run_experiment(inputs, gold, output, predictor, proposer, *, formal_root, ro
                         and candidate_score['risk_score'] >= control_score['risk_score'])
             accepted = accepted and all(candidate_score['components'][key] is not None
                 and candidate_score['components'][key] >= value for key, value in control_score['components'].items())
+            query_changed = any(before['queries'] != after['queries']
+                                for before, after in zip(control_predictions, candidate_predictions)) if runtime.get('search_provider') == 'patsnap' else None
+            if query_changed is False:
+                accepted = False
+                reason = 'no_effective_query_change'
+            else:
+                reason = 'strict_gain_without_component_regression' if accepted else 'no_strict_gain_or_component_regression'
             record = {'round': number, 'parent_skill': str(incumbent), 'candidate_skill': binding,
                 'control_score': control_score, 'candidate_score': candidate_score, 'accepted': accepted,
-                'reason': 'strict_gain_without_component_regression' if accepted else 'no_strict_gain_or_component_regression'}
+                'effective_query_changed': query_changed, 'reason': reason}
             record['parent_sha256'] = hashlib.sha256(incumbent.read_bytes()).hexdigest()
             save(folder/'evaluation.json', record)
             history.append(record)
             if accepted:
                 incumbent, selected = candidate, number
                 additions.append(addition)
-                predictions = candidate_predictions
                 last_feedback = _feedback(candidate_score)
             else:
-                predictions = control_predictions
                 last_feedback = _feedback(control_score)
             save(folder/'feedback.json', {'candidate': _feedback(candidate_score), 'accepted': accepted,
                  'next_parent': str(incumbent), 'incumbent': last_feedback})
-            previous_attempt = {'proposal': proposal, 'candidate_feedback': _feedback(candidate_score),
-                                'accepted': accepted, 'predictions': _optimizer_predictions(candidate_predictions)}
         result = {'schema': SCHEMA, 'execution': 'completed', 'mode': mode, 'initial_skill': initial_binding,
             'initial_score': initial_score, 'rounds': history, 'selected_round': selected, 'best_skill': str(incumbent),
             'accepted_rounds': [r['round'] for r in history if r['accepted']], 'last_incumbent_score': last_feedback,
             'generalization': 'not_measured_no_anchor', 'anchor': None}
         result.update(score_weights=list(weights), trial_budget=deepcopy(budget))
+        result['target_skill'] = configuration['target_skill']
         result.update(scoring_profile=initial_score['scoring_profile'], component_weights=configuration['component_weights'])
         result['formal_skills_unchanged'] = _formal_fingerprints(formal_root) == protected
         result['best_skill_sha256'] = hashlib.sha256(incumbent.read_bytes()).hexdigest()

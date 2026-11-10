@@ -14,6 +14,17 @@ def labeled(elements, label):
     return next(item for item in elements if item.label == label)
 
 
+def allow_patsnap(app):
+    labeled(app.sidebar.checkbox, "我确认将检索词发送到智慧芽，并使用检索和正文接口额度").set_value(True)
+
+
+def patsnap_document(number, text="装置包括压力传感器。"):
+    from modules.novelty_models import PatentDocument, SourceSection, patsnap_view_url
+    url = patsnap_view_url(f"11111111-1111-1111-1111-{number[2:]:0>12}")
+    return PatentDocument(number, "模拟来源", url, "2023-01-01", (SourceSection("manual-1", text),),
+                          source_kind="patsnap_mcp_snapshot", snapshot_schema_version=2, parsed_complete=True)
+
+
 class AppFlowTests(unittest.TestCase):
     def app(self):
         return AppTest.from_file(str(Path(__file__).parents[1] / "app.py")).run(timeout=60)
@@ -32,15 +43,15 @@ class AppFlowTests(unittest.TestCase):
         return app
 
     def test_first_screen_has_no_network_or_paid_model_call(self):
-        with patch("modules.harness.search_patents") as search, patch("modules.llm_client.LLMClient.complete") as model:
+        with patch("modules.patsnap_mcp.PatsnapMCP.search") as search, patch("modules.llm_client.LLMClient.complete") as model:
             app = self.app()
             self.assertEqual(len(app.exception), 0)
             search.assert_not_called()
             model.assert_not_called()
-            self.assertTrue(labeled(app.button, "1 · 检索 Google Patents 并定位证据").disabled)
+            self.assertTrue(labeled(app.button, "1 · 检索 智慧芽 并定位证据").disabled)
 
     def test_manual_evidence_does_not_auto_judge_or_send_model(self):
-        with patch("modules.harness.search_patents") as search, patch("modules.llm_client.LLMClient.complete") as model:
+        with patch("modules.patsnap_mcp.PatsnapMCP.search") as search, patch("modules.llm_client.LLMClient.complete") as model:
             app = self.manual_snapshot(self.app())
             self.assertEqual(len(app.exception), 0)
             state = app.session_state["novelty_state"]
