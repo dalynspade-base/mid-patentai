@@ -113,7 +113,10 @@ class RSIExperimentTests(unittest.TestCase):
         self.run_demo(proposer=proposer, predictor=predict)
         for call in proposer.call_args_list:
             payload = call.args[0]
-            self.assertEqual(set(payload), {'skill_id', 'current_skill', 'round', 'development_examples', 'earlier_proposals'})
+            self.assertEqual(set(payload), {'skill_id', 'current_skill', 'round', 'development_examples', 'earlier_proposals',
+                                            'objective', 'process_context'})
+            self.assertEqual(set(payload['process_context']), {'upstream', 'output', 'downstream', 'measurement', 'limits'})
+            self.assertNotIn('RSIDEMO001', json.dumps(payload, ensure_ascii=False))
         self.assertTrue((self.root/'run/sealed_proposals.json').is_file())
 
     def test_hardcoded_reference_identity_is_rejected_before_trial(self):

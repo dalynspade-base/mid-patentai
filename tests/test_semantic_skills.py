@@ -185,7 +185,7 @@ class BusinessSkillTests(unittest.TestCase):
         self.assertEqual(names,set(SKILLS)|{"patent-precheck","patent-semantic-eval"})
 
     def test_report_refreshes_records_after_review_revocation(self):
-        from evals.legacy.fixtures import case_inputs,dataset
+        from history.evals.legacy.fixtures import case_inputs,dataset
         from modules.patent_tools import build_report as report_payload
         from modules.novelty_rules import assess_novelty
         from modules.skill_contracts import plain

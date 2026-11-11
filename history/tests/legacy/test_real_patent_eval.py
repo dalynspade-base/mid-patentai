@@ -9,10 +9,10 @@ from dataclasses import asdict
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from engineering.legacy.real_patent_eval import (fetch_sources, load_sources, real_cases, run_real_evaluation,
+from history.engineering.legacy.real_patent_eval import (fetch_sources, load_sources, real_cases, run_real_evaluation,
                                       summarize_real, write_json)
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[3]
 
 
 class RealEvaluationTests(unittest.TestCase):
@@ -142,7 +142,7 @@ class RealEvaluationTests(unittest.TestCase):
             self.assertTrue(all(not r["reviewed"] for r in payload["candidate_reviews"]))
 
     def test_engineering_trial_refuses_existing_output_before_requesting_key(self):
-        from tools.legacy.run_engineering_trial import main
+        from history.tools.legacy.run_engineering_trial import main
         directory = self.folder()
         with patch("sys.argv", ["trial", "--source-dir", str(directory), "--output-dir", str(directory)]), \
              patch("getpass.getpass") as key, contextlib.redirect_stderr(io.StringIO()):
@@ -152,7 +152,7 @@ class RealEvaluationTests(unittest.TestCase):
 
     @unittest.skipUnless(importlib.util.find_spec("deepeval"), "optional historical DeepEval dependency")
     def test_engineering_trial_model_output_stays_candidate_only(self):
-        from tools.legacy.run_engineering_trial import main
+        from history.tools.legacy.run_engineering_trial import main
         directory = self.folder()
         source = directory / "sources"
         self.sources(source)

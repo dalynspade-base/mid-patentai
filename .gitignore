@@ -29,3 +29,12 @@ id_ed25519
 # Word editor locks and temporary files
 ~$*
 *.tmp
+
+# Local-only archived runs and final-test datasets / private answers
+/history/local/
+/final_test/*
+!/final_test/README.md
+
+# Local briefings archived during v2.6.0 organization
+/history/reports/harness_briefing_20261022/
+/history/reports/version-briefing-1.1.0/

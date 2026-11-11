@@ -8,7 +8,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from modules.google_patent_documents import fetch_google_document
 from modules.patent_search import search_patents
@@ -18,7 +18,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-dir", type=Path, help="新运行目录；默认保存于.local/verification")
     args = parser.parse_args()
-    output = args.output_dir or Path(__file__).resolve().parents[1] / ".local/verification" / (
+    output = args.output_dir or Path(__file__).resolve().parents[2] / ".local/verification" / (
         "google-smoke-" + datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S-%f")
     )
     # Reserve a new destination before any network call.

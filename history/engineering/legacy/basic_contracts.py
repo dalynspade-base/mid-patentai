@@ -19,7 +19,7 @@ os.environ["DEEPEVAL_DISABLE_DOTENV"] = "1"
 from deepeval.metrics import BaseMetric
 from deepeval.test_case import LLMTestCase
 
-from evals.legacy.fixtures import case_inputs, dataset
+from history.evals.legacy.fixtures import case_inputs, dataset
 from modules.novelty_matching import SynonymLexicon
 from modules.novelty_models import LABELS, PatentDocument, SourceSection
 from modules.harness import NoveltyHarness

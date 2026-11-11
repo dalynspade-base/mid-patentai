@@ -20,6 +20,8 @@ class CandidateUITests(unittest.TestCase):
             return {"url": self.docs[key].url, "title": title, "publication_number": key}
 
         def search(query, limit):
+            if '压力感测器' in query or 'pressure sensor' in query:
+                return [result("US1244", "压力感测器")]
             if "压力传感器" in query:
                 return [result("US1234", "压力传感器"), result("US1254", "压力传感器术语出现在引用目录")]
             return [result("US1244", "压力感测器")]

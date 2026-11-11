@@ -20,7 +20,8 @@ def main():
     read = lambda p: json.loads(p.read_text(encoding='utf-8-sig'))
     inputs = validate_inputs(read(args.input)); gold = validate_gold(inputs, read(args.gold))
     reviews = read(args.reviews) if args.reviews else None
-    result = score_predictions(inputs, gold, read(args.predictions), (.5, .5), reviews=reviews)
+    predictions = read(args.predictions)
+    result = score_predictions(inputs, gold, predictions, (.5, .5), reviews=reviews)
     args.output_dir.mkdir(parents=True, exist_ok=False)
     (args.output_dir/'score.json').write_text(json.dumps(result, ensure_ascii=False, indent=2)+'\n', encoding='utf-8')
     print(json.dumps(result, ensure_ascii=False, indent=2))

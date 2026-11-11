@@ -101,7 +101,7 @@ def evaluation_input_hash(features: list[Feature], documents: list[PatentDocumen
 
 
 def real_cases(root: Path) -> tuple[dict, list[dict], list[str]]:
-    definition = json.loads((root / "evals/legacy/real_patent_cases.json").read_text(encoding="utf-8"))
+    definition = json.loads((root / "history/evals/legacy/real_patent_cases.json").read_text(encoding="utf-8"))
     example = json.loads((root / definition["example"]).read_text(encoding="utf-8"))
     cases = []
     for item in definition["cases"]:

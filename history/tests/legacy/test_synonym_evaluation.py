@@ -3,11 +3,11 @@ import copy
 import json
 import unittest
 from pathlib import Path
-from engineering.legacy.synonym_eval import relevance_input_hash, retrieval_metrics, run_synonym_evaluation
+from history.engineering.legacy.synonym_eval import relevance_input_hash, retrieval_metrics, run_synonym_evaluation
 
 class SynonymEvaluationTests(unittest.TestCase):
     def data(self):
-        return json.loads((Path(__file__).parents[2] / "evals/legacy/synonym_retrieval_cases.json").read_text(encoding="utf-8"))
+        return json.loads((Path(__file__).resolve().parents[3] / "history/evals/legacy/synonym_retrieval_cases.json").read_text(encoding="utf-8"))
 
     def test_metric_denominators_and_zero_relevant_reference(self):
         metrics = retrieval_metrics(["R1", "N1"], {"R1", "R2"}, {"R1", "R2", "N1"}, 3)

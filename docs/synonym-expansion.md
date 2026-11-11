@@ -1,5 +1,7 @@
 # 术语扩展与语义验收
 
+> 2.6.0：当前智慧芽编译与候选归因见[智慧芽协议](patsnap-search.md)，测试隔离及RSI闭环见[测试协议](testing.md)。历史模式按其实际来源保留。
+
 `modules.patent_tools.expand_terms` 调用现有扩展实现，区分原词、词典候选、模型候选和显式审核后的查询变体。理论/工程检索预算、专名保护、否定、关系方向及技术数值的约束保留；增加查询词不代表已经证明语义等价。
 
 扩展记录保留原始要素、领域词典、查询策略、保护术语、每个候选的关系和处理依据。模型生成与审核分开，未经审核的新词不能自动进入查询。
@@ -12,6 +14,6 @@
 python tools/run_synonym_eval.py --records 实际导出记录.json --output-dir 新预览目录
 ```
 
-默认只生成预览；实际调用裁判需添加 `--run-model --confirm-external`。旧 `--k`、`--compare-rankers` 等参数已经撤销。固定池数值对照留在 `engineering/legacy/synonym_eval.py` 和 `tests/legacy/`，不作为当前验收。
+默认只生成预览；实际调用裁判需添加 `--run-model --confirm-external`。旧 `--k`、`--compare-rankers` 等参数已经撤销。固定池数值对照留在 `history/engineering/legacy/synonym_eval.py` 和 `history/tests/legacy/`，不作为当前验收。
 
-[整理前方案及历史数值结果](history/pre-1.0.0/synonym-expansion.md)。
+[整理前方案及历史数值结果](../history/docs/pre-1.0.0/synonym-expansion.md)。

@@ -4,7 +4,7 @@ import unittest
 from dataclasses import asdict, replace
 from pathlib import Path
 
-from evals.legacy.fixtures import case_inputs, dataset
+from history.evals.legacy.fixtures import case_inputs, dataset
 from modules.google_patent_documents import manual_google_document, parse_google_page
 from modules.novelty_models import (DocumentReview, EvidenceRow, Feature, PatentDocument,
                                     review_input_hash, stamp_review)
@@ -80,7 +80,7 @@ class EvidenceReviewTests(unittest.TestCase):
         self.assertEqual(document.sections[1].source_anchor, "")
 
     def test_legacy_real_snapshots_keep_original_hashes_and_bytes(self):
-        root = Path(__file__).resolve().parents[1] / "reports" / "engineering_trial"
+        root = Path(__file__).resolve().parents[1] / "history" / "reports" / "engineering_trial"
         for name in ("US4968168A_source.json", "US5944436A_source.json"):
             path = root / name
             before = path.read_bytes()
@@ -178,7 +178,7 @@ class EvidenceReviewTests(unittest.TestCase):
         self.assertIn("人工填写", markdown)
 
     def test_legacy_report_does_not_relabel_internal_id_as_claim_number(self):
-        path = Path(__file__).resolve().parents[1] / "reports" / "engineering_trial" / "original_evidence.json"
+        path = Path(__file__).resolve().parents[1] / "history" / "reports" / "engineering_trial" / "original_evidence.json"
         markdown = to_markdown(json.loads(path.read_text(encoding="utf-8")))
         self.assertIn("旧版快照内部编号 claim-2（非原文权利要求号）", markdown)
         self.assertIn("历史记录未绑定", markdown)

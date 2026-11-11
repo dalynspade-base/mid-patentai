@@ -24,7 +24,7 @@ AI 客户端需要具备读取文件的工具；附件读取或解析失败应�
 
 当前工程和语义契约使用 `python tools/run_verification.py --current-only --output-dir 新运行目录`；完整运行去掉 `--current-only`，历史工程单列。离线契约使用 `python tools/check_semantic_contract.py`。真实语义评估使用 `tools/run_semantic_eval.py`，只有明确外发确认后才调用裁判。完整安装与启动步骤见 [README](../README.md)。
 
-早期验证次数、浏览器记录与人工复核阶段说明保留在[整理前快照](history/pre-1.0.0/local-integration.md)，不作为当前语义验收结果。
+早期验证次数、浏览器记录与人工复核阶段说明保留在[整理前快照](../history/docs/pre-1.0.0/local-integration.md)，不作为当前语义验收结果。
 
 ## 来源与后续协作
 

@@ -44,7 +44,7 @@ class ModelPatentTrial:
         generation = generate_llm_candidates(features, lexicon, 'engineering', [], self.client, True,
                                              patent_context=context, trial_instructions=skill)
         if generation['status'] != 'ok':
-            raise RuntimeError("术语扩展未完成，无法比较该轮 Skill。")
+            raise RuntimeError(f"术语扩展未完成，无法比较该轮 Skill：{generation.get('error', '未知原因')}")
         generation['trial_skill_sha256'] = sha256(raw_skill).hexdigest()
         plan = build_expansion_plan(features, lexicon, 'engineering', generated=generation)
         pending = [r for r in plan['candidates'] if r['status'] == 'pending']
@@ -65,6 +65,12 @@ class ModelPatentTrial:
         documents = [d for d in documents if d.publication_date and d.publication_date < case['cutoff']]
         return self._assess(case, settings, documents, [q['sent_query'] for q in audit['queries'] if not q.get('reused_query_id')],
                             audit, audit['retrieval_cost']['page_attempts'])
+
+    def assess_fixed_corpus(self, case, settings, documents):
+        """Evidence-only evaluation; supplied bodies are never claimed as search hits."""
+        result = self._assess(case, settings, documents, [],
+                              {'mode': 'fixed_corpus', 'retrieval_not_measured': True}, 0)
+        return result | {'evaluation_scope': 'evidence_only_no_retrieval_metric'}
 
     def _review_terms(self, features, candidates):
         packet = {'features': [asdict(f) for f in features],

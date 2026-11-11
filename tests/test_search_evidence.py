@@ -6,7 +6,7 @@ from pathlib import Path
 from unittest.mock import Mock
 from urllib.parse import parse_qs
 
-from evals.legacy.fixtures import case_inputs, dataset
+from history.evals.legacy.fixtures import case_inputs, dataset
 from modules.google_patent_documents import manual_google_document
 from modules.novelty_matching import SynonymLexicon
 from modules.novelty_models import DocumentReview, EvidenceRow, Feature, stamp_review
@@ -63,17 +63,24 @@ class SearchEvidenceTests(unittest.TestCase):
         self.assertEqual([q["query"] for q in plan["queries"]], [f.text for f in features])
         self.assertEqual([q["feature_ids"] for q in plan["queries"]], [["F1"], ["F2"]])
 
-    def test_long_feature_is_compacted_for_patsnap_and_budget_omissions_are_recorded(self):
-        features = [Feature("F1", "x" * 401)] + [Feature(f"F{i}", f"part {i}") for i in range(2, 12)]
+    def test_long_feature_requires_concepts_and_budget_omissions_are_recorded(self):
+        features = [Feature("F1", "电驱动器经隔振联轴器驱动离心叶轮。" * 24)] + [Feature(f"F{i}", f"part {i}") for i in range(2, 12)]
         searcher = Mock(return_value=[])
-        state = NoveltyHarness(searcher=searcher).run(features=features, cutoff="2024-01-01")
+        with self.assertRaisesRegex(ValueError, 'anchors'):
+            NoveltyHarness(searcher=searcher).run(features=features, cutoff="2024-01-01")
+        searcher.assert_not_called()
+        from modules.synonym_expansion import build_expansion_plan
+        expansion = build_expansion_plan(features, SynonymLexicon(), 'theoretical', generated={
+            'status': 'ok', 'candidates': [], 'anchors': [
+                {'feature_id': 'F1', 'term': '电驱动器'}, {'feature_id': 'F1', 'term': '离心叶轮'}]})
+        state = NoveltyHarness(searcher=searcher).run(features=features, cutoff="2024-01-01", expansion=expansion)
         self.assertEqual(searcher.call_count, 8)
         self.assertTrue(all(len(call.args[0]) <= 400 for call in searcher.call_args_list))
         skipped_ids = {f for s in state["search_audit"]["skipped"] for f in s["feature_ids"]}
-        self.assertEqual(skipped_ids, {"F9", "F10", "F11"})
+        self.assertTrue({"F9", "F10", "F11"} <= skipped_ids)
         first_query = state["search_audit"]["queries"][0]
-        self.assertEqual(first_query["query"], features[0].text)
-        self.assertLess(len(first_query["sent_query"]), len(first_query["query"]))
+        self.assertIn('"电驱动器" AND "离心叶轮"', first_query["sent_query"])
+        self.assertEqual(state['features'][0].text, features[0].text)
         warnings = " ".join(state["decision"].warnings)
         self.assertIn("F11", warnings)
         self.assertEqual(state["decision"].label, "insufficient_evidence")
@@ -191,7 +198,8 @@ class SearchEvidenceTests(unittest.TestCase):
     def test_search_gaps_block_absence_but_preserve_a_separately_verified_risk(self):
         for label in ("no_complete_disclosure_found", "potential_novelty_risk"):
             inputs = case_inputs(next(c for c in dataset()["cases"] if c["expected"] == label))
-            journal = NoveltyHarness(searcher=Mock(side_effect=RuntimeError("fixture search failed"))).run(
+            journal = NoveltyHarness(searcher=Mock(side_effect=RuntimeError("fixture search failed")),
+                                     fetcher=Mock(), search_provider='google').run(
                 features=inputs["features"], cutoff=inputs["cutoff"])["search_audit"]
             state = NoveltyHarness(allow_synthetic=True).run(**inputs, search_audit=journal)
             self.assertEqual(state["decision"].label, "potential_novelty_risk" if label == "potential_novelty_risk" else "insufficient_evidence")

@@ -8,4 +8,4 @@
 
 使用 `tools/run_semantic_eval.py` 评估实际导出记录；使用 `tools/check_semantic_contract.py` 检查离线契约。后者和模拟响应测试均不能证明真实语义判断正确。
 
-旧三框架评测和数值方案的原文见[整理前快照](history/pre-1.0.0/novelty_eval_design.md)，历史实现见[工程说明](../engineering/legacy/README.md)。
+旧三框架评测和数值方案的原文见[整理前快照](../history/docs/pre-1.0.0/novelty_eval_design.md)，历史实现见[工程说明](../history/engineering/legacy/README.md)。

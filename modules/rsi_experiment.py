@@ -48,6 +48,13 @@ def validate_inputs(inputs):
             raise ValueError('Duplicate case id.')
         if case.get('scoring_profile') not in {None, 'manual-v1.2', 'evidence-v2'}:
             raise ValueError('Unknown scoring profile.')
+        if case.get('scoring_profile') == 'manual-v1.2':
+            targets = case.get('assessment_targets')
+            if (not isinstance(targets, list) or len(targets) != 2
+                    or any(not isinstance(t, dict) or set(t) != {'id', 'title', 'text'}
+                           or any(not isinstance(v, str) or not v.strip() for v in t.values()) for t in targets)
+                    or {t['id'] for t in targets} != {'1', '2'}):
+                raise ValueError('v1.2 public claims contain only id, title and text; reference fields are forbidden.')
         ids.add(case['case_id'])
     return deepcopy(inputs)
 
@@ -147,11 +154,23 @@ def score_predictions(inputs, gold, predictions, weights, *, reviews=None):
     components = ({key: None if any(r['components'][key] is None for r in rows) else sum(r['components'][key] for r in rows)/len(rows)
                    for key in ('retrieval', 'document_evidence', 'claim_conclusion')} if manual else
                   {'retrieval': retrieval, 'risk': risk})
-    return {'retrieval_score': retrieval, 'risk_score': risk, 'components': components,
+    result = {'retrieval_score': retrieval, 'risk_score': risk, 'components': components,
             'adoption_eligible': all(r.get('adoption_eligible', True) for r in rows),
             'scoring_profile': profile,
             'total_score': (None if risk is None else sum(components.values())) if manual else
                 (None if risk is None else weights[0] * retrieval + weights[1] * risk), 'cases': rows}
+    evidence_only = [p.get('evaluation_scope') == 'evidence_only_no_retrieval_metric' for p in predictions]
+    if any(evidence_only):
+        if not all(evidence_only):
+            raise ValueError('Fixed-corpus and end-to-end predictions must be scored in separate runs.')
+        result.update(evaluation_scope='evidence_only_no_retrieval_metric', retrieval_score=None,
+                      total_score=None, adoption_eligible=False)
+        result['components']['retrieval'] = None
+        for row in rows:
+            row.update(retrieval_score=None, retrieval_metrics=None, total_score=None, adoption_eligible=False,
+                       evaluation_scope='evidence_only_no_retrieval_metric')
+            row['components']['retrieval'] = None
+    return result
 
 
 def _formal_fingerprints(root):
@@ -300,6 +319,13 @@ def run_experiment(inputs, gold, output, predictor, proposer, *, formal_root, ro
         for number in range(1, rounds+1):
             proposal = proposer({
                 'skill_id': 'patent-synonym-expansion', 'current_skill': base, 'round': number,
+                'objective': '仅改术语扩展；提升实际智慧芽查询中的有效表达覆盖及v1.2检索分，证据与权项结论不得退步。',
+                'process_context': {
+                    'upstream': '公开技术要素、完整限定、基准日；不含题库、金标或测试反馈',
+                    'output': '连续原文的短概念anchors及待审核同义表达，完整目标不改写',
+                    'downstream': '原词保留；概念内已审核表达OR、概念间AND；分查询轮流融合；固定检索与正文预算',
+                    'measurement': '审核词→实际下发查询→新增候选的归因记录；冻结后按v1.2原35/45/20评分',
+                    'limits': '不改查询编译、融合、预算或评分；不读取封存名单、参考标签、引文及测试结果'},
                 'development_examples': [
                     '合成例：压力传感器的规范译名可供查询，但“测量装置”是上位概念。',
                     '合成例：扩展连接器术语时，保持原要素里的连接方向、否定和参数。'],
