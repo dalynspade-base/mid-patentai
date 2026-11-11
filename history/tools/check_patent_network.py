@@ -5,7 +5,7 @@ from pathlib import Path
 import sys
 from urllib.parse import urlsplit
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 import requests
 from modules.patent_http import default_state
 from modules.patent_search import search_patents

@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 from tools.run_verification import group_tests
 from tools.check_semantic_contract import main as check_contract
-from tools.smoke_google import main as smoke_google
+from history.tools.smoke_google import main as smoke_google
 
 
 class VerificationToolTests(unittest.TestCase):
@@ -63,7 +63,7 @@ class VerificationToolTests(unittest.TestCase):
     def test_smoke_refuses_existing_destination_before_network(self):
         with tempfile.TemporaryDirectory() as directory:
             with patch('sys.argv', ['smoke', '--output-dir', directory]), \
-                 patch('tools.smoke_google.search_patents') as search:
+                 patch('history.tools.smoke_google.search_patents') as search:
                 with self.assertRaises(FileExistsError):
                     smoke_google()
                 search.assert_not_called()
@@ -72,7 +72,7 @@ class VerificationToolTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / 'new-run'
             with patch('sys.argv', ['smoke', '--output-dir', str(output)]), \
-                 patch('tools.smoke_google.search_patents', side_effect=RuntimeError('test failure')), \
+                 patch('history.tools.smoke_google.search_patents', side_effect=RuntimeError('test failure')), \
                  redirect_stdout(StringIO()):
                 smoke_google()
             report = json.loads((output / 'live_google_smoke.json').read_text(encoding='utf-8'))

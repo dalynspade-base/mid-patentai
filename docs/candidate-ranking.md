@@ -6,6 +6,6 @@
 
 独立语义评估读取查询、实际候选、正文来源和失败边界，检查对象、关系、语境及其他适用维度，给出原文依据与修订动作。新增文献数量及名次改变不作为语义质量指标。
 
-内部排序与成本字段只作运行记录，不能用作新颖性阈值，也不输入语义裁判作为质量依据。历史 Recall/Precision 对照保留在 `engineering/legacy/synonym_eval.py`，现行入口见[语义协议](semantic-skills.md)。
+内部排序与成本字段只作运行记录，不能用作新颖性阈值，也不输入语义裁判作为质量依据。历史 Recall/Precision 对照保留在 `history/engineering/legacy/synonym_eval.py`，现行入口见[语义协议](semantic-skills.md)。
 
-[整理前排序说明与历史结果](history/pre-1.0.0/candidate-ranking.md)。
+[整理前排序说明与历史结果](../history/docs/pre-1.0.0/candidate-ranking.md)。

@@ -86,7 +86,9 @@ class PatsnapHandbookTrialTests(unittest.TestCase):
         def complete(prompt, payload, max_tokens):
             packet = json.loads(payload)
             if '工具返回协议' in prompt and '试验检索术语' in prompt:
-                return json.dumps({'candidates': [candidate]})
+                return json.dumps({'candidates': [candidate], 'anchors': [
+                    {'feature_id': '1', 'term': '压力传感器'}, {'feature_id': '1', 'term': '管路压力'},
+                    {'feature_id': '2', 'term': case['assessment_targets'][1]['text']} ]})
             self.assertNotIn('试验检索术语', prompt)
             if 'candidates' in packet:
                 return json.dumps({'approved_ids': [r['id'] for r in packet['candidates']]})
@@ -104,7 +106,7 @@ class PatsnapHandbookTrialTests(unittest.TestCase):
             out = ModelPatentTrial(client, platform=platform)(skill, case, {
                 'abstain_label': 'insufficient_evidence', 'budget': {'max_queries': 8, 'max_documents': 25}})
         self.assertTrue(any('压力探测器' in query and ' AND ' in query for query in out['queries']))
-        self.assertTrue(all('PBD:[17900101 TO 20231231]' in query for query in out['queries']))
+        self.assertTrue(all('PBD:[19000101 TO 20231231]' in query for query in out['queries']))
         self.assertEqual([doc['publication_id'] for doc in out['retrieved']], [document.id])
         expected = json.loads(json.dumps(document.to_dict()))
         self.assertEqual(documents, [(expected, 6000), (expected, 12000)])

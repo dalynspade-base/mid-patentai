@@ -147,7 +147,7 @@ class ContextEvaluationTests(unittest.TestCase):
         with self.assertRaises(ValueError):context_for([],"2024-01-01",ctx)
 
     def test_contextual_chain_gets_separate_semantic_handoff_call(self):
-        from evals.legacy.fixtures import case_inputs, dataset
+        from history.evals.legacy.fixtures import case_inputs, dataset
         state=NoveltyHarness(allow_synthetic=True).run(**case_inputs(dataset()["cases"][0]))
         calls=[]
         client=Mock(model="teaching-judge",url="https://example.test/v1")
@@ -175,7 +175,7 @@ class ContextEvaluationTests(unittest.TestCase):
         self.assertTrue(any(i["status"]=="violated" and "上游" in i["basis"] for i in handoff_issues(records)))
 
     def test_different_document_content_is_not_hidden_by_identical_ids(self):
-        from evals.legacy.fixtures import case_inputs,dataset
+        from history.evals.legacy.fixtures import case_inputs,dataset
         state=NoveltyHarness(allow_synthetic=True).run(**case_inputs(dataset()["cases"][0]))
         records=deepcopy(state["skill_records"])
         evidence=records[3]

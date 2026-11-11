@@ -3,12 +3,12 @@ import json
 import unittest
 from pathlib import Path
 
-from engineering.legacy.synonym_eval import ranking_comparison, ranking_comparison_markdown, run_synonym_evaluation
+from history.engineering.legacy.synonym_eval import ranking_comparison, ranking_comparison_markdown, run_synonym_evaluation
 
 
 class RankingEvaluationTests(unittest.TestCase):
     def data(self):
-        return json.loads((Path(__file__).parents[2] / "evals/legacy/synonym_retrieval_cases.json").read_text(encoding="utf-8"))
+        return json.loads((Path(__file__).resolve().parents[3] / "history/evals/legacy/synonym_retrieval_cases.json").read_text(encoding="utf-8"))
 
     def test_previous_pollution_case_recovers_without_inventing_new_related_documents(self):
         report = ranking_comparison(self.data(), 3)

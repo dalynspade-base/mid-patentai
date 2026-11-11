@@ -18,7 +18,7 @@ def group_tests(suite):
             for child in item:
                 visit(child)
         else:
-            historical = item.id().startswith(("legacy.", "tests.legacy."))
+            historical = item.id().startswith(("legacy.", "tests.legacy.", "history.tests.legacy."))
             groups["legacy_engineering" if historical else "current_engineering"].append(item)
 
     visit(suite)
@@ -29,7 +29,7 @@ def load_suite(current_only=False):
     # Selecting current-only must not import historical optional dependencies at discovery time.
     names = ["tests." + path.stem for path in sorted((ROOT / "tests").glob("test*.py"))]
     if not current_only:
-        names += ["tests.legacy." + path.stem for path in sorted((ROOT / "tests/legacy").glob("test*.py"))]
+        names += ["history.tests.legacy." + path.stem for path in sorted((ROOT / "history/tests/legacy").glob("test*.py"))]
     return unittest.defaultTestLoader.loadTestsFromNames(names)
 
 

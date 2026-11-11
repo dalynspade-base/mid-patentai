@@ -32,7 +32,7 @@ def format_markdown(lines):
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--project-root", type=Path, default=Path(__file__).resolve().parents[2])
+    parser.add_argument("--project-root", type=Path, default=Path(__file__).resolve().parents[3])
     parser.add_argument("--case", type=Path)
     parser.add_argument("--source-dir", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
@@ -50,7 +50,7 @@ def main() -> int:
     from modules.patent_search import search_patents
     from modules.harness import NoveltyHarness
     from modules.harness import model_suggest_rows
-    from engineering.legacy.basic_contracts import run_basic_evals
+    from history.engineering.legacy.basic_contracts import run_basic_evals
 
     case_path = args.case or args.project_root / "examples" / "engineering_trial.json"
     case = json.loads(case_path.read_text(encoding="utf-8"))

@@ -5,10 +5,10 @@ import subprocess
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT))
 
-from engineering.legacy.real_patent_eval import fetch_sources, real_cases, run_real_evaluation, write_json
+from history.engineering.legacy.real_patent_eval import fetch_sources, real_cases, run_real_evaluation, write_json
 
 
 def main():

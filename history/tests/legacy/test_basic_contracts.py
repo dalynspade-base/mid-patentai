@@ -4,7 +4,7 @@ import unittest
 
 HAS_DEEPEVAL = importlib.util.find_spec('deepeval') is not None
 if HAS_DEEPEVAL:
-    from engineering.legacy.basic_contracts import run_basic_evals
+    from history.engineering.legacy.basic_contracts import run_basic_evals
 
 
 @unittest.skipUnless(HAS_DEEPEVAL, 'optional historical DeepEval dependency is not installed')

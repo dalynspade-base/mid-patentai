@@ -87,7 +87,7 @@ class PatsnapTests(unittest.TestCase):
             feature_text="压力传感器\n控制器", cutoff="2026-11-09")
         client._post.assert_called_once()
         records = state["search_audit"]["queries"]
-        self.assertEqual(records[0]["sent_query"], 'TACD:("压力传感器")')
+        self.assertEqual(records[0]["sent_query"], 'TACD:("压力传感器") AND PBD:[19000101 TO 20261108]')
         self.assertIn("67200005", records[0]["error"])
         self.assertNotIn("secret-like", state["markdown"])
         self.assertTrue(all(r["status"] == "not_executed" for r in records[1:]))

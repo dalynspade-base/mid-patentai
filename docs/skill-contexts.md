@@ -36,7 +36,7 @@
 ```python
 from modules.harness import NoveltyHarness
 
-# history 为已读取的记录；documents 为已取得的Google Patents快照。
+# history 为已读取的记录；documents 为已取得并保留实际来源的原文快照。
 state = NoveltyHarness().run(claim_history=history, claim_target="1/2",
     cutoff="2024-01-01", documents=documents)
 # 不共享跨目标复核，不合并各目标结论。

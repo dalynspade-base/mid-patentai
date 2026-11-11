@@ -8,7 +8,7 @@ import unittest
 from dataclasses import replace
 from unittest.mock import Mock
 
-from evals.legacy.fixtures import case_inputs, dataset
+from history.evals.legacy.fixtures import case_inputs, dataset
 from modules.google_patent_documents import fetch_google_document, manual_google_document, parse_google_page
 from modules.novelty_matching import SynonymLexicon
 from modules.novelty_models import EvidenceRow, Feature, PatentDocument, SourceSection, google_patent_url, parse_features

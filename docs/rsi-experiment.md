@@ -1,5 +1,7 @@
 # 术语扩展 RSI
 
+> 2.6.0：当前智慧芽编译与候选归因见[智慧芽协议](patsnap-search.md)，测试隔离及RSI闭环见[测试协议](testing.md)。历史模式按其实际来源保留。
+
 小 RSI 比较同一套公开副本在不同术语生成指令下的表现。正式术语扩展 Skill 是基线。每轮把一条已封存的候选规则加入临时文件，生成审核后的中英文术语及查询变体。程序向智慧芽发送短词组合，保留实际查询、顺序、来源、公开日和原文。逐篇对照与权项汇总各自使用正式指令。
 
 ## 信息边界和采纳
@@ -15,7 +17,7 @@
 先用现有副本 A 的派生材料检查协议和预算：
 
 ```powershell
-.\.venv-novelty\Scripts\python.exe -B -X utf8 tools/run_rsi.py --input .local/datasets/copy-a-v12/public/input.json --gold .local/datasets/copy-a-v12/private/gold.json --rounds 1 --max-queries 8 --max-documents 25
+.\.venv-novelty\Scripts\python.exe -B -X utf8 tools/run_rsi.py --input history/local/datasets/copy-a-v12/public/input.json --gold history/local/datasets/copy-a-v12/private/gold.json --rounds 1 --max-queries 8 --max-documents 25
 ```
 
 教学流程使用合成响应：

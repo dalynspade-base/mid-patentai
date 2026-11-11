@@ -24,7 +24,7 @@ PROFILES = {
     "engineering": {"label": "工程类（部件与关系组合）", "query_budget": 16, "dictionary_aliases": 2,
                     "llm_aliases": 2, "variants_per_feature": 8, "combination_width": 2, "max_llm_candidates": 36},
 }
-PROMPT_VERSION = "synonym-expansion-v1"
+PROMPT_VERSION = "synonym-expansion-v2-patsnap"
 
 
 def feature_hash(features: list[Feature]) -> str:
@@ -126,6 +126,9 @@ def build_expansion_plan(features: list[Feature], lexicon: SynonymLexicon, profi
         raise ValueError("同义词扩展需要编号唯一的技术要素。")
     protected = list(dict.fromkeys(x.strip() for x in protected_terms or [] if x.strip()))
     generated = generated or {"status": "not_requested", "candidates": [], "cost": {"llm_calls": 0}}
+    if "anchors" in generated:
+        from modules.patsnap_query_plan import validate_anchors
+        validate_anchors(generated["anchors"], features)
     raw = generated.get("candidates", [])
     if not isinstance(raw, list) or len(raw) > PROFILES[profile]["max_llm_candidates"]:
         raise ValueError("LLM候选数量无效或超过该类型上限。")
@@ -210,7 +213,12 @@ def generate_llm_candidates(features: list[Feature], lexicon: SynonymLexicon, pr
         "理论类侧重专名、固定译名和规范缩写，少量扩展，不把专名改成宽泛术语。"
         "工程类可为部件、结构/连接名称、工艺、材料及功能表达提供多个精确候选，分别标记类别，组合由程序完成。"
         "保护术语不得扩展。缺乏依据时不生成。所有候选还须经过程序规则或人工审核，不属于已确认事实。"
-        "仅返回JSON对象candidates数组，每项feature_id、source、term、language(zh/en/abbr)、"
+        f"候选总数不得超过{PROFILES[profile]['max_llm_candidates']}项；按要素分配，优先有依据的不同表达。"
+        "同时提取anchors数组，每项feature_id、term：每个要素2–6个连续原文中的短概念，短要素允许1个。"
+        "term为2–32字，优先技术对象、介质、机制与读出方式，不摘完整关系句、不拆字、不含查询操作符。"
+        "拟扩展的source应列为概念锚点，使已审核表达能进入智慧芽查询。"
+        "智慧芽查询在同一概念内OR连接审核后的表达，概念间AND；不要把所有部件用OR混成大查询。"
+        "仅返回JSON对象anchors数组和candidates数组。candidates每项feature_id、source、term、language(zh/en/abbr)、"
         "category(term/component/structure/process/material/function)、relation(equivalent/broader/narrower/related/unknown)、rationale。")
     from modules.patent_context import context_for
     payload = json.dumps({"features": [asdict(f) for f in features], "profile": profile,
@@ -228,16 +236,48 @@ def generate_llm_candidates(features: list[Feature], lexicon: SynonymLexicon, pr
               "provider_host": urlsplit(client.url).hostname, "prompt_version": PROMPT_VERSION,
               "cost": {"llm_calls": 1, "input_characters": len(system) + len(payload),
                        "payload_characters": len(payload), "output_characters": 0}}
-    try:
-        response = client.complete(system, payload, max_tokens=5000)
-        result["cost"]["output_characters"] = len(response)
-        data = parse_object(response)
-        # 重用严格候选检查，错误响应不接受部分内容，也不升级为词典同义词。
-        build_expansion_plan(features, lexicon, profile, protected_terms,
-                             {"status": "ok", "candidates": data.get("candidates")})
-        result.update(status="ok", candidates=data["candidates"])
-    except (RuntimeError, ValueError) as exc:
-        result["error"] = str(exc)
+    from modules.llm_client import LLMOutputTruncated
+    output_limit = 8000
+    result["cost"]["llm_calls"] = 0
+    result["cost"]["attempts"] = []
+    for attempt in range(3):
+        try:
+            result["cost"]["llm_calls"] += 1
+            response = client.complete(system, payload, max_tokens=output_limit)
+            result["cost"]["output_characters"] += len(response)
+            data = parse_object(response)
+            raw = data.get("candidates")
+            cap = PROFILES[profile]["max_llm_candidates"]
+            if isinstance(raw, list) and len(raw) > cap:
+                for start in range(0, len(raw), cap):
+                    build_expansion_plan(features, lexicon, profile, protected_terms,
+                                         {'status': 'ok', 'candidates': raw[start:start + cap]})
+                lanes = [[(i, r) for i, r in enumerate(raw) if isinstance(r, dict) and r.get("feature_id") == f.id]
+                         for f in features]
+                ordered = [x for turn in itertools.zip_longest(*lanes) for x in turn if x is not None]
+                if len(ordered) != len(raw):
+                    raise ValueError("超限候选含无效要素编号或结构。")
+                selected = ordered[:cap]
+                result["cost"]["dropped_candidates"] = len(raw) - len(selected)
+                result["cost"]["dropped_candidate_indices"] = sorted(set(range(len(raw))) - {i for i, _ in selected})
+                data["candidates"] = [r for _, r in selected]
+            candidate_result = {"status": "ok", "candidates": data.get("candidates")}
+            if "anchors" in data:
+                candidate_result["anchors"] = data["anchors"]
+            build_expansion_plan(features, lexicon, profile, protected_terms, candidate_result)
+            result.update(candidate_result)
+            result.pop("error", None)
+            break
+        except LLMOutputTruncated as exc:
+            result["error"] = str(exc)
+            output_limit = 12000
+        except ValueError as exc:
+            result["error"] = str(exc)
+            system += "\n上次结构校验失败：" + str(exc) + "；重新输出完整JSON，遵守候选上限。"
+        except RuntimeError as exc:
+            result["error"] = str(exc)
+            break
+        result["cost"]["attempts"].append({"attempt": attempt + 1, "error": result["error"]})
     result["cost"]["elapsed_seconds"] = round(time.perf_counter() - started, 6)
     result["cost"]["usage_tokens"] = getattr(client, "last_usage", None)
     result["cost"]["http_attempts"] = getattr(client, "last_request_count", None)

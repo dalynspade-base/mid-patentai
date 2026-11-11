@@ -168,6 +168,13 @@ def model_review_documents(features: list[Feature], documents: list[PatentDocume
     return result
 
 
+def host_agent_review(data, features, document, cutoff, *, model="host-agent",
+                      endpoint="host-agent://conversation", patent_context=None):
+    """Validate a host model's frozen review without relabeling it as human."""
+    return _validated_model_review(data, features, document, cutoff, model, endpoint,
+                                   patent_context=patent_context)
+
+
 def empty_review_rows(features: list[Feature]) -> tuple[EvidenceRow, ...]:
     return tuple(EvidenceRow(f.id, basis="", origin="human") for f in features)
 

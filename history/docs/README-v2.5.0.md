@@ -1,0 +1,253 @@
+# 专利新颖性预筛
+
+**版本：2.5.0** · [智慧芽检索](docs/patsnap-search.md) · [术语扩展 RSI](docs/rsi-experiment.md) · [2.0.0 架构迁移](docs/releases/v2.0.0.md) · [变更记录](CHANGELOG.md)
+
+本项目把用户想法或已保存材料整理为技术要素，通过智慧芽检索并取得原文，逐篇对照技术关系与全部限定，再给出有证据范围的新颖性预筛报告。八份 Markdown Skill 描述任务与上下文，Python 工具执行具体操作，harness 管理状态和调用。
+
+当前适用于 CN 新颖性预筛，支持整套确认要素，或按明确版本和引用路径展开独立、从属权利要求，分别对照。报告用于定位风险和补充取证，不等于可授权性、创造性、侵权或 FTO 结论。
+
+## Skill、tool 与 harness
+
+| 层次 | 位置 | 职责 |
+|---|---|---|
+| Skill | `.agents/skills/*/SKILL.md` | 指令、必要上下文、判断边界和交接要求；按当前任务读取 |
+| Tool | `modules/patent_tools.py` 及专用模块 | 可调用的整理、检索、复核、规则和报告函数；参数校验及实际执行 |
+| Harness | `modules/harness.py` | 管理本轮状态、固定六步调用、记录、依赖注入和结束条件 |
+| 模型与会话 | `modules/llm_client.py` 与宿主 | 解释当前 Skill 指令与材料；程序模型调用使用显式输入包，不假装拥有完整聊天历史 |
+| Eval | [patent-semantic-eval](.agents/skills/patent-semantic-eval/SKILL.md) + `modules/semantic_eval.py` | 冻结业务后独立验收，六维文字裁决及跨阶段核验 |
+
+2.0.0 删除将 Python 函数冒称 Skill 的 `skills/` 包；六步工具集中命名，固定调度不再依赖 LangGraph。LlamaIndex 仍只提供本地阅读线索。六份专用上下文与必查维度只维护在对应 `SKILL.md`，运行器和评估器读取同一来源，执行记录绑定实际指令文档。
+
+这是本项目的有限任务 harness，不是通用自主 agent。对话中的任务理解、材料读取、工具选择由宿主执行 Skill；网页保留确认交互，Python 运行器负责已明确输入的业务流程。没有“运行函数即完成语义理解”的假设。
+
+普通要素及独立/从属权利要求、择一分支、修改历史继续可用。界面可导入 [教学示例](examples/claim_history.json)，批量入口为 `NoveltyHarness.run_claims`；详见[上下文协议](docs/skill-contexts.md)。六维 Eval 的动态必查、跨阶段衔接、四类业务结论与来源/日期规则均保留。
+
+## 可选：临时 Skill 的 RSI 实验
+
+提供隔离的五轮“提议—对照试跑—固定评分—采纳”循环，每轮新建临时 SKILL.md，只增补实验文字，正式八份 Skill 不变。默认只验证/预览，真实调用需显式启用。线上 #8 公开材料与用户本地材料分开保存；自动选择 evidence-v2 证据评分或 manual-v1.2 原35/45/20手册，旧整案标签协议继续兼容。语义评分先冻结输出再单独复核，数学分数由代码计算。详见[双材料评分与运行](docs/dual-material-scoring.md)、[实验架构](docs/rsi-experiment.md)及[2.2.0整合边界](docs/releases/v2.2.0.md)。数字只属于该实验的外部目标，正式六维语义验收保持原协议。
+
+## 安装与启动
+
+已验证环境为 Windows、Python **3.12.14**。建议使用 Python 3.12；其他 Python 版本未在本次发布中验证。
+
+在项目根目录的 PowerShell 中执行：
+
+```powershell
+py -3.12 -m venv .venv-novelty
+.\.venv-novelty\Scripts\python.exe -m pip install -r requirements.txt
+.\start_novelty.ps1
+```
+
+若终端限制执行 PowerShell 脚本，可直接启动：
+
+```powershell
+.\.venv-novelty\Scripts\python.exe -X utf8 -m streamlit run app.py --server.address 127.0.0.1
+```
+
+已有可用环境只需更新依赖，不必删除环境。`requirements-novelty.txt` 是 `requirements.txt` 的兼容安装别名。需要完整历史 DeepEval 回归时，另行安装：
+
+```powershell
+.\.venv-novelty\Scripts\python.exe -m pip install -r requirements-engineering.txt
+```
+
+## 模型配置与材料使用
+
+网页可直接输入模型配置，也会读取项目根目录的 `.env`。首次使用可复制模板：
+
+```powershell
+if (-not (Test-Path -LiteralPath .env)) { Copy-Item .env.example .env }
+```
+
+仅在 `.env` 尚不存在时复制；已有配置直接编辑。配置项如下：
+
+| 变量 | 含义 |
+|---|---|
+| `LLM_API_KEY` | 用户自己的模型密钥 |
+| `LLM_BASE_URL` | 兼容 Chat Completions 的服务基址；默认 `https://api.deepseek.com`，不要重复添加 `/chat/completions` |
+| `LLM_MODEL` | 服务支持的模型名称；模板值可按实际服务调整 |
+| `PATENT_PLATFORM_MCP_CONFIG` | 可选，现有 `patent-platform` MCP 配置文件路径；默认读取当前用户的 `Downloads/mcp.json` |
+
+网页左侧确认使用智慧芽检索和正文接口额度后运行。配置方法、次数预算和使用示例见[智慧芽接入说明](docs/patsnap-search.md)。模型术语生成、逐篇对照和独立语义裁判会单独请求模型，需先确认外发范围。独立评估沿用当前模型配置，指职责和调用阶段分离。
+
+网页支持保存附件，但保存成功不等于已经提取或理解附件。对话材料整理应读取实际原文；无法读取的附件保留未知，不能补造技术结构或效果。真实案件、原始附件、密钥及本地运行结果不提交到 Git。
+
+## 完成一次预筛：逐个 Skill 的操作与交接
+
+下面是正式业务流程：主入口组织六个业务 Skill，业务输出冻结后再按需交给独立语义评估。每个阶段标题都链接到实际 `SKILL.md`，执行该阶段前读取相应指令。RSI 是旁路实验，入口见上方[临时 Skill 的 RSI 实验](#可选临时-skill-的-rsi-实验)，不自动改写正式技能。
+
+### 0. 接手任务：[patent-precheck](.agents/skills/patent-precheck/SKILL.md)
+
+输入发明描述、附件或已保存案件；在本项目对话中可使用 `$patent-precheck`。先确认当前案件、已完成阶段、完整限定、判断基准日和本轮检索来源。采用权利要求模式时，还需明确文本版本、引用路径和修改依据。
+
+主入口按实际进度读取后续 Skill，沿用已提供的信息和已批准的外发范围。交接的是本轮目标、材料位置、执行范围与待补项；文件保存成功不代表附件已读取。默认对话取证边界见[主入口指令](.agents/skills/patent-precheck/SKILL.md)，网页预算见[检索协议](docs/search-evidence.md)。
+
+### 1. 整理材料：[patent-material-preparation](.agents/skills/patent-material-preparation/SKILL.md)
+
+读取实际原文或用户明确确认的要素，将部件、连接关系、条件、否定、数值及单位整理为带出处的技术要素，同时列出未读范围与未知项。权利要求目标沿指定引用路径继承限定，不合并其他分支。已保存案件按[案件整理协议](.agents/skills/patent-material-preparation/references/case-preparation.md)处理。
+
+**交付并确认：**要素清单、材料出处、整理版本、未知项和基准日；网页可载入 AI 整理结果供确认。确认后进入术语扩展，原始附件、`case.json` 和旧整理版本另存保留。无法读取的内容不能补造为技术事实。
+
+### 2. 审核检索表达：[patent-synonym-expansion](.agents/skills/patent-synonym-expansion/SKILL.md)
+
+基于已确认要素和技术语境生成中英文译名、缩写等候选，分别标明等义、上下位、相关或未知。保留原词、专名、关系方向、否定及数值限定，将候选放回原句检查范围是否变化。
+
+**交付并确认：**候选关系、审核状态、保护术语和查询变体。审核后的表达用于检索；拒绝或待审核词仍保留记录。扩展词不改写权利要求，也不直接成为披露或法律等同判断。具体预算见[术语扩展协议](docs/synonym-expansion.md)。
+
+### 3. 检索与取得原文：[patent-candidate-search](.agents/skills/patent-candidate-search/SKILL.md)
+
+按查询计划在本轮指定的平台检索，或录入来源明确的原文快照；记录实际平台、查询、来源 URL、公开号、日期、取得范围及失败。候选排序和标题/摘要相关性用于安排阅读，不能代替正文对照。显式提供空快照集时不自动联网。
+
+**交付：**候选文献、已取得快照、来源/日期和检索缺口。未取到正文或日期不明的文献保持未知，失败不能记成“没有相关专利”。需要补证时继续检索；达到预算则保留缺口收束。操作字段见[检索协议](docs/search-evidence.md)与[候选排序](docs/candidate-ranking.md)。
+
+### 4. 逐篇对照证据：[patent-evidence-alignment](.agents/skills/patent-evidence-alignment/SKILL.md)
+
+先预览并确认向模型发送的完整要素、选定原文和阅读线索，再在批准范围内逐篇复核全部输入段落。每项返回 `disclosed` / `not_found` / `unknown`、逐字引文、原文位置、方案归属与理由；同时检查限定间关系、相邻语境、全文矛盾及互斥实施例。
+
+**交付：**与当前要素和快照绑定的有效复核、同一方案及充分公开依据、未解决缺口。阅读命中不自动成为证据，不跨文献拼接；缺少有效全文复核时保持 `partial`。需补原文则回到检索，发现要素失真则返回材料整理。详见[模型证据协议](docs/model-evidence-alignment.md)。
+
+### 5. 形成预筛结论：[patent-novelty-assessment](.agents/skills/patent-novelty-assessment/SKILL.md)
+
+读取有效逐项复核，检查单篇文献同一披露方案是否覆盖全部限定，并核对来源、日期链、基准日和范围。各权利要求版本与引用分支分别判断；上游绑定冲突时退回最早受影响步骤重建。
+
+**交付：**单篇完整披露风险、本次已复核文献未发现完整披露、证据不足或超出范围四类结论，以及相应证据和缺口。“未发现”只限本次实际复核范围，不能改写为不存在现有技术或保证授权。
+
+### 6. 冻结并交付报告：[patent-report-delivery](.agents/skills/patent-report-delivery/SKILL.md)
+
+统一组装已确认输入、逐篇证据、复核和预筛结论，双向核对 Markdown 正文与 JSON。保留基准日、目标版本、引用路径、意见来源、未知项及各阶段实际执行记录 `skill_records`；模型意见和历史人工意见分别标明。
+
+**交付：**可下载的 Markdown / JSON，以及关联案件的新一轮结果。冻结本轮业务输出后才进入独立验收；下载或保存成功不作为专业验收通过。已完成报告及原始材料不覆盖，操作见[材料留存](docs/local-integration.md)。
+
+### 7. 独立验收：[patent-semantic-eval](.agents/skills/patent-semantic-eval/SKILL.md)
+
+在报告下方展开“独立语义评估”，或使用下方 CLI；核对冻结的实际输入/输出、原文、执行状态、Skill 指纹及可选独立参考，预览外发包并在批准范围内执行。逐技能按六维验收，六步均完成后再核查限定、未知、证据身份和结论的跨阶段传递。
+
+**交付：**每维依据、引文、反例和后续动作，以及 `acceptable` / `needs_revision` / `pending_adjudication` 文字裁决。只评已完成阶段；缺步或裁判失败时整体为 `incomplete`。验收不自动改写业务结论；需要修订时返回对应业务步骤，重建受影响的下游结果，重新冻结后再评。详见[六维语义规范](docs/semantic-skills.md)。
+
+### 流程图
+
+图中每个 `patent-*` 节点对应上方同名 Skill 链接。主入口负责调度，六步业务由 harness 和工具执行；独立验收在业务冻结之后按需启动。
+
+```mermaid
+flowchart TD
+    I[发明描述 / 附件 / 已保存案件] --> P["0 主入口<br/>patent-precheck"]
+    P --> M["1 材料整理<br/>patent-material-preparation"]
+    M --> MC{要素、基准日与范围已确认?}
+    MC -->|补充或修订| M
+    MC -->|是| T["2 术语扩展<br/>patent-synonym-expansion"]
+    T --> TC{检索表达已审核?}
+    TC -->|调整候选| T
+    TC -->|是| S["3 候选检索与原文获取<br/>patent-candidate-search"]
+    S --> EC{模型外发包已确认?}
+    EC -->|调整原文或范围| S
+    EC -->|是| E["4 逐篇证据对照<br/>patent-evidence-alignment"]
+    E -.->|需补原文且预算允许| S
+    E --> N["5 新颖性判断<br/>patent-novelty-assessment"]
+    N --> R["6 报告交付<br/>patent-report-delivery"]
+    R --> F["冻结业务 Markdown / JSON / skill_records<br/>保留证据缺口、失败及未知"]
+    F --> Q{是否开展独立语义验收?}
+    Q -->|否| D[交付本轮报告与下一步]
+    Q -->|是：核对并确认外发包| V["7 独立语义评估<br/>patent-semantic-eval"]
+    V --> B[逐技能六维文字裁决<br/>六步齐全后核验跨阶段衔接]
+    B --> D
+    B -.->|需修订：返回对应阶段，重建下游| P
+```
+
+检索失败、未读范围和缺步如实进入记录；这些记录不代表业务或验收完成。目标、限定、版本、基准日或输入绑定变化时，从最早受影响阶段重做，不沿用失效复核。当前网页仍有材料确认、术语审核和模型外发等交互；尚未实现“上传任意附件后自动完成全部专业判断”。
+
+## 八个技能及其职责
+
+| 入口 | 主要输入 | 主要输出 |
+|---|---|---|
+| [patent-precheck](.agents/skills/patent-precheck/SKILL.md) | 当前材料、任务和执行进度 | 调度六个业务阶段；公开接口 `modules.harness.NoveltyHarness` |
+| [patent-material-preparation](.agents/skills/patent-material-preparation/SKILL.md) | 实际材料原文或确认要素 | 带出处的要素、未知项和整理记录 |
+| [patent-synonym-expansion](.agents/skills/patent-synonym-expansion/SKILL.md) | 要素、语境、词典与保护术语 | 候选关系、审核状态和保留限定的查询变体 |
+| [patent-candidate-search](.agents/skills/patent-candidate-search/SKILL.md) | 查询计划、基准日或提供的快照 | 实际查询、候选文献、来源和检索缺口 |
+| [patent-evidence-alignment](.agents/skills/patent-evidence-alignment/SKILL.md) | 技术要素、选定原文及阅读线索 | 逐项支持/缺口/未知、原文位置和同一方案依据 |
+| [patent-novelty-assessment](.agents/skills/patent-novelty-assessment/SKILL.md) | 有效复核和来源/日期等约束 | 有范围边界的新颖性预筛结论 |
+| [patent-report-delivery](.agents/skills/patent-report-delivery/SKILL.md) | 实际执行结果、案件和证据 | 统一组装并绑定的 Markdown、JSON 与技能记录 |
+| [patent-semantic-eval](.agents/skills/patent-semantic-eval/SKILL.md) | 冻结的技能输入/输出、原文与可选参考 | 六维发现、语义裁决、引文、反例及后续动作 |
+
+主入口 Skill 指导宿主组织任务，harness 调度工具；独立裁判检查六个阶段的实际输出。尚未完成的技能不作为已通过验收的技能。
+
+## 六维语义评估及结果解释
+
+| 维度 | 检查重点 |
+|---|---|
+| 术语与对象 | 技术语境中的等义、上下位、相关概念及指称对象 |
+| 结构与关系 | 连接、控制方向、施受角色、输入输出和组合 |
+| 逻辑与限定 | 条件、否定、范围、顺序、可选项、技术数值和单位 |
+| 语境与指称 | 指代、同一方案、背景、引述、假设与实际披露 |
+| 功能与效果 | 功能限定与实现手段；相同目的不能补足结构缺口 |
+| 评价与表达 | 评价措辞是否改变、掩盖或扩大技术含义和结论 |
+
+六维是本项目的任务检查维度，不声称语言学文献规定了固定六层理论。各技能均返回六维意见；必要维度不能跳过，其他维度不适用时须解释原因。维度不加权、不累加，不输出分数、概率、通过率或高中低评级。
+
+| 结果类别 | 可能结果 | 含义 |
+|---|---|---|
+| 业务预筛结论 | 单篇完整披露风险／本次已复核文献未发现完整披露／证据不足／超出范围 | 回答本次资料范围内的业务问题 |
+| 技能执行状态 | `completed` / `partial` / `not_executed` / `failed` | 说明业务步骤是否实际完成 |
+| 语义验收裁决 | 可接受 `acceptable`／需修订 `needs_revision`／待裁决 `pending_adjudication` | 说明实际输出是否忠于依据和任务义务 |
+| 整体评估执行 | `completed` / `incomplete` | 缺少必要技能或裁判失败时，不生成完整验收结论 |
+
+“证据不足”是业务结论，“待裁决”是验收意见，二者不相互替代。裁判返回 `activated_dimensions`，已触发维度不能跳过；确定的维度判断同时引用实际输出和原始依据；违反项提供反例及修订动作。裁判给出“需修订”不会自动改写业务结果。技术数值、日期、哈希以及内部运行成本可以保留，它们不作为语义质量分数。
+
+## 命令行评估与验证
+
+以下命令均在项目根目录执行，输出目录每次须使用新名称。无需激活环境，统一调用同一解释器。
+
+```powershell
+# 离线裁判契约自测，不调用模型、不产生业务语义验收
+.\.venv-novelty\Scripts\python.exe -X utf8 tools/check_semantic_contract.py
+# 工程及历史回归分组运行；历史 DeepEval 项需要可选依赖，否则明确跳过
+.\.venv-novelty\Scripts\python.exe -X utf8 tools/run_verification.py --output-dir .local/verification/release-check
+# 仅当前业务工程/语义契约；发现测试时也不导入历史可选依赖
+.\.venv-novelty\Scripts\python.exe -X utf8 tools/run_verification.py --current-only --output-dir .local/verification/current-check
+# 从实际导出 JSON 冻结技能记录，只生成外发预览
+.\.venv-novelty\Scripts\python.exe -X utf8 tools/run_semantic_eval.py --records .local/input/novelty_evidence.json --output-dir .local/evaluations/preview
+# 单独预览术语扩展；其他技能可通过 --skill 指定
+.\.venv-novelty\Scripts\python.exe -X utf8 tools/run_synonym_eval.py --records .local/input/novelty_evidence.json --output-dir .local/evaluations/synonyms
+```
+
+先将网页导出的证据 JSON 保存到示例中的输入路径，或替换为自己的实际路径。旧报告没有 `skill_records` 时，需要重新执行业务；不能把历史数值结果直接改名为语义结果。
+
+CLI 读取进程环境变量，**不会自动加载 `.env`**。实际模型评估前，在当前 PowerShell 会话配置 `LLM_API_KEY`、`LLM_BASE_URL` 和 `LLM_MODEL`，核对外发计划，再使用新的目录执行：
+
+```powershell
+.\.venv-novelty\Scripts\python.exe -X utf8 tools/run_semantic_eval.py --records .local/input/novelty_evidence.json --output-dir .local/evaluations/judged --run-model --confirm-external
+```
+
+可用 `--references` 提供与实际输出绑定的独立参考，或 `--skill` 仅评一个业务技能。缺少参考如实标为 `none`；`--demo` 仅生成教学计划，不能和 `--run-model` 一起使用。预览生成 `frozen_skill_outputs.json`、`semantic_eval_plan.json`；真实调用另生成 `semantic_eval.json` 和 `semantic_eval.md`。详见[结果和参考协议](docs/semantic-skills.md)。
+
+命令执行成功不等于验收可接受：实际运行在 `execution=completed` 时可正常退出，即使 `verdict=needs_revision`；执行不完整返回非零状态。自动化调用方应读取 JSON 中的执行状态和裁决。
+
+智慧芽连通性可用网页中的公开通用检索词检查。历史 Google 诊断入口仅用于既有工程回归。
+
+## 目录、升级与数据保留
+
+```text
+.agents/skills/       八份技能定义
+modules/harness.py   固定流程运行器
+modules/patent_tools.py  业务工具
+modules/skill_library.py  Markdown 指令与上下文加载
+modules/             当前业务工具、运行上下文、阅读线索与语义裁判
+engineering/legacy/  历史数值工程模块
+tools/               当前验证和语义评估入口；legacy/ 下为历史试验
+tests/               当前工程/语义契约；legacy/ 下为历史工程测试
+evals/legacy/        历史教学及固定候选池夹具
+docs/releases/       版本对比与迁移说明
+docs/history/        整理前设计文档快照
+reports/             已纳入版本历史的报告与索引；新增本地汇报不提交
+.local/              本地案件、运行、验证和备份（不提交）
+```
+
+从 1.x 升级时，将 `skills.precheck_skill.NoveltyHarness` 改为 `modules.harness.NoveltyHarness`；业务函数使用 `modules.patent_tools`，评估使用 `modules.semantic_eval.evaluate_records`。详见[2.0.0 迁移表](docs/releases/v2.0.0.md)。历史依赖无需删除。
+
+原始附件、`case.json`、已有整理版本、原文快照、历史哈希和报告不自动迁移或覆盖。历史报告按原含义读取，不能自动补成新的语义验收记录。真实材料、凭据、依赖环境和新增运行记录保持本地。`.local/`（含 RSI 的 `failure.json` / `failure.md`）、`tests/.artifacts/`、未跟踪的本地汇报与 QA 产物不纳入发布；保留失败处理逻辑及其回归测试源代码。
+
+## 本次验证与能力边界
+
+2.2.0 发布前在本地目标目录通过 303 项当前工程/语义契约与 28 项历史工程测试，零失败、零跳过；八份 SKILL.md 通过结构校验，README 的 43 个本地链接均可定位。测试使用构造材料和模拟模型；次数不表示语义质量或专业准确率。验证记录另存于 `.local/verification/`，不纳入上传。
+
+本次未证明真实模型专业语义准确率，也未证明 Google Patents 全库召回改善。真实能力仍需独立参考、隔离案例和有出处的语义复核。未发现完整披露不等于不存在相关现有技术；日期链、抵触申请及充分公开等特殊情况仍可能需要专业核验。
+
+[材料留存](docs/local-integration.md) · [术语扩展](docs/synonym-expansion.md) · [候选检索](docs/candidate-ranking.md) · [证据对照](docs/model-evidence-alignment.md) · [历史工程](engineering/legacy/README.md) · [历史报告](reports/README.md)

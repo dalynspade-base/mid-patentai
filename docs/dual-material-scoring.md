@@ -1,5 +1,7 @@
 # 两套测试材料的评分与运行
 
+> 2.6.0：当前智慧芽编译与候选归因见[智慧芽协议](patsnap-search.md)，测试隔离及RSI闭环见[测试协议](testing.md)。历史模式按其实际来源保留。
+
 2.2.0 使用材料自己的评分协议。执行入口仍为本地真实检索 RSI；当前保留三种可识别协议。
 
 |材料|自动选择的协议|评分|
@@ -17,7 +19,7 @@
 ```powershell
 # 仅PDF文本提取需要可选依赖；已经生成的JSON运行时不需要该依赖
 python -m pip install -r requirements-data.txt
-python -X utf8 tools/prepare_rsi_dataset.py --archive .local/testsets/copy-A-squeezed-light-cn/v1.2 --output-dir .local/datasets/copy-a-v12-new
+python -X utf8 tools/prepare_rsi_dataset.py --archive history/local/testsets/copy-A-squeezed-light-cn/v1.2 --output-dir .local/datasets/copy-a-v12-new
 ```
 
 也可通过 `--input-text` 提供从同一公开副本提取的文本。适配器提取两条完整权项并记录PDF和派生文本的哈希；不会把缺失Markdown的旧哈希冒充PDF哈希。
@@ -38,8 +40,8 @@ python -X utf8 tools/prepare_rsi_dataset.py --pr8-dir evals/testsets --output-di
 ## 先预览，再显式运行
 
 ```powershell
-python -X utf8 tools/run_rsi.py --input .local/datasets/copy-a-v12/public/input.json --gold .local/datasets/copy-a-v12/private/gold.json --max-documents 25
-python -X utf8 tools/run_rsi.py --input .local/datasets/pr8-train/public/input.json --gold .local/datasets/pr8-train/private/gold.json
+python -X utf8 tools/run_rsi.py --input history/local/datasets/copy-a-v12/public/input.json --gold history/local/datasets/copy-a-v12/private/gold.json --max-documents 25
+python -X utf8 tools/run_rsi.py --input history/local/datasets/pr8-train/public/input.json --gold history/local/datasets/pr8-train/private/gold.json
 ```
 
 预览会显示实际评分协议、分项权重、请求预算和私有评分参考是否参与外发。正式运行需另加新的 `--output-dir`、`--run-model --confirm-external`。

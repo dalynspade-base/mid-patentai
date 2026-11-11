@@ -10,4 +10,4 @@
 
 独立语义裁判按[六维协议](semantic-skills.md)检查实际对照结果。原有模拟响应测试只验证程序行为，不能证明专业准确率。
 
-[整理前统一对照说明与验证记录](history/pre-1.0.0/model-evidence-alignment.md)。
+[整理前统一对照说明与验证记录](../history/docs/pre-1.0.0/model-evidence-alignment.md)。

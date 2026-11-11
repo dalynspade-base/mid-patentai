@@ -188,7 +188,8 @@ def candidate_origins(audit, features):
                 covered.update(record.get("feature_ids", []))
         for value in record.get("results", []):
             if value.get("publication_id") and not value.get("validation_error"):
-                (original if record.get("kind") == "original" else expansion).add(value["publication_id"])
+                expanded = bool(record.get('candidate_ids')) if 'concept_groups' in record else record.get('kind') != 'original'
+                (expansion if expanded else original).add(value["publication_id"])
     complete = original_ok and covered == {f.id for f in features}
     return original, expansion, complete
 

@@ -1,7 +1,9 @@
 # 专利预筛六个业务技能与独立语义评估
 
+> 2.6.0：当前智慧芽编译与候选归因见[智慧芽协议](patsnap-search.md)，测试隔离及RSI闭环见[测试协议](testing.md)。历史模式按其实际来源保留。
+
 当前架构包含主入口 patent-precheck、六个业务子skill、独立评估 patent-semantic-eval，共八份技能定义。
-固定调度位于modules/harness.py，LlamaIndex阅读线索位于modules/evidence_retriever.py；旧数值工具位于engineering/legacy/，不再保留框架命名的Python skill入口。
+固定调度位于modules/harness.py，LlamaIndex阅读线索位于modules/evidence_retriever.py；旧数值工具位于history/engineering/legacy/，不再保留框架命名的Python skill入口。
 
 |业务 Skill|调用工具|输出|
 |---|---|---|
@@ -42,7 +44,7 @@ status为satisfied/violated/undetermined/not_applicable；有违反则needs_revi
 `python tools/run_semantic_eval.py --records 已导出的证据JSON --output-dir 新目录` 默认仅生成评估计划，不调用模型。
 显式添加 `--run-model --confirm-external` 才调用配置的LLM_API_KEY/LLM_BASE_URL/LLM_MODEL；可用 `--references` 读取独立参考，先保存待评输入再读取参考。
 
-engineering/legacy/basic_contracts.py与旧指标函数只用于历史工程；tools/check_semantic_contract.py为独立离线契约入口。报告统一由modules.patent_tools.deliver_report组装，modules/novelty_report.py只生成基础载荷和正文。历史报告不重写。
+history/engineering/legacy/basic_contracts.py与旧指标函数只用于历史工程；tools/check_semantic_contract.py为独立离线契约入口。报告统一由modules.patent_tools.deliver_report组装，modules/novelty_report.py只生成基础载荷和正文。历史报告不重写。
 新测试验证执行绑定、裁判正负对照、六维完整性、引文和失败处理，模拟响应不证明实际模型专业准确率。
 
 ## 上下文与跨步骤验收

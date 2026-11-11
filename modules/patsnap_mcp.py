@@ -181,10 +181,15 @@ class PatsnapMCP:
             raise ValueError(f"智慧芽每条查询可保留 1–{MAX_PATSNAP_RESULTS} 篇候选。")
         payload = self.call("search_patents", {"query": query, "limit": limit, "offset": 0})
         data = payload.get("data")
-        if payload.get("status") is not True or not isinstance(data, dict) or not isinstance(data.get("results"), list):
+        if payload.get("status") is not True or not isinstance(data, dict):
+            raise RuntimeError("智慧芽检索响应缺少结果列表。")
+        hits = data.get("results")
+        if hits is None and type(data.get("local_hit_count")) is int and data["local_hit_count"] == 0:
+            hits = []
+        if not isinstance(hits, list):
             raise RuntimeError("智慧芽检索响应缺少结果列表。")
         results = []
-        for hit in data["results"]:
+        for hit in hits:
             if not isinstance(hit, dict):
                 results.append(None)
                 continue
@@ -194,6 +199,8 @@ class PatsnapMCP:
                 url = ""
             results.append({"title": hit.get("title"), "url": url, "publication_number": hit.get("pn")})
         total = data.get("total_search_result_count")
+        if total is None and not results and data.get("local_hit_count") == 0:
+            total = 0
         return {"results": results, "total_matches": total if type(total) is int and total >= len(results) else None}
 
     def fetch(self, candidate):

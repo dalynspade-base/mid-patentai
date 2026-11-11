@@ -33,7 +33,7 @@ def search_input_hash(features: list[Feature], cutoff: str) -> str:
 
 
 def query_plan(features: list[Feature], query: str, lexicon: SynonymLexicon, expansion: dict | None = None,
-               *, max_queries=None, compact=False) -> dict:
+               *, max_queries=None, compact=False, before=None) -> dict:
     """Each original feature gets priority over variants. Never shorten a feature."""
     query = query.strip()
     if len(query) > MAX_QUERY_LENGTH:
@@ -49,6 +49,9 @@ def query_plan(features: list[Feature], query: str, lexicon: SynonymLexicon, exp
         budget = min(budget, max_queries)
     plan = {"query_mode": "user_query" if query else "per_feature", "queries": [], "skipped": [],
             "query_budget": budget, "expansion": expansion}
+    if compact and not query:
+        from modules.patsnap_query_plan import concept_plan
+        return plan | concept_plan(features, expansion, budget=budget, before=before)
     sources = [([], query)] if query else [([f.id], f.text) for f in features]
     seen: set[str] = set()
 
@@ -105,7 +108,8 @@ def retrieve_with_journal(features: list[Feature], cutoff: str, query: str, lexi
     audit = {"schema_version": 1, "mode": "online", "input_hash": search_input_hash(features, cutoff),
              "provider": provider, "started_at": now(), "query_budget": MAX_QUERIES, "results_per_query": results_per_query,
              "document_budget": max_documents, "synonym_groups": deepcopy(lexicon.groups),
-             **query_plan(features, query, lexicon, expansion, max_queries=max_queries, compact=provider == "patsnap"),
+             **query_plan(features, query, lexicon, expansion, max_queries=max_queries,
+                          compact=provider == "patsnap", before=before or cutoff),
              "candidates": []}
     candidates: dict[str, dict] = {}
     terms = {row["id"]: row["term"] for row in audit["expansion"]["candidates"]}
@@ -120,7 +124,7 @@ def retrieve_with_journal(features: list[Feature], cutoff: str, query: str, lexi
             sent_query = record["query"]
             if provider == "patsnap":
                 from modules.patsnap_mcp import patsnap_query
-                sent_query = patsnap_query(sent_query, custom=audit["query_mode"] == "user_query",
+                sent_query = patsnap_query(sent_query, custom=audit["query_mode"] == "user_query" or "concept_groups" in record,
                                           focus=[terms[i] for i in record.get("candidate_ids", [])], before=before)
                 record["sent_query"] = sent_query
                 if sent_query in sent:
@@ -172,10 +176,17 @@ def retrieve_with_journal(features: list[Feature], cutoff: str, query: str, lexi
         candidate["legacy_lexical_rank"] = index
     annotate_origins(legacy, audit, features)
     ordered = rank_candidates(features, list(candidates.values()), lexicon, audit["expansion"])
+    if provider == "patsnap" and audit["query_mode"] != "user_query":
+        from modules.patsnap_query_plan import fuse_candidates
+        ordered = fuse_candidates(list(candidates.values()), [q['id'] for q in audit['queries']])
     for index, candidate in enumerate(ordered, 1):
         candidate["rank"] = index
     audit["ranking"] = {"version": RANKING_VERSION, "mode": "rules", "metadata_reviews": {},
         "note": "组件、关系与提及语境的规则线索；未进行正文相关性或新颖性确认"}
+    if provider == "patsnap" and audit["query_mode"] != "user_query":
+        audit["ranking"].update(version="query-round-robin-v1", mode="query_round_robin",
+                                note="按独立查询轮流取候选；规则提示仍保留，不代表正文相关性。")
+    audit["candidate_order"] = [c["publication_id"] for c in ordered]
     documents = []
     for candidate in ordered[:max_documents]:
         if paused:
@@ -195,6 +206,16 @@ def retrieve_with_journal(features: list[Feature], cutoff: str, query: str, lexi
         candidate["fetch_finished_at"] = now()
     audit["candidates"] = ordered
     audit["finished_at"] = now()
+    audit["fetched_order"] = [d.id for d in documents]
+    audit["eligible_fetched_order"] = [d.id for d in documents if d.publication_date and d.publication_date < cutoff]
+    audit["expansion_attribution"] = [
+        {"candidate_id": row["id"], "source": row["source"], "term": row["term"], "status": row["status"],
+         "planned_query_ids": [q["id"] for q in audit["queries"] if row["id"] in q.get("candidate_ids", [])],
+         "sent_query_ids": [q["id"] for q in audit["queries"] if row["id"] in q.get("candidate_ids", [])
+                            and q["status"] == "ok" and not q.get("reused_query_id")],
+         "retrieved_publication_ids": list(dict.fromkeys(r.get("publication_id") for q in audit["queries"]
+             if row["id"] in q.get("candidate_ids", []) for r in q.get("results", []) if r.get("publication_id")))}
+        for row in audit["expansion"]["candidates"]]
     audit["retrieval_cost"] = {"search_calls": sum(r["status"] != "not_executed" and "reused_query_id" not in r
                                                  for r in audit["queries"]),
         "page_attempts": sum("fetch_started_at" in c for c in ordered), "successful_pages": len(documents),
